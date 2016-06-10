@@ -12,7 +12,7 @@ var uuid = require('node-uuid');
 var config = require('./config');
 
 exports.createClaim = function(user, cb) {
-    //load groups
+    //load groups (using sequelize generated code)
     user.getGroups({attributes: ['id']}).then(function(groups) {
         var gids = [];
         groups.forEach(function(group) {
@@ -33,16 +33,13 @@ exports.createClaim = function(user, cb) {
             "exp": (Date.now() + config.auth.ttl)/1000,
             "iat": (Date.now())/1000,
             "scopes": user.scopes,
-            //"sub": String(user.id), //can't use user.username because it might not used. convert to string for better compatibility
-            "sub": user.id, //can't use user.username because it might not used. 
+            "sub": user.id, //can't use user.username because it could be not set
             "gids": gids,
             "profile": { 
                 username: user.username,
                 email: user.email,
                 fullname: user.fullname 
             },
-            //this is not part of official jwt, but this allows me to do stateless xsrf check via double-submit
-            //"xsrf": uuid.v4()
         });
     });
 }

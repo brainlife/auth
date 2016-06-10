@@ -4,7 +4,7 @@
     "url": "/local/auth",
     "title": "Perform authentication",
     "name": "LocalAuth",
-    "description": "<p>Perform authentication using username(or email) and SCA password.</p>",
+    "description": "<p>Perform authentication using username(or email) and SCA password get JWT token.</p>",
     "group": "Local",
     "parameter": {
       "fields": {
@@ -41,6 +41,44 @@
     },
     "version": "0.0.0",
     "filename": "api/controllers/local.js",
+    "groupTitle": "Local"
+  },
+  {
+    "type": "post",
+    "url": "/signup",
+    "title": "Register new user",
+    "name": "Signup",
+    "description": "<p>Register new user with username and email</p>",
+    "group": "Local",
+    "parameter": {
+      "fields": {
+        "Parameter": [
+          {
+            "group": "Parameter",
+            "type": "String",
+            "optional": false,
+            "field": "username",
+            "description": "<p>Username</p>"
+          },
+          {
+            "group": "Parameter",
+            "type": "String",
+            "optional": false,
+            "field": "password",
+            "description": "<p>Password</p>"
+          },
+          {
+            "group": "Parameter",
+            "type": "String",
+            "optional": false,
+            "field": "email",
+            "description": "<p>Email</p>"
+          }
+        ]
+      }
+    },
+    "version": "0.0.0",
+    "filename": "api/controllers/signup.js",
     "groupTitle": "Local"
   },
   {

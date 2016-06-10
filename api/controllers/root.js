@@ -1,3 +1,4 @@
+'use strict';
 
 //contrib
 var express = require('express');
@@ -6,6 +7,7 @@ var passport = require('passport');
 var passport_localst = require('passport-local').Strategy;
 var winston = require('winston');
 var jwt = require('express-jwt');
+var async = require('async');
 
 //mine
 var config = require('../config');
@@ -29,7 +31,7 @@ router.post('/refresh', jwt({secret: config.auth.public_key}), function(req, res
         if(!user) return next("Couldn't find any user with sub:"+req.user.sub);
         var err = user.check();
         if(err) return next(err);
-        common.createClaim(user, function(err, claim){
+        common.createClaim(user, function(err, claim) {
             if(err) return next(err);
             var jwt = common.signJwt(claim);
             return res.json({jwt: jwt});
@@ -60,7 +62,6 @@ router.post('/confirm_email', function(req, res, next) {
         });
     });
 });
-
 
 /**
  * @api {get} /health Get API status
@@ -116,7 +117,7 @@ router.get('/config', function(req, res) {
  *         "iucas": "hayashis"
  *     }
  */
-router.get('/me', jwt({secret: config.auth.public_key}), function(req, res) {
+router.get('/me', jwt({secret: config.auth.public_key}), function(req, res, next) {
     db.User.findOne({
         where: {id: req.user.sub},
         //password_hash is replace by true/false right below
@@ -129,22 +130,80 @@ router.get('/me', jwt({secret: config.auth.public_key}), function(req, res) {
 });
 
 //return list of all users (minus password) admin only - used by user admin
-router.get('/users', jwt({secret: config.auth.public_key}), function(req, res) {
+router.get('/users', jwt({secret: config.auth.public_key}), function(req, res, next) {
+    var where = {};
+    if(req.query.where) where = JSON.parse(req.query.where);
     if(!~req.user.scopes.sca.indexOf("admin")) return res.send(401);
     db.User.findAll({
-        //password_hash is replace by true/false right below
+        where: where, 
+        //raw: true, //so that I can add _gids
+        
+        //password_hash is replaced by true/false right below
         attributes: [
             'id', 'username', 'fullname', 'password_hash', 
             'email', 'email_confirmed', 'iucas', 'googleid', 'gitid', 'x509dns', 
             'times', 'scopes', 'active'],
     }).then(function(users) {
+
+        //mask password!
         users.forEach(function(user) {
             if(user.password_hash) user.password_hash = true;
         });
+        
+        /*
+        //load gids for each users
+        if(req.query.gids) {
+            var _users = JSON.stringif(users);
+            async.forEach(users, function(user, next_user) {
+                user._gids = [];
+                user.getGroups({attributes: ['id']}).then(function(groups) {
+                    groups.forEach(function(group) {
+                        user._gids.push(group.id);
+                    });
+                    next_user();
+                });
+                console.dir(user._gids);
+            }, function(err) {
+                if(err) return next(err);
+                res.json(users);
+            });
+        } else {
+            //done then
+            res.json(users);
+        }
+        */
         res.json(users);
     });
 });
 
+/**
+ * @api {get} /user/groups/:id Get list of group IDS that user is member of
+ * @apiName UserGroups
+ * @apiDescription Only for admin
+ *
+ * @apiGroup User
+ * 
+ * @apiHeader {String} authorization A valid JWT token "Bearer: xxxxx"
+ * @apiSuccessExample {json} Success-Response:
+ *     HTTP/1.1 200 OK
+ *     [ 1,2,3 ] 
+ */
+router.get('/user/groups/:id', jwt({secret: config.auth.public_key}), function(req, res, next) {
+    if(!~req.user.scopes.sca.indexOf("admin")) return res.send(401);
+    db.User.findOne({
+        where: {id: req.params.id},
+    }).then(function(user) {
+        user.getGroups({attributes: ['id']}).then(function(groups) {
+            var gids = [];
+            groups.forEach(function(group) {
+                gids.push(group.id);  
+            });
+            res.json(gids);
+        });
+    });
+});
+ 
+//DEPRECATED - use /users
 //return detail from just one user - admin only (somewhat redundant from /users ??)
 router.get('/user/:id', jwt({secret: config.auth.public_key}), function(req, res) {
     if(!~req.user.scopes.sca.indexOf("admin")) return res.send(401);
@@ -240,6 +299,7 @@ router.post('/group', jwt({secret: config.auth.public_key}), function(req, res, 
 });
 
 //return detail from just one group (open to all users)
+//redundant with /groups. I should probabaly depcreate this and implement query capability for /groups
 router.get('/group/:id', jwt({secret: config.auth.public_key}), function(req, res) {
     //if(!~req.user.scopes.sca.indexOf("admin")) return res.send(401);
     db.Group.findOne({

@@ -25,6 +25,17 @@ function registerUser(body, done) {
     });
 }
 
+/**
+ * @api {post} /signup Register new user
+ * @apiName Signup
+ * @apiDescription Register new user with username and email
+ * @apiGroup Local
+ *
+ * @apiParam {String} username Username
+ * @apiParam {String} password Password
+ * @apiParam {String} email Email
+ *
+ */
 router.post('/', function(req, res, next) {
     var username = req.body.username;
     var email = req.body.email;
@@ -47,7 +58,7 @@ router.post('/', function(req, res, next) {
                             if(err) return next(err);
                             var jwt = common.signJwt(claim);
                             if(config.email_confirmation) {
-                                common.send_email_confirmation(req.headers.referer, user, function(err) {
+                                common.send_email_confirmation(req.headers.referer||config.email_confirmation.url, user, function(err) {
                                     if(err) return next(err);
                                     res.json({code:'confirm_email', jwt: jwt, sub: user.id});
                                 });
