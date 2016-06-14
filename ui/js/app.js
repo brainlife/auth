@@ -10,8 +10,8 @@ var app = angular.module('app', [
     'angular-jwt',
     'ui.bootstrap',
     'sca-shared',
-    'ui.select',
-    'ui.gravatar'
+    'ui.gravatar',
+    'ui.select'
 ]);
 
 //http://wijmo.com/easy-form-validation-in-angularjs/
