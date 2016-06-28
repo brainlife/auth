@@ -5,6 +5,7 @@ var router = express.Router();
 var request = require('request');
 var winston = require('winston');
 var jwt = require('express-jwt');
+var clone = require('clone');
 
 //mine
 var config = require('../config');
@@ -47,13 +48,12 @@ function register_newuser(uid, res, next) {
                  "If you have already registered with username / password, please login with username / password first, ");
         } else {
             //brand new user - go ahead and create a new account using IU id as sca user id
-            db.User.create({
-                username: uid, //let's use IU id as local username
-                email: uid+"@iu.edu", 
-                email_confirmed: true, //let's trust IU..
-                iucas: uid,
-                scopes: config.auth.default_scopes
-            }).then(function(user) {
+            var u = clone(config.auth.default);
+            u.username = uid; //let's use IU id as local username
+            u.email = uid+"@iu.edu";
+            u.email_confirmed = true; //let's trust IU..
+            u.iucas = uid;
+            db.User.create(u).then(function(user) {
                 issue_jwt(user, function(err, jwt) {
                     if(err) return next(err);
                     res.json({jwt:jwt, registered: true});

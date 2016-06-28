@@ -2,21 +2,21 @@
 //contrib
 var express = require('express');
 var router = express.Router();
-var common = require('../common');
 var winston = require('winston');
+var clone = require('clone');
 
 //mine
 var config = require('../config');
 var logger = new winston.Logger(config.logger.winston);
 var db = require('../models');
+var common = require('../common');
 
 function registerUser(body, done) {
-    var user = db.User.build({
-        username: body.username, 
-        fullname: body.fullname, 
-        email: body.email,
-        scopes: config.auth.default_scopes
-    });
+    var u = clone(config.auth.default);
+    u.username = body.username;
+    u.fullname = body.fullname;
+    u.email = body.email;
+    var user = db.User.build(u);
     logger.info("registering user");
     user.setPassword(body.password, function(err) {
         if(err) return done(err);

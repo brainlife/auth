@@ -21,6 +21,11 @@ var logger = new winston.Logger(config.logger.winston);
 var db = require('./models');
 var migration = require('./migration');
 
+//prevent startup if config is old
+if(config.auth.default_scopes) {
+    throw new Error("default_scopes is replaced by default object in config.");
+}
+
 //init express
 var app = express();
 app.use(cors());
