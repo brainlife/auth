@@ -67,7 +67,7 @@ exports.start = function(cb) {
         var host = process.env.HOST || config.express.host || 'localhost';
         app.listen(port, host, function(err) {
             if(err) return cb(err);
-            console.log("Express server listening on %s:%d in %s mode", host,port, app.settings.env);
+            console.log("Express server listening on %s:%d", host,port);
             cb(null);
         });
     });
