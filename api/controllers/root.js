@@ -4,7 +4,6 @@
 var express = require('express');
 var router = express.Router();
 var passport = require('passport');
-var passport_localst = require('passport-local').Strategy;
 var winston = require('winston');
 var jwt = require('express-jwt');
 var async = require('async');
@@ -82,6 +81,9 @@ router.get('/config', function(req, res) {
     };
     if(config.local) {
         c.local = {};
+    }
+    if(config.ldap) {
+        c.ldap = {};
     }
     if(config.iucas) {
         c.iucas = {};
@@ -310,6 +312,26 @@ router.get('/group/:id', jwt({secret: config.auth.public_key}), function(req, re
         ]
     }).then(function(group) {
         res.json(group);
+    });
+});
+
+/**
+ * @api {put} /profile Set user profile
+ * @apiDescription Update user's auth profile
+ * @apiName PutProfile
+ * @apiGroup Profile
+ *
+ * @apiHeader {String} authorization A valid JWT token (Bearer:)
+ * @apiParam {String} fullname User's fullname
+ *
+ * @apiSuccess {Object} jwt New JWT token
+ */
+router.put('/profile', jwt({secret: config.auth.public_key}), function(req, res, next) {
+    db.User.findOne({where: {id: req.user.sub}}).then(function(user) {
+        user.fullname = req.body.fullname;
+        user.save().then(function() {
+            res.json({status: "ok", message: "Profile updated successfully."});
+        });
     });
 });
 

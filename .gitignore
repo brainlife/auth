@@ -2,6 +2,7 @@
 ui/bower_components
 node_modules
 api/config/auth.*
+api/config/*.password
 api/config/index.js
 ui/config.js
 nohup*.out

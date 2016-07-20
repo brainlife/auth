@@ -1,6 +1,50 @@
 [
   {
     "type": "post",
+    "url": "/ldap/auth",
+    "title": "Perform ldap authentication",
+    "name": "LDAPAuth",
+    "description": "<p>Perform ldap authentication using username / password params</p>",
+    "group": "Local",
+    "parameter": {
+      "fields": {
+        "Parameter": [
+          {
+            "group": "Parameter",
+            "type": "String",
+            "optional": false,
+            "field": "username",
+            "description": "<p>LDAP Username</p>"
+          },
+          {
+            "group": "Parameter",
+            "type": "String",
+            "optional": false,
+            "field": "password",
+            "description": "<p>LDAP password</p>"
+          }
+        ]
+      }
+    },
+    "success": {
+      "fields": {
+        "Success 200": [
+          {
+            "group": "Success 200",
+            "type": "Object",
+            "optional": false,
+            "field": "jwt",
+            "description": "<p>JWT token</p>"
+          }
+        ]
+      }
+    },
+    "version": "0.0.0",
+    "filename": "api/controllers/ldap.js",
+    "groupTitle": "Local"
+  },
+  {
+    "type": "post",
     "url": "/local/auth",
     "title": "Perform authentication",
     "name": "LocalAuth",
@@ -80,6 +124,56 @@
     "version": "0.0.0",
     "filename": "api/controllers/signup.js",
     "groupTitle": "Local"
+  },
+  {
+    "type": "put",
+    "url": "/profile",
+    "title": "Set user profile",
+    "description": "<p>Update user's auth profile</p>",
+    "name": "PutProfile",
+    "group": "Profile",
+    "header": {
+      "fields": {
+        "Header": [
+          {
+            "group": "Header",
+            "type": "String",
+            "optional": false,
+            "field": "authorization",
+            "description": "<p>A valid JWT token (Bearer:)</p>"
+          }
+        ]
+      }
+    },
+    "parameter": {
+      "fields": {
+        "Parameter": [
+          {
+            "group": "Parameter",
+            "type": "String",
+            "optional": false,
+            "field": "fullname",
+            "description": "<p>User's fullname</p>"
+          }
+        ]
+      }
+    },
+    "success": {
+      "fields": {
+        "Success 200": [
+          {
+            "group": "Success 200",
+            "type": "Object",
+            "optional": false,
+            "field": "jwt",
+            "description": "<p>New JWT token</p>"
+          }
+        ]
+      }
+    },
+    "version": "0.0.0",
+    "filename": "api/controllers/root.js",
+    "groupTitle": "Profile"
   },
   {
     "type": "get",
@@ -167,6 +261,39 @@
         {
           "title": "Success-Response:",
           "content": "HTTP/1.1 200 OK\n{\n    \"username\": \"hayashis\",\n    \"fullname\": \"Soichi Hayashi\",\n    \"email\": \"hayashis@iu.edu\",\n    \"email_confirmed\": true,\n    \"iucas\": \"hayashis\"\n}",
+          "type": "json"
+        }
+      ]
+    },
+    "version": "0.0.0",
+    "filename": "api/controllers/root.js",
+    "groupTitle": "User"
+  },
+  {
+    "type": "get",
+    "url": "/user/groups/:id",
+    "title": "Get list of group IDS that user is member of",
+    "name": "UserGroups",
+    "description": "<p>Only for admin</p>",
+    "group": "User",
+    "header": {
+      "fields": {
+        "Header": [
+          {
+            "group": "Header",
+            "type": "String",
+            "optional": false,
+            "field": "authorization",
+            "description": "<p>A valid JWT token &quot;Bearer: xxxxx&quot;</p>"
+          }
+        ]
+      }
+    },
+    "success": {
+      "examples": [
+        {
+          "title": "Success-Response:",
+          "content": "HTTP/1.1 200 OK\n[ 1,2,3 ]",
           "type": "json"
         }
       ]

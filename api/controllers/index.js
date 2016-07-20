@@ -16,6 +16,9 @@ if(config.auth.allow_signup !== false) {
 if(config.local) {
     router.use('/local', require('./local'));
 }
+if(config.ldap) {
+    router.use('/ldap', require('./ldap'));
+}
 if(config.iucas) {
     router.use('/iucas', require('./iucas'));
 }

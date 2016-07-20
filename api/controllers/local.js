@@ -89,15 +89,6 @@ router.put('/setpass', jwt({secret: config.auth.public_key}), function(req, res,
     });
 });
 
-router.put('/setprofile', jwt({secret: config.auth.public_key}), function(req, res, next) {
-    db.User.findOne({where: {id: req.user.sub}}).then(function(user) {
-        user.fullname = req.body.fullname;
-        user.save().then(function() {
-            res.json({status: "ok", message: "Profile updated successfully."});
-        });
-    });
-});
-
 //TODO untested
 //reset password (with a valid reset token) ?token=123
 router.put('/resetpass', function(req, res, next) {

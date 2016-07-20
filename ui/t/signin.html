@@ -7,7 +7,7 @@ body {
 
 <div class="container">
     <div class="center-block">
-        <img class="logo" ng-src="{{logo_400_url}}"/>
+        <img class="logo" ng-src="{{appconf.logo_400_url}}"/>
         <div class="form-group" ng-if="serverconf.x509">
             <button type="button" class="btn btn-warning btn-block" ng-click="begin_x509()">
                 <i class="fa fa-certificate" style="font-size: 150%"></i> Login with X509 Certificate
@@ -23,16 +23,22 @@ body {
                 <img src="images/trident.png"/>&nbsp;&nbsp;&nbsp;Login with IU Account
             </button>
         </div>
-        <div ng-if="serverconf.local">
+        <div ng-if="serverconf.local || serverconf.ldap">
             <div class="form-group" ng-if="serverconf.x509 || serverconf.git || serverconf.iucas">
                 <center>or</center>
             </div>
-            <form ng-submit="submit()" ng-if="serverconf.local">
-                <!-- name="username" and name="password" isn't technically needed but it helps browser figures out what fields they are (autopopulate) -->
+            <form ng-submit="submit()">
                 <div class="form-group">
-                    <div class="input-group">
+                    <div class="input-group" ng-if="serverconf.local">
                         <span class="input-group-addon"><i class="fa fa-envelope" style="width: 30px;"></i></span>
                         <input class="form-control" name="username" type="text" placeholder="Username or Email" ng-model="userpass.username" required/>
+                    </div>
+                    <div class="input-group" ng-if="serverconf.ldap">
+                        <span class="input-group-addon">
+                            <i ng-if="!appconf.ldap_logo" class="fa fa-envelope" style="width: 30px;"></i>
+                            <img ng-if="appconf.ldap_logo" src="{{appconf.ldap_logo}}" style="margin: 0 8px 0 7px" height="15"></img>
+                        </span>
+                        <input class="form-control" name="username" type="text" placeholder="Username" ng-model="userpass.username" required/>
                     </div>
                 </div>
                 <div class="form-group">

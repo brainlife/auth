@@ -11,6 +11,8 @@ angular.module('app.config', [])
     admin_email: 'hayashis@iu.edu',
     logo_400_url: 'images/soichidev.jpg',
 
+    ldap_logo: 'images/iulogo.png',
+
     //URL for auth service API
     api: '../api/auth',
     

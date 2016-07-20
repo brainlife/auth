@@ -19,9 +19,8 @@ function($scope, appconf, $route, toaster, $http, serverconf, menu) {
 app.controller('SigninController', ['$scope', 'appconf', '$route', 'toaster', '$http', 'jwtHelper', '$routeParams', '$location', 'scaMessage', '$sce', 'serverconf',
 function($scope, appconf, $route, toaster, $http, jwtHelper, $routeParams, $location, scaMessage, $sce, serverconf) {
     $scope.$parent.active_menu = 'signin';
-    $scope.title = appconf.title;
+    $scope.appconf = appconf;
     serverconf.then(function(_c) { $scope.serverconf = _c; });
-    $scope.logo_400_url = appconf.logo_400_url;
     scaMessage.show(toaster);
 
     //decide where to go after auth
@@ -32,9 +31,12 @@ function($scope, appconf, $route, toaster, $http, jwtHelper, $routeParams, $loca
     sessionStorage.setItem('auth_redirect', redirect); //save it for iucas login which needs this later
 
     $scope.userpass = {};
+
     $scope.submit = function() {
-        $http.post(appconf.api+'/local/auth', $scope.userpass)
-        .then(function(res) {
+        var url = "";
+        if($scope.serverconf.local) url = appconf.api+"/local/auth";
+        if($scope.serverconf.ldap) url = appconf.api+"/ldap/auth";
+        $http.post(url, $scope.userpass).then(function(res) {
             scaMessage.success(res.data.message);
             localStorage.setItem(appconf.jwt_id, res.data.jwt);
             sessionStorage.removeItem('auth_redirect');
@@ -217,7 +219,7 @@ function($scope, appconf, $route, toaster, $http, serverconf, jwtHelper, scaMess
     $http.get(appconf.api+'/me').success(function(info) { $scope.user = info; });
 
     $scope.submit_profile = function() {
-        $http.put(appconf.api+'/local/setprofile', $scope.user)
+        $http.put(appconf.api+'/profile', $scope.user)
         .then(function(res, status, headers, config) {
             toaster.success(res.data.message);
             $http.get(appconf.api+'/me').success(function(info) { $scope.user = info; });

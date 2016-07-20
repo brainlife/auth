@@ -25,7 +25,7 @@ module.exports = function(sequelize, DataTypes) {
         email_confirmation_token: Sequelize.STRING,
 
         ///////////////////////////////////////////////////////////////////////////////////////////
-        //might not be set if user register via 3rd party login
+        //only used by local auth
         password_hash: Sequelize.STRING,
         password_reset_token: Sequelize.STRING, //used to reset password (via email?)
         
