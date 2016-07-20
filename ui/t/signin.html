@@ -29,7 +29,7 @@ body {
             </div>
             <form ng-submit="submit()">
                 <div class="form-group">
-                    <div class="input-group" ng-if="serverconf.local">
+                    <div class="input-group" ng-if="serverconf.local && !serverconf.ldap">
                         <span class="input-group-addon"><i class="fa fa-envelope" style="width: 30px;"></i></span>
                         <input class="form-control" name="username" type="text" placeholder="Username or Email" ng-model="userpass.username" required/>
                     </div>

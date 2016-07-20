@@ -33,6 +33,7 @@ function($scope, appconf, $route, toaster, $http, jwtHelper, $routeParams, $loca
     $scope.userpass = {};
 
     $scope.submit = function() {
+        //ldap auth takes precedence
         var url = "";
         if($scope.serverconf.local) url = appconf.api+"/local/auth";
         if($scope.serverconf.ldap) url = appconf.api+"/ldap/auth";
