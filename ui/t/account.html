@@ -67,6 +67,16 @@
         </li>
         <li class="list-group-item">
             <form>
+                <div class="well" ng-if="serverconf.ldap">
+                    <img src="{{appconf.ldap_logo}}" class="account pull-left" style="padding-right: 10px;">
+                    <p class="pull-right text-muted" style="margin: 11px;">
+                        <span ng-if="user.username"><b>{{user.username}}</b> |</span>
+                        Last Login: 
+                        <span ng-if="!user.times.ldap_login">Never</span>
+                        <time ng-if="user.times.ldap_login">{{user.times.ldap_login | date:'medium'}}</time>
+                    </p>
+                    <h4>LDAP</h4>
+                </div> 
                 <div class="well" ng-if="serverconf.iucas">
                     <img src="images/iu.account_logo.png" class="account pull-left" style="padding-right: 10px;">
                     <button class="btn pull-right" ng-if="user.iucas" ng-click="disconnect('iucas')">Disconnect</button>

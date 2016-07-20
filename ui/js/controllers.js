@@ -205,7 +205,7 @@ function($scope, appconf, $route, toaster, $http, jwtHelper, $routeParams, scaMe
 app.controller('AccountController', ['$scope', 'appconf', '$route', 'toaster', '$http', 'serverconf', 'jwtHelper', 'scaMessage', 'scaSettingsMenu',
 function($scope, appconf, $route, toaster, $http, serverconf, jwtHelper, scaMessage, scaSettingsMenu) {
     $scope.$parent.active_menu = 'user';
-    //$scope.public_profile = profile.pub;
+    $scope.appconf = appconf;
     $scope.user = null;
     $scope.form_password = {};
     scaMessage.show(toaster);
