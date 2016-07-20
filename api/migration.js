@@ -59,6 +59,12 @@ var migrations = [
             next();
         });
     },
+    function(qi, next) {
+        logger.info("adding ldap");
+        qi.addColumn('Users', 'ldap', {type: Sequelize.STRING}).then(function() {
+            next();
+        });
+    },
     /*
     function(qi, next) {
         logger.info("adding group desc");

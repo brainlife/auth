@@ -32,6 +32,7 @@ module.exports = function(sequelize, DataTypes) {
         ///////////////////////////////////////////////////////////////////////////////////////////
         //for 3rd party login
         iucas: Sequelize.STRING,
+        ldap: Sequelize.STRING,
         googleid: Sequelize.STRING,
         gitid: Sequelize.STRING,
         x509dns: JsonField(sequelize, 'User', 'x509dns'),

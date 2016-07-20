@@ -15,6 +15,7 @@ var db = require('../models');
 
 function registerUser(ldapuser, cb) {
     var u = clone(config.auth.default);
+    u.ldap = ldapuser.cn; 
     u.username = ldapuser.cn;
     u.iucas = ldapuser.cn; //TODO should I do this?
     u.email = ldapuser.mail;
@@ -29,9 +30,12 @@ function registerUser(ldapuser, cb) {
 passport.use(new passportldap(config.ldap,
     function(ldapuser, done) {
         logger.info("handling ldap auth post processing");
-        db.User.findOne({where: {"username": ldapuser.cn}}).then(function(user) {
+        //look for ldap field, but also look for username (for now)
+        //TODO - this means IU user can *takeover* non-IU SCA user.. eventually I might drop this
+        db.User.findOne({where: {$or: {"ldap": ldapuser.cn, "username": ldapuser.cn }}}).then(function(user) {
             if (!user) {
                 //first time(?) .. auto register
+                //TODO - need to handle username collision
                 registerUser(ldapuser, function(err, user) {
                     done(null, user);
                 }); 
