@@ -6,6 +6,7 @@ var passport = require('passport');
 var passportldap = require('passport-ldapauth');
 var winston = require('winston');
 var jwt = require('express-jwt');
+var clone = require('clone');
 
 //mine
 var config = require('../config');
@@ -30,8 +31,10 @@ function registerUser(ldapuser, cb) {
 passport.use(new passportldap(config.ldap,
     function(ldapuser, done) {
         logger.info("handling ldap auth post processing");
-        //look for ldap field, but also look for username (for now)
-        //TODO - this means IU user can *takeover* non-IU SCA user.. eventually I might drop this
+        //look for ldap field, but also look for username (for now) so that users who registered with 
+        //local username/pass can be authenticated
+        //TODO - this means IU user can *takeover* non-IU SCA user.. eventually I might allow both
+        //local and ldap authentication, but it will be very confusing to the user.
         db.User.findOne({where: {$or: {"ldap": ldapuser.cn, "username": ldapuser.cn }}}).then(function(user) {
             if (!user) {
                 //first time(?) .. auto register
