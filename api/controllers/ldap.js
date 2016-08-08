@@ -43,6 +43,10 @@ passport.use(new passportldap(config.ldap,
                     done(null, user);
                 }); 
             } else {
+                //if user is matched using username, and ldap is empty, I should populate ldap 
+                //so that user will be matched with ldap next time .. eventually I should make username matching
+                //optional or completely drop it..
+
                 done(null, user);
             }
         });
