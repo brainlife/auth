@@ -4,7 +4,6 @@ COPY . /app
 
 RUN cd /app && npm install --production
 
-EXPOSE 80
-
-CMD node /app/api/auth.js
+EXPOSE 8080
+CMD [ "npm", "start" ]
 

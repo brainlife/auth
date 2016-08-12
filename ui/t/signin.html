@@ -36,7 +36,7 @@ body {
                     <div class="input-group" ng-if="serverconf.ldap">
                         <span class="input-group-addon">
                             <i ng-if="!appconf.ldap_logo" class="fa fa-envelope" style="width: 30px;"></i>
-                            <img ng-if="appconf.ldap_logo" src="{{appconf.ldap_logo}}" style="margin: 0 8px 0 7px" height="15"></img>
+                            <img ng-if="appconf.ldap_logo" ng-src="{{appconf.ldap_logo}}" style="margin: 0 8px 0 7px" height="15"></img>
                         </span>
                         <input class="form-control" name="username" type="text" placeholder="Username" ng-model="userpass.username" required/>
                     </div>
