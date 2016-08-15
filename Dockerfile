@@ -1,10 +1,8 @@
 FROM node:4
 
 COPY . /app
-
-RUN cd /app && npm install --production
-
 WORKDIR /app
 
+RUN npm install --production
 CMD [ "npm", "start" ]
 
