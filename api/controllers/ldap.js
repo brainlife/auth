@@ -68,6 +68,8 @@ router.post('/auth', function(req, res, next) {
     passport.authenticate('ldapauth', {session: false}, function(err, user, info) {
         if (err) return next(err);
         if (!user) return next(info);
+        var err = user.check();
+        if(err) return next(err);
         common.createClaim(user, function(err, claim) {
             if(err) return next(err);
             var jwt = common.signJwt(claim);

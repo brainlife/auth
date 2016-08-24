@@ -56,7 +56,8 @@ module.exports = function(sequelize, DataTypes) {
         times: JsonField(sequelize, 'User', 'times'),
         scopes: JsonField(sequelize, 'User', 'scopes'),
         
-        active: { type: Sequelize.BOOLEAN, defaultValue: true } //TODO prevent user from loggin in (usually temporarily)
+        //prevent user from loggin in (usually temporarily)
+        active: { type: Sequelize.BOOLEAN, defaultValue: true } 
 
     }, {
         classMethods: {
