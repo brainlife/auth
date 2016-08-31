@@ -41,11 +41,14 @@ app.use('/', require('./controllers'));
 app.use(expressWinston.errorLogger(config.logger.winston));
 app.use(function(err, req, res, next) {
     if(typeof err == "string") err = {message: err};
-    if(err.stack) {
-        logger.info(err.stack);
-        err.stack = "hidden"; //let's hide callstack
-    }
+    //log this error
     logger.info(err);
+    if(err.name) switch(err.name) {
+    case "UnauthorizedError":
+        logger.info(req.headers); //dump headers for debugging purpose..
+        break;
+    }
+    if(err.stack) err.stack = "hidden"; //don't sent call stack to UI - for security reason
     res.status(err.status || 500);
     res.json(err);
 });
