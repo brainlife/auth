@@ -160,7 +160,7 @@ app.config(['$routeProvider', 'appconf', function($routeProvider, appconf) {
         controller: 'SigninController'
     })
     .when('/signout', {
-        templateUrl: 't/signout.html',
+        template: '',
         controller: 'SignoutController'
     })
     .when('/complete', {

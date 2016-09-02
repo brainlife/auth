@@ -20,13 +20,11 @@
     "express-jwt": "~3",
     "express-session": "~1.11.3",
     "express-validator": "~2.14.2",
-    "express-winston": "~0.3.1",
+    "express-winston": "^2.0.0",
     "grunt": "~0.4.5",
-    "grunt-contrib-less": "~1.0.1",
+    "grunt-contrib-less": "^1.0.1",
     "grunt-contrib-watch": "~0.6.1",
-    "jsonwebtoken": "~6",
-    "less-middleware": "~1.0.4",
-    "morgan": "~1.5.3",
+    "jsonwebtoken": "^7.1.9",
     "node-uuid": "^1.4.7",
     "nodemailer": "^2.0.0",
     "optimist": "~0.6.1",
@@ -42,7 +40,7 @@
     "serve-favicon": "~2.2.1",
     "sqlite3": "^3.1.4",
     "underscore": "^1.8.3",
-    "winston": "~1.0.1"
+    "winston": "^2.2.0"
   },
   "devDependencies": {
     "chai": "^3.5.0",

@@ -233,7 +233,12 @@ function($scope, appconf, $route, toaster, $http, serverconf, jwtHelper, scaMess
         $http.put(appconf.api+'/local/setpass', {password_old: $scope.form_password.old, password: $scope.form_password.new})
         .then(function(res, status, headers, config) {
             toaster.success(res.data.message);
-            $http.get(appconf.api+'/me').success(function(info) { $scope.user = info; });
+
+            $http.get(appconf.api+'/me').success(function(info) { $scope.user = info; }); //why do I need to do this?
+
+            //reset the password reset form (mainly to give user visual feedback)
+            $scope.form_password = {};
+
         }, function(res, status, headers, config) {
             if(res.data && res.data.message) toaster.error(res.data.message);
             else toaster.error(res.statusText);

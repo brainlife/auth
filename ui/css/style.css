@@ -59,3 +59,10 @@ ul.userlist li {
 .ui-select-match-close {
   color: #222;
 }
+.fixed-top {
+  position: fixed;
+  top: 0px;
+  left: 0px;
+  z-index: 999;
+  width: 100%;
+}
