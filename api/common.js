@@ -4,7 +4,6 @@ var fs = require('fs');
 
 //contrib
 var jwt = require('jsonwebtoken');
-var uuid = require('node-uuid');
 var nodemailer = require('nodemailer');
 var uuid = require('node-uuid');
 

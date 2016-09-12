@@ -330,7 +330,7 @@ router.put('/profile', jwt({secret: config.auth.public_key}), function(req, res,
     db.User.findOne({where: {id: req.user.sub}}).then(function(user) {
         user.fullname = req.body.fullname;
         user.save().then(function() {
-            res.json({status: "ok", message: "Profile updated successfully."});
+            res.json({status: "ok", message: "Account profile updated successfully."});
         });
     });
 });

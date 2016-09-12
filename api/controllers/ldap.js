@@ -23,9 +23,11 @@ function registerUser(ldapuser, cb) {
     u.email_confirmed = true; //let's trust IU
     u.fullname = ldapuser.givenName+" "+ldapuser.sn;
     var user = db.User.build(u);
-    logger.info("registering user through first time ldap auth");
-    logger.info(user);
-    user.save().then(cb);
+    logger.info("registering user through first time ldap auth - ldap.cn:"+u.username);
+    //logger.info(user);
+    user.save().then(function() {
+        cb(null, user);
+    });
 }
 
 passport.use(new passportldap(config.ldap,
@@ -39,15 +41,20 @@ passport.use(new passportldap(config.ldap,
             if (!user) {
                 //first time(?) .. auto register
                 //TODO - need to handle username collision
-                registerUser(ldapuser, function(err, user) {
-                    done(null, user);
-                }); 
+                registerUser(ldapuser, done);
             } else {
-                //if user is matched using username, and ldap is empty, I should populate ldap 
-                //so that user will be matched with ldap next time .. eventually I should make username matching
-                //optional or completely drop it..
-
-                done(null, user);
+                if(!user.ldap) {
+                    //if user is matched using username, and ldap is empty, populate ldap so that 
+                    //user will be matched with ldap next time .. 
+                    //eventually I should make username matching optional or completely drop it..
+                    logger.warn("user account matched via username but ldap was empty - setting ldap account:"+ldapuser.cn);
+                    user.ldap = ldapuser.cn;
+                    user.save().then(function() {
+                        done(null, user);
+                    });
+                } else {
+                    done(null, user);
+                }
             }
         });
     }

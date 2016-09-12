@@ -2,7 +2,7 @@
 
 //contrib
 var Sequelize = require('sequelize');
-var JsonField = require('sequelize-json');
+//var JsonField = require('sequelize-json');
 var bcrypt = require('bcrypt');
 var winston = require('winston');
 
