@@ -335,6 +335,17 @@ router.put('/profile', jwt({secret: config.auth.public_key}), function(req, res,
     });
 });
 
+//router.get('/profile/:id', jwt({secret: config.auth.public_key}), function(req, res, next) {
+//making this public for now (onere profile page)
+router.get('/profile/:id', function(req, res, next) {
+    db.User.findOne({
+        where: {id: req.params.id},
+        attributes: [ 'id', 'fullname', 'email', 'active']
+    }).then(function(user) {
+        res.json(user);
+    });
+});
+
 //return all profiles (open to all users)
 router.get('/profiles', jwt({secret: config.auth.public_key}), function(req, res) {
     db.User.findAll({

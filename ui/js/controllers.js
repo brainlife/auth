@@ -8,18 +8,18 @@ app.factory('serverconf', ['appconf', '$http', function(appconf, $http) {
     });
 }]);
 
-app.controller('HeaderController', ['$scope', 'appconf', '$route', 'toaster', '$http', 'serverconf', 'menu',
-function($scope, appconf, $route, toaster, $http, serverconf, menu) {
+app.controller('HeaderController', 
+function($scope, appconf, $route, toaster, $http, serverconf, menu, scaSettingsMenu) {
     $scope.title = appconf.title;
     serverconf.then(function(_c) { $scope.serverconf = _c; });
-    //menu.then(function(_menu) { $scope.menu = _menu; });
     $scope.menu = menu;
-}]);
+    $scope.appconf = appconf;
+    $scope.settings_menu = scaSettingsMenu;
+});
 
 app.controller('SigninController', ['$scope', 'appconf', '$route', 'toaster', '$http', 'jwtHelper', '$routeParams', '$location', 'scaMessage', '$sce', 'serverconf',
 function($scope, appconf, $route, toaster, $http, jwtHelper, $routeParams, $location, scaMessage, $sce, serverconf) {
     $scope.$parent.active_menu = 'signin';
-    $scope.appconf = appconf;
     serverconf.then(function(_c) { $scope.serverconf = _c; });
     scaMessage.show(toaster);
 
@@ -202,10 +202,9 @@ function($scope, appconf, $route, toaster, $http, jwtHelper, $routeParams, scaMe
     }
 }]);
 
-app.controller('AccountController', ['$scope', 'appconf', '$route', 'toaster', '$http', 'serverconf', 'jwtHelper', 'scaMessage', 'scaSettingsMenu',
-function($scope, appconf, $route, toaster, $http, serverconf, jwtHelper, scaMessage, scaSettingsMenu) {
+app.controller('AccountController', 
+function($scope, appconf, $route, toaster, $http, serverconf, jwtHelper, scaMessage) {
     $scope.$parent.active_menu = 'user';
-    $scope.appconf = appconf;
     $scope.user = null;
     $scope.form_password = {};
     scaMessage.show(toaster);
@@ -213,7 +212,6 @@ function($scope, appconf, $route, toaster, $http, serverconf, jwtHelper, scaMess
     var jwt = localStorage.getItem(appconf.jwt_id);
     var user = jwtHelper.decodeToken(jwt);
     $scope.user = user;
-    $scope.settings_menu = scaSettingsMenu;
     $scope.debug = {jwt: user};
 
     serverconf.then(function(_serverconf) { $scope.serverconf = _serverconf; });
@@ -277,13 +275,12 @@ function($scope, appconf, $route, toaster, $http, serverconf, jwtHelper, scaMess
             else toaster.error(res.statusText);
         }); 
     }
-}]);
+});
 
 app.controller('ForgotpassController', ['$scope', 'appconf', '$route', 'toaster', '$http', 'jwtHelper', '$routeParams', '$location', 'scaMessage', 
 function($scope, appconf, $route, toaster, $http, jwtHelper, $routeParams, $location, scaMessage) {
     $scope.$parent.active_menu = 'user'; //TODO - is there a better menu?
     scaMessage.show(toaster);
-    $scope.appconf = appconf;
 }]);
 
 app.directive('passwordStrength', function() {
@@ -334,8 +331,8 @@ function($scope, appconf, $route, toaster, $http, serverconf, jwtHelper, scaMess
     }
 }]);
 
-app.controller('AdminUserController', ['$scope', 'appconf', '$route', 'toaster', '$http', 'serverconf', 'jwtHelper', 'scaMessage', 'scaAdminMenu', '$routeParams', '$location',
-function($scope, appconf, $route, toaster, $http, serverconf, jwtHelper, scaMessage, scaAdminMenu, $routeParams, $location) {
+app.controller('AdminUserController', 
+function($scope, appconf, $route, toaster, $http, serverconf, jwtHelper, scaMessage, scaAdminMenu, $routeParams, $location, $window) {
     scaMessage.show(toaster);
     $scope.$parent.active_menu = 'admin';
     $scope.admin_menu = scaAdminMenu;
@@ -351,6 +348,10 @@ function($scope, appconf, $route, toaster, $http, serverconf, jwtHelper, scaMess
         else toaster.error(res.statusText);
     });
 
+    $scope.cancel = function() {
+        $window.history.back();
+    }
+
     $scope.submit = function() {
         $scope.user.x509dns = JSON.parse($scope.x509dns);
         $scope.user.scopes = JSON.parse($scope.scopes);
@@ -364,12 +365,12 @@ function($scope, appconf, $route, toaster, $http, serverconf, jwtHelper, scaMess
             else toaster.error(res.statusText);
         });
     }
-}]);
+});
 
 app.controller('GroupsController', ['$scope', 'appconf', '$route', 'toaster', '$http', 'serverconf', 'jwtHelper', 'scaMessage', 'profiles',
 function($scope, appconf, $route, toaster, $http, serverconf, jwtHelper, scaMessage, profiles) {
-    scaMessage.show(toaster);
     $scope.$parent.active_menu = 'groups';
+    scaMessage.show(toaster);
 
     profiles.then(function(_users) { 
         $scope.users = _users;

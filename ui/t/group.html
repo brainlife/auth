@@ -1,10 +1,10 @@
 <div class="fixed-top">
-    <sca-menubar header="menu.header" menu="menu.top" active="active_menu" profile="menu._profile" user="menu.user"></sca-menubar>
     <div class="header">
         <div class="container">
-            <h2>Groups</h2>
+            <h2>Settings</h2>
         </div>
     </div>
+    <sca-menutab menu="settings_menu" active="'groups'" user="menu.user"></sca-menutab>
 </div>
 <div class="container" style="margin-top: 130px;">
     <form ng-submit="submit()" class="form-horizontal">
@@ -60,8 +60,8 @@
             </div>
         </div>
         <div class="pull-right">
-            <button type="submit" class="btn btn-primary"><span ng-if="group.id">Update</span><span ng-if="!group.id">Create</span></button>
             <button type="button" class="btn" ng-click="cancel()">Cancel</button>
+            <button type="submit" class="btn btn-primary"><span ng-if="group.id">Update</span><span ng-if="!group.id">Create</span></button>
         </div>
     </form>
     <br>
