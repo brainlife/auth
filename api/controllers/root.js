@@ -195,6 +195,7 @@ router.get('/user/groups/:id', jwt({secret: config.auth.public_key}), function(r
     db.User.findOne({
         where: {id: req.params.id},
     }).then(function(user) {
+        if(!user) return res.status(404).end();
         user.getGroups({attributes: ['id']}).then(function(groups) {
             var gids = [];
             groups.forEach(function(group) {
@@ -335,6 +336,7 @@ router.put('/profile', jwt({secret: config.auth.public_key}), function(req, res,
     });
 });
 
+//TODO should be deprecated once (get)/profile is implemented
 //router.get('/profile/:id', jwt({secret: config.auth.public_key}), function(req, res, next) {
 //making this public for now (onere profile page)
 router.get('/profile/:id', function(req, res, next) {
@@ -346,6 +348,9 @@ router.get('/profile/:id', function(req, res, next) {
     });
 });
 
+//TODO - this API needs to be deprecated once (get)/profile with query capability is implemented
+//(used by sca-wf-onere/project and others)
+//ui-select and various selector can then do dynamic querying
 //return all profiles (open to all users)
 router.get('/profiles', jwt({secret: config.auth.public_key}), function(req, res) {
     db.User.findAll({
