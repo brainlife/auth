@@ -6,6 +6,8 @@ var assert = require('assert');
 //mine
 var config = require('../api/config');
 
+config.local = {}; //force local to be avaialble... (TODO should I use a dedicated test config?)
+
 //use temporary db for test..
 config.db.storage = "/tmp/test.sqlite";
 
