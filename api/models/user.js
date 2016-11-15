@@ -30,26 +30,13 @@ module.exports = function(sequelize, DataTypes) {
         password_reset_token: Sequelize.STRING, //used to reset password (via email?)
         
         ///////////////////////////////////////////////////////////////////////////////////////////
-        //for 3rd party login
+        //for 3rd party login (TODO - should I store all this in JSON fields?)
         iucas: Sequelize.STRING,
         ldap: Sequelize.STRING,
         googleid: Sequelize.STRING,
-        gitid: Sequelize.STRING,
+        github: Sequelize.STRING,
+        facebook: Sequelize.STRING,
         x509dns: JsonField(sequelize, 'User', 'x509dns'),
-        /*
-        x509dns: { //array of DNs
-            type: Sequelize.TEXT,
-            defaultValue: '[]',
-            get: function () { 
-                var v = this.getDataValue('x509dns');
-                if(!v) return null;
-                return JSON.parse(v);
-            },
-            set: function (admins) {
-                return this.setDataValue('x509dns', JSON.stringify(admins));
-            }
-        },
-        */
 
         ///////////////////////////////////////////////////////////////////////////////////////////
         //

@@ -158,14 +158,18 @@ app.config(['$routeProvider', 'appconf', function($routeProvider, appconf) {
     when('/signin', {
         templateUrl: 't/signin.html',
         controller: 'SigninController'
+    }).
+    when('/success/:jwt', {
+        template: '',
+        controller: 'SuccessController'
     })
     .when('/signout', {
         template: '',
         controller: 'SignoutController'
     })
-    .when('/complete', {
-        templateUrl: 't/complete.html',
-        controller: 'CompleteController',
+    .when('/register', {
+        templateUrl: 't/register.html',
+        controller: 'RegisterController',
         requiresLogin: true
     })
     .when('/forgotpass', {

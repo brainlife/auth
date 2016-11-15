@@ -6,7 +6,7 @@ var path = require('path');
 
 //contrib
 var express = require('express');
-//var cookieParser = require('cookie-parser');
+var cookieParser = require('cookie-parser'); //google auth uses this
 var bodyParser = require('body-parser');
 var Sequelize = require('sequelize');
 var passport = require('passport');
@@ -31,7 +31,7 @@ app.use(cors());
 app.use(bodyParser.json()); //parse application/json
 app.use(bodyParser.urlencoded({extended: false})); //parse application/x-www-form-urlencoded //TODO - do we need this?
 app.use(expressWinston.logger(config.logger.winston)); 
-//app.use(cookieParser()); //TODO - do we really need this?
+app.use(cookieParser());
 app.use(passport.initialize());//needed for express-based application
 
 app.use('/', require('./controllers'));

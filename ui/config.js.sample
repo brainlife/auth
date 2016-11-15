@@ -12,6 +12,7 @@ angular.module('app.config', [])
     logo_400_url: 'images/soichidev.jpg',
 
     ldap_logo: 'images/iulogo.png',
+    ldap_label: 'IU Username',
 
     //URL for auth service API
     api: '../api/auth',

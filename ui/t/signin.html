@@ -13,9 +13,19 @@ body {
                 <i class="fa fa-certificate" style="font-size: 150%"></i> Login with X509 Certificate
             </button>
         </div>
-        <div class="form-group" ng-if="serverconf.git">
-            <button type="button" class="btn btn-primary btn-block" ng-click="begin_git()">
+        <div class="form-group" ng-if="serverconf.google">
+            <button type="button" class="btn btn-danger btn-block" ng-click="begin('google')">
+                <i class="fa fa-google" style="font-size: 150%"></i> Login with Google
+            </button>
+        </div>
+        <div class="form-group" ng-if="serverconf.github">
+            <button type="button" class="btn btn-info btn-block" ng-click="begin('github')">
                 <i class="fa fa-github" style="font-size: 150%"></i> Login with Github
+            </button>
+        </div>
+        <div class="form-group" ng-if="serverconf.facebook">
+            <button type="button" class="btn btn-primary btn-block" ng-click="begin('facebook')">
+                <i class="fa fa-facebook" style="font-size: 150%"></i> Login with Facebook
             </button>
         </div>
         <div class="form-group" ng-if="serverconf.iucas">
@@ -38,7 +48,7 @@ body {
                             <i ng-if="!appconf.ldap_logo" class="fa fa-envelope" style="width: 30px;"></i>
                             <img ng-if="appconf.ldap_logo" ng-src="{{appconf.ldap_logo}}" style="margin: 0 8px 0 7px" height="15"></img>
                         </span>
-                        <input class="form-control" name="username" type="text" placeholder="Username" ng-model="userpass.username" required/>
+                        <input class="form-control" name="username" type="text" placeholder="{{appconf.ldap_label || 'Username'}}" ng-model="userpass.username" required/>
                     </div>
                 </div>
                 <div class="form-group">

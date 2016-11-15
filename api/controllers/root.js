@@ -80,22 +80,25 @@ router.get('/config', function(req, res) {
         allow_signup: config.auth.allow_signup,
     };
     if(config.local) {
-        c.local = {};
+        c.local = true;
     }
     if(config.ldap) {
-        c.ldap = {};
+        c.ldap = true;
     }
     if(config.iucas) {
-        c.iucas = {};
+        c.iucas = true;
     }
-    if(config.git) {
-        c.git = {};
+    if(config.github) {
+        c.github = true;
+    }
+    if(config.facebook) {
+        c.facebook = true;
     }
     if(config.x509) {
-        c.x509= {};
+        c.x509 = true;
     }
     if(config.google) {
-        c.google= {};
+        c.google = true;
     }
     res.json(c); 
 });
@@ -123,7 +126,7 @@ router.get('/me', jwt({secret: config.auth.public_key}), function(req, res, next
     db.User.findOne({
         where: {id: req.user.sub},
         //password_hash is replace by true/false right below
-        attributes: ['username', 'fullname', 'email', 'email_confirmed', 'iucas', 'googleid', 'gitid', 'x509dns', 'times', 'password_hash'],
+        //attributes: ['username', 'fullname', 'email', 'email_confirmed', 'iucas', 'googleid', 'github', 'x509dns', 'times', 'password_hash'],
     }).then(function(user) {
         if(!user) return res.status(404).end();
         if(user.password_hash) user.password_hash = true;

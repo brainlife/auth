@@ -65,14 +65,18 @@ var migrations = [
             next();
         });
     },
-    /*
     function(qi, next) {
-        logger.info("adding group desc");
-        qi.addColumn('Groups', 'desc', {type: Sequelize.TEXT}).then(function() {
+        logger.info("adding github ID");
+        qi.addColumn('Users', 'github', {type: Sequelize.STRING}).then(function() {
             next();
         });
     },
-    */
+    function(qi, next) {
+        logger.info("adding facebook ID");
+        qi.addColumn('Users', 'facebook', {type: Sequelize.STRING}).then(function() {
+            next();
+        });
+    },
 ];
 
 exports.run = function() {

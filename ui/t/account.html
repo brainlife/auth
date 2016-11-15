@@ -73,7 +73,7 @@
         <li class="list-group-item">
             <form>
                 <div class="well" ng-if="serverconf.ldap">
-                    <img src="{{appconf.ldap_logo}}" class="account pull-left" style="padding-right: 10px;">
+                    <img ng-src="{{appconf.ldap_logo}}" class="account pull-left" style="padding-right: 10px;">
                     <p class="pull-right text-muted" style="margin: 11px;">
                         <span ng-if="user.username"><b>{{user.username}}</b> |</span>
                         Last Login: 
@@ -94,29 +94,44 @@
                     </p>
                     <h4>Indiana University CAS</h4>
                 </div> 
-                <div class="well" ng-if="serverconf.git">
-                    <span class="pull-left" style="font-size: 200%; padding-right: 10px;"><i class="fa fa-github"></i></span>
-                    <button class="btn pull-right" ng-if="user.gitid" ng-click="disconnect('git')">Disconnect</button>
-                    <button class="btn pull-right" ng-if="!user.gitid" ng-click="git_connect()">Connect</button>
-                    <p class="pull-right text-muted" style="margin: 11px;">
-                        <span ng-if="user.gitid"><b>{{user.gitid}}</b> |</span>
-                        Last Login: 
-                        <span ng-if="!user.times.github_login">Never</span>
-                        <time ng-if="user.times.github_login">{{user.times.github_login | date:'medium'}}</time>
-                    </p>
-                    <h4>Git</h4>
-                </div>
                 <div class="well" ng-if="serverconf.google">
+                    <!--
                     <img src="images/google.account_logo.png" class="account pull-left" style="padding-right: 10px;">
+                    -->
                     <button class="btn pull-right" ng-if="user.googleid" ng-click="disconnect('google')">Disconnect</button>
-                    <button class="btn pull-right" ng-if="!user.googleid" ng-click="google_connect()">Connect</button>
+                    <button class="btn pull-right" ng-if="!user.googleid" ng-click="connect('google')">Connect</button>
                     <p class="pull-right text-muted" style="margin: 11px;">
                         <span ng-if="user.googleid"><b>{{user.googleid}}</b> |</span>
                         Last Login: 
                         <span ng-if="!user.times.google_login">Never</span>
                         <time ng-if="user.times.google_login">{{user.times.google_login | date:'medium'}}</time>
                     </p>
-                    <h4>Google</h4>
+                    <h4><i class="fa fa-google" aria-hidden="true"></i> Google</h4>
+                </div>
+                <div class="well" ng-if="serverconf.github">
+                    <!--
+                    <img src="images/github.account_logo.png" class="account pull-left" style="padding-right: 10px;">
+                    -->
+                    <button class="btn pull-right" ng-if="user.github" ng-click="disconnect('github')">Disconnect</button>
+                    <button class="btn pull-right" ng-if="!user.github" ng-click="connect('github')">Connect</button>
+                    <p class="pull-right text-muted" style="margin: 11px;">
+                        <span ng-if="user.github"><b>{{user.github}}</b> |</span>
+                        Last Login: 
+                        <span ng-if="!user.times.github_login">Never</span>
+                        <time ng-if="user.times.github_login">{{user.times.github_login | date:'medium'}}</time>
+                    </p>
+                    <h4><i class="fa fa-github" aria-hidden="true"></i> Github</h4>
+                </div>
+                <div class="well" ng-if="serverconf.facebook">
+                    <button class="btn pull-right" ng-if="user.facebook" ng-click="disconnect('facebook')">Disconnect</button>
+                    <button class="btn pull-right" ng-if="!user.facebook" ng-click="connect('facebook')">Connect</button>
+                    <p class="pull-right text-muted" style="margin: 11px;">
+                        <span ng-if="user.facebook"><b>{{user.facebook}}</b> |</span>
+                        Last Login: 
+                        <span ng-if="!user.times.facebook_login">Never</span>
+                        <time ng-if="user.times.facebook_login">{{user.times.facebook_login | date:'medium'}}</time>
+                    </p>
+                    <h4><i class="fa fa-facebook" aria-hidden="true"></i> Facebook</h4>
                 </div>
                 <div class="well" ng-if="serverconf.x509">
                     <span class="pull-left" style="font-size: 200%; padding-right: 10px;"><i class="fa fa-certificate"></i></span>
@@ -143,6 +158,8 @@
         <li class="list-group-item" ng-if="show_debug">
             <h4>JWT</h4>
             <pre>{{debug.jwt|json}}</pre>
+            <h4>User Record</h4>
+            <pre>{{user|json}}</pre>
         </li>
     </ul>
     <ng-include src="'t/footer.html'"></ng-include> <!--should this be part of view?-->

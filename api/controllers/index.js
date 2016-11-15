@@ -25,8 +25,14 @@ if(config.iucas) {
 if(config.x509) {
     router.use('/x509', require('./x509'));
 }
-if(config.git) {
-    router.use('/git', require('./git'));
+if(config.github) {
+    router.use('/github', require('./github'));
+}
+if(config.google) {
+    router.use('/google', require('./google'));
+}
+if(config.facebook) {
+    router.use('/facebook', require('./facebook'));
 }
 
 module.exports = router;
