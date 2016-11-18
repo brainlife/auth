@@ -31,7 +31,7 @@
     "passport-local": "~1.0.0",
     "promise": "^7.0.4",
     "request": "^2.78.0",
-    "sequelize": "^3.25.0",
+    "sequelize": "^3.27.0",
     "sequelize-json": "^2.1.2",
     "sqlite3": "^3.1.8",
     "underscore": "^1.8.3",

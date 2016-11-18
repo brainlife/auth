@@ -1,14 +1,14 @@
 
-//contrib
-var request = require('supertest')
-var assert = require('assert');
+const request = require('supertest')
+const assert = require('assert');
+const fs = require('fs');
 
 //mine
 var config = require('../api/config');
 
 config.local = {}; //force local to be avaialble... (TODO should I use a dedicated test config?)
 config.test = {
-    jwt: "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJodHRwczovL3NjYS5pdS5lZHUvYXV0aCIsImlhdCI6MTQ2MzQ5MzgxNy4xMzMsInNjb3BlcyI6eyJzY2EiOlsidXNlciJdfSwic3ViIjoidGVzdF9zZXJ2aWNlIn0.qEDod2KkMhoDJK1IZ8cTwEm4TDUMKGDzHCpMYvtEDnd6vr0fiSlzBcVe-srEonSjBuO0NcGRrmBQXHbX-ftDay5CXK27W-pwcgwjc7GkTw_bTe1Z8Y1c8jlNwvcHbE_pJk6ZCHBRQCEvpoUeSOFGKRgORG8H144LKnjEIeD_VbY",
+    jwt: fs.readFileSync('./api/config/test.jwt','ascii').trim(),
 }
 
 //use temporary db for test..

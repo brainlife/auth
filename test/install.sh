@@ -19,3 +19,11 @@ fi
 if [ ! -f api/config/ldap.password ]; then
     echo "testpass" > api/config/ldap.password
 fi
+
+if [ ! -f api/config/test.jwt ]; then
+    echo "creating test.jwt"
+    (
+    cd bin
+    ./auth.js issue --scopes '{ "sca": ["user"] }' --sub 'test_service' --out test.jwt
+    )
+fi

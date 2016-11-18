@@ -4,6 +4,7 @@ node_modules
 api/config/auth.*
 api/config/*.password
 api/config/index.js
+api/config/*.jwt
 ui/config.js
 nohup*.out
 **/*.log
