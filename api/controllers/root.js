@@ -320,10 +320,10 @@ router.get('/group/:id', jwt({secret: config.auth.public_key}), function(req, re
 });
 
 /**
+ * @apiGroup Profile
  * @api {put} /profile Set user profile
  * @apiDescription Update user's auth profile
  * @apiName PutProfile
- * @apiGroup Profile
  *
  * @apiHeader {String} authorization A valid JWT token (Bearer:)
  * @apiParam {String} fullname User's fullname
@@ -339,9 +339,60 @@ router.put('/profile', jwt({secret: config.auth.public_key}), function(req, res,
     });
 });
 
-//TODO should be deprecated once (get)/profile is implemented
-//router.get('/profile/:id', jwt({secret: config.auth.public_key}), function(req, res, next) {
+/**
+ * @apiGroup Profile
+ * @api {get} /profile          Query auth profiles
+ * @apiDescription              Query auth profiles
+ * @apiName GetProfile
+ *
+ * @apiParam {Object} where     Optional sequelize where query - defaults to {}
+ * @apiParam {Object} order     Optional sequelize sort object - defaults to [['fullname', 'DESC']]
+ * @apiParam {Number} limit     Optional Maximum number of records to return - defaults to 100
+ * @apiParam {Number} offset    Optional Record offset for pagination
+ *
+ * @apiHeader {String} authorization 
+ *                              A valid JWT token "Bearer: xxxxx"
+ */
+router.get('/profile', jwt({secret: config.auth.public_key}), function(req, res, next) {
+    var where = {};
+    if(req.query.where) where = JSON.parse(req.query.where);
+    var order = [['fullname', 'DESC']];
+    if(req.query.order) order = JSON.parse(req.query.order);
+
+    db.User.findAndCountAll({
+        where: where,
+        order: order,
+        limit: req.query.limit||100,
+        offset: req.query.offset||0,
+        attributes: [ 'id', 'fullname', 'email', 'active' ]
+    }).then(function(profiles) {
+        res.json({profiles: profiles.rows, count: profiles.count});
+    });
+
+    /*
+    db.User.find(find)
+    .select(req.query.select || 'fullname')
+    .select([ 'id', 'fullname', 'email', 'active'])
+    .limit(req.query.limit || 100)
+    .skip(req.query.skip || 0)
+    .sort(req.query.sort || '_id')
+    //.populate('project_id', 'name desc')
+    //.populate('dataset_id', 'name desc')
+    //.populate('application_id', 'name desc config.type')
+    //.populate('application_id dataset_id')
+    .exec(function(err, recs) {
+        if(err) return next(err);
+        db.User.count(find).exec(function(err, count) {
+            if(err) return next(err);
+            res.json({profiles: recs, count: count});
+        });
+    });
+    */
+});
+
+//DEPRECATED BY GET:/profile
 //making this public for now (onere profile page)
+//router.get('/profile/:id', jwt({secret: config.auth.public_key}), function(req, res, next) {
 router.get('/profile/:id', function(req, res, next) {
     db.User.findOne({
         where: {id: req.params.id},
@@ -351,10 +402,9 @@ router.get('/profile/:id', function(req, res, next) {
     });
 });
 
-//TODO - this API needs to be deprecated once (get)/profile with query capability is implemented
-//(used by sca-wf-onere/project and others)
-//ui-select and various selector can then do dynamic querying
+//DEPRECATED BY GET:/profile
 //return all profiles (open to all users)
+//(used by sca-wf-onere/project and others)
 router.get('/profiles', jwt({secret: config.auth.public_key}), function(req, res) {
     db.User.findAll({
         attributes: [ 'id', 'fullname', 'email', 'active']

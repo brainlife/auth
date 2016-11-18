@@ -7,6 +7,9 @@ var assert = require('assert');
 var config = require('../api/config');
 
 config.local = {}; //force local to be avaialble... (TODO should I use a dedicated test config?)
+config.test = {
+    jwt: "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJodHRwczovL3NjYS5pdS5lZHUvYXV0aCIsImlhdCI6MTQ2MzQ5MzgxNy4xMzMsInNjb3BlcyI6eyJzY2EiOlsidXNlciJdfSwic3ViIjoidGVzdF9zZXJ2aWNlIn0.qEDod2KkMhoDJK1IZ8cTwEm4TDUMKGDzHCpMYvtEDnd6vr0fiSlzBcVe-srEonSjBuO0NcGRrmBQXHbX-ftDay5CXK27W-pwcgwjc7GkTw_bTe1Z8Y1c8jlNwvcHbE_pJk6ZCHBRQCEvpoUeSOFGKRgORG8H144LKnjEIeD_VbY",
+}
 
 //use temporary db for test..
 config.db.storage = "/tmp/test.sqlite";
@@ -55,7 +58,7 @@ describe('GET /config', function() {
 
 describe('/local', function() {
     describe("create user", function() {
-        it('should create user', function(done) {
+        it('should create user 1', function(done) {
             var user = db.User.build({
                 username: 'test',
                 fullname: 'test user',
@@ -72,7 +75,23 @@ describe('/local', function() {
                 });
             });
         });
+        it('should create user 2', function(done) {
+            var user = db.User.build({
+                username: 'test2',
+                fullname: 'test user2',
+                email: 'test2@example.com',
+                scopes: config.auth.default_scopes,
+            });
+            user.email_confirmation_token = "abc123";
+            user.setPassword('testpass', function(err) {
+                if(err) throw err;
+                user.save().then(function(_user) {
+                    done();
+                });
+            });
+        });
     });
+
     describe("/confirming_email", function() {
         it('should confirm', function(done) {
             request(app)
@@ -97,6 +116,40 @@ describe('/local', function() {
     });
 });
 
+describe('/root', function() {
+    describe("get/profile", function() {
+        it('get all', function(done) {
+            request(app)
+            .get('/profile')
+            .set('Accept', 'application/json')
+            .set('Authorization', 'Bearer '+config.test.jwt)
+            .expect('Content-Type', /json/) 
+            .expect(200)
+            .end(function(err, res) {
+                if(err) return done(err);
+                assert(res.body.profiles.length == 2);
+                assert(res.body.count == 2);
+                console.dir(res.body);
+                done();
+            });
+        });
+        it('get 1', function(done) {
+            request(app)
+            .get('/profile?limit=1&offset=1')
+            .set('Accept', 'application/json')
+            .set('Authorization', 'Bearer '+config.test.jwt)
+            .expect('Content-Type', /json/) 
+            .expect(200)
+            .end(function(err, res) {
+                if(err) return done(err);
+                assert(res.body.profiles.length == 1);
+                assert(res.body.count == 2);
+                console.dir(res.body);
+                done();
+            });
+        });
+    });
+});
 
 /*
 process.env.DEBUG="*";
