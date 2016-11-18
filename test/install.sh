@@ -14,7 +14,7 @@ fi
 echo "point 1"
 if [ ! -f api/config/test.jwt ]; then
     echo "creating test.jwt"
-    ./bin/auth.js issue --scopes '{ "sca": ["user"] }' --sub 'test_service' --out test.jwt
+    node ./bin/auth.js issue --scopes '{ "sca": ["user"] }' --sub 'test_service' --out test.jwt
 fi
 
 if [ ! -f api/config/index.js ]; then
