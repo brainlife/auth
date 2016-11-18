@@ -24,6 +24,6 @@ fi
 
 if [ ! -f api/config/test.jwt ]; then
     echo "creating test.jwt"
-    node ./bin/auth.js issue --scopes '{ "sca": ["user"] }' --sub 'test_service' --out test.jwt
+    node ./bin/auth.js issue --scopes '{ "sca": ["user"] }' --sub 'test_service' --out api/config/test.jwt
 fi
 
