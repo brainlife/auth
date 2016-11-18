@@ -11,12 +11,6 @@ if [ ! -f api/config/auth.key ]; then
     )
 fi
 
-echo "point 1"
-if [ ! -f api/config/test.jwt ]; then
-    echo "creating test.jwt"
-    node ./bin/auth.js issue --scopes '{ "sca": ["user"] }' --sub 'test_service' --out test.jwt
-fi
-
 if [ ! -f api/config/index.js ]; then
     echo "installing test config/index.js"
     cp api/config/index.js.sample api/config/index.js 
@@ -26,4 +20,10 @@ if [ ! -f api/config/ldap.password ]; then
     echo "testpass" > api/config/ldap.password
 fi
 
+#########################################################
+
+if [ ! -f api/config/test.jwt ]; then
+    echo "creating test.jwt"
+    node ./bin/auth.js issue --scopes '{ "sca": ["user"] }' --sub 'test_service' --out test.jwt
+fi
 
