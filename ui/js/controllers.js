@@ -126,7 +126,7 @@ app.controller('SignupController', function($scope, $route, toaster, $http, jwtH
             localStorage.setItem($scope.appconf.jwt_id, res.data.jwt);
 
             //let's post auth profile for the first time
-            $http.put($scope.appconf.api+'/local/profile/'/*+res.data.sub*/, {
+            $http.put($scope.appconf.api+'/profile/'/*+res.data.sub*/, {
                 //email: $scope.form.email,
                 fullname: $scope.form.fullname,
             })
