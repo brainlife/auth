@@ -174,11 +174,13 @@ app.config(['$routeProvider', 'appconf', function($routeProvider, appconf) {
         template: '',
         controller: 'SignoutController'
     })
+    /*
     .when('/register', {
         templateUrl: 't/register.html',
         controller: 'RegisterController',
         requiresLogin: true
     })
+    */
     .when('/forgotpass', {
         templateUrl: 't/forgotpass.html',
         controller: 'ForgotpassController'

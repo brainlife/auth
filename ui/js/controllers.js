@@ -125,8 +125,8 @@ app.controller('SignupController', function($scope, $route, toaster, $http, jwtH
         .then(function(res, status, headers, config) {
             localStorage.setItem($scope.appconf.jwt_id, res.data.jwt);
 
-            //let's post public profile for the first time
-            $http.put($scope.appconf.api+'/local/setprofile/'/*+res.data.sub*/, {
+            //let's post auth profile for the first time
+            $http.put($scope.appconf.api+'/local/profile/'/*+res.data.sub*/, {
                 //email: $scope.form.email,
                 fullname: $scope.form.fullname,
             })
@@ -153,6 +153,7 @@ app.controller('SignupController', function($scope, $route, toaster, $http, jwtH
 
 //allow user to complete registration *after* successful initial 3rd party login
 //TODO - I believe this is deprecated - now that we redirect to profile page after initial successful login
+/*
 app.controller('RegisterController', function($scope, $route, toaster, $http, jwtHelper, $routeParams, scaMessage, serverconf) {
     $scope.$parent.active_menu = 'complete';
     scaMessage.show(toaster);
@@ -178,7 +179,7 @@ app.controller('RegisterController', function($scope, $route, toaster, $http, jw
     if(!redirect) redirect = $scope.appconf.default_redirect_url;
 
     function put_profile(cb) {
-        $http.put($scope.appconf.api+'/local/setprofile/'/*+user.sub*/, {
+        $http.put($scope.appconf.api+'/local/setprofile/', {
             //email: $scope.form.email,
             fullname: $scope.form.fullname,
         }).then(function(res) {
@@ -216,6 +217,7 @@ app.controller('RegisterController', function($scope, $route, toaster, $http, jw
         }
     }
 });
+*/
 
 app.controller('AccountController', 
 function($scope, $route, toaster, $http, serverconf, jwtHelper, scaMessage) {
