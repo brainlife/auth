@@ -146,7 +146,7 @@ router.get('/users', jwt({secret: config.auth.public_key}), function(req, res, n
         //password_hash is replaced by true/false right below
         attributes: [
             'id', 'username', 'fullname', 'password_hash', 
-            'email', 'email_confirmed', 'iucas', 'googleid', 'gitid', 'x509dns', 
+            'email', 'email_confirmed', 'iucas', 'googleid', 'github', 'x509dns', 
             'times', 'scopes', 'active'],
     }).then(function(users) {
 
@@ -217,7 +217,7 @@ router.get('/user/:id', jwt({secret: config.auth.public_key}), function(req, res
         where: {id: req.params.id},
         attributes: [
             'id', 'username', 'fullname',
-            'email', 'email_confirmed', 'iucas', 'googleid', 'gitid', 'x509dns', 
+            'email', 'email_confirmed', 'iucas', 'googleid', 'github', 'x509dns', 
             'times', 'scopes', 'active'],
     }).then(function(user) {
         res.json(user);
