@@ -152,6 +152,13 @@ app.config(['cfpLoadingBarProvider', function(cfpLoadingBarProvider) {
     cfpLoadingBarProvider.includeSpinner = false;
 }]);
 
+//set allowed jwt provider
+app.config(function(appconf, $httpProvider, jwtOptionsProvider) {
+    jwtOptionsProvider.config({
+      whiteListedDomains: appconf.jwt_whitelist,
+    });
+});
+
 //configure route
 app.config(['$routeProvider', 'appconf', function($routeProvider, appconf) {
     $routeProvider.
