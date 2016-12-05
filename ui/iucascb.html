@@ -27,7 +27,7 @@
     var app = angular.module('iucascb', ['app.config', 'ngCookies', 'angular-jwt', 'sca-shared']);
     app.config(['appconf', '$httpProvider', 'jwtInterceptorProvider', 
     function(appconf, $httpProvider, jwtInterceptorProvider) {
-        jwtInterceptorProvider.tokenGetter = function(jwtHelper, config, $http) {
+        jwtInterceptorProvider.tokenGetter = function(jwtHelper, $http) {
             return localStorage.getItem(appconf.jwt_id);
         }
         $httpProvider.interceptors.push('jwtInterceptor');
