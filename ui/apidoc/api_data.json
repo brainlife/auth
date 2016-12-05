@@ -126,12 +126,70 @@
     "groupTitle": "Local"
   },
   {
+    "group": "Profile",
+    "type": "get",
+    "url": "/profile",
+    "title": "Query auth profiles",
+    "description": "<p>Query auth profiles</p>",
+    "name": "GetProfile",
+    "parameter": {
+      "fields": {
+        "Parameter": [
+          {
+            "group": "Parameter",
+            "type": "Object",
+            "optional": false,
+            "field": "where",
+            "description": "<p>Optional sequelize where query - defaults to {}</p>"
+          },
+          {
+            "group": "Parameter",
+            "type": "Object",
+            "optional": false,
+            "field": "order",
+            "description": "<p>Optional sequelize sort object - defaults to [['fullname', 'DESC']]</p>"
+          },
+          {
+            "group": "Parameter",
+            "type": "Number",
+            "optional": false,
+            "field": "limit",
+            "description": "<p>Optional Maximum number of records to return - defaults to 100</p>"
+          },
+          {
+            "group": "Parameter",
+            "type": "Number",
+            "optional": false,
+            "field": "offset",
+            "description": "<p>Optional Record offset for pagination</p>"
+          }
+        ]
+      }
+    },
+    "header": {
+      "fields": {
+        "Header": [
+          {
+            "group": "Header",
+            "type": "String",
+            "optional": false,
+            "field": "authorization",
+            "description": "<p>A valid JWT token &quot;Bearer: xxxxx&quot;</p>"
+          }
+        ]
+      }
+    },
+    "version": "0.0.0",
+    "filename": "api/controllers/root.js",
+    "groupTitle": "Profile"
+  },
+  {
+    "group": "Profile",
     "type": "put",
     "url": "/profile",
     "title": "Set user profile",
     "description": "<p>Update user's auth profile</p>",
     "name": "PutProfile",
-    "group": "Profile",
     "header": {
       "fields": {
         "Header": [

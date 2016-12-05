@@ -343,7 +343,7 @@ router.put('/profile', jwt({secret: config.auth.public_key}), function(req, res,
  * @apiGroup Profile
  * @api {get} /profile          Query auth profiles
  * @apiDescription              Query auth profiles
- * @apiName GetProfile
+ * @apiName Get auth (public) profiles
  *
  * @apiParam {Object} where     Optional sequelize where query - defaults to {}
  * @apiParam {Object} order     Optional sequelize sort object - defaults to [['fullname', 'DESC']]
