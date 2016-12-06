@@ -4,6 +4,7 @@ var express = require('express');
 var router = express.Router();
 var winston = require('winston');
 var clone = require('clone');
+var async = require('async');
 
 //mine
 var config = require('../config');
@@ -17,12 +18,27 @@ function registerUser(body, done) {
     u.fullname = body.fullname;
     u.email = body.email;
     var user = db.User.build(u);
-    logger.info("registering user");
-    logger.info(user);
+    logger.info("registering new user: "+u.username);
+    //logger.info(user);
     user.setPassword(body.password, function(err) {
         if(err) return done(err);
         logger.debug("set password done");
-        user.save().then(done);
+        user.save().then(function() {
+            //add to default groups
+            user.addMemberGroups(u.gids, function() {
+                done(user);    
+            });
+            /*
+            async.forEach(u.gids, function(gid, next) {
+                db.Group.findById(gid).then(function(group) {
+                    logger.info("adding new user to group "+gid);
+                    group.addMember(user.id).then(next);
+                });
+            }, function(err) {
+                done(user);    
+            });
+            */
+        });
     });
 }
 

@@ -54,12 +54,26 @@ function register_newuser(uid, res, next) {
             u.email = uid+"@iu.edu";
             u.email_confirmed = true; //let's trust IU..
             u.iucas = uid;
+            //TODO I should refactor this part somehow..
             db.User.create(u).then(function(user) {
-                issue_jwt(user, function(err, jwt) {
-                    if(err) return next(err);
-                    res.json({jwt:jwt, registered: true});
+                user.addMemberGroups(u.gids, function() {
+                    //done(user);    
+                    issue_jwt(user, function(err, jwt) {
+                        if(err) return next(err);
+                        res.json({jwt:jwt, registered: true});
+                    });
                 });
             });
+            /*
+            db.User.create(u).then(function(user) {
+                user.addGroupMembers(u.gids, function(err) {
+                    issue_jwt(user, function(err, jwt) {
+                        if(err) return next(err);
+                        res.json({jwt:jwt, registered: true});
+                    });
+                });
+            });
+            */
         }
     });
 }

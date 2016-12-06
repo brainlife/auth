@@ -5,6 +5,7 @@ var Sequelize = require('sequelize');
 var JsonField = require('sequelize-json');
 var bcrypt = require('bcrypt');
 var winston = require('winston');
+var async = require('async');
 
 //mine
 var config = require('../config');
@@ -45,31 +46,20 @@ module.exports = function(sequelize, DataTypes) {
         
         //prevent user from loggin in (usually temporarily)
         active: { type: Sequelize.BOOLEAN, defaultValue: true } 
-
     }, {
         classMethods: {
-            /*
-            //why is this here?
-            createToken: function(user) {
-                var today = Math.round(Date.now()/1000);
-                var expiration = today+3600*24*7; //7days
-
-                //http://self-issued.info/docs/draft-ietf-oauth-json-web-token.html#RegisteredClaimName
-                var token = {
-                    iss: "http://trident.iu.edu", //issuer
-                    exp: expiration,
-                    scopes: []
-                };
-                if(user) {
-                    token.sub = user._id;
-                    //token.name = user.fullname;
-                    token.scopes = user.scopes;
-                }
-                return token;
-            },
-            */
         },
         instanceMethods: {
+            addMemberGroups: function(gids, cb) {
+                var rec = this;
+                async.forEach(gids, function(gid, next) {
+                    sequelize.models.Group.findById(gid).then(function(group) {
+                        logger.info("adding new user to group "+gid);
+                        group.addMember(rec.id).then(next);
+                    });
+                }, cb);
+            },
+
             setPassword: function (password, cb) {
                 var rec = this;
                 /* cost of computation https://www.npmjs.com/package/bcrypt
@@ -91,7 +81,6 @@ module.exports = function(sequelize, DataTypes) {
                 });
             },
             isPassword: function(password) {
-                //logger.debug("checking password now"); 
                 if(!this.password_hash) return false; //no password, no go
                 return bcrypt.compareSync(password, this.password_hash);
             },
@@ -110,84 +99,4 @@ module.exports = function(sequelize, DataTypes) {
             }
         }
     });
-
-
-    /*.then(function() {
-      return User.create({
-        username: 'janedoe',
-        birthday: new Date(1980, 6, 20)
-      });
-    }).then(function(jane) {
-      console.log(jane.get({
-        plain: true
-      }))
-    });
-    */
-
-    /*
-
-    var mongoose = require('mongoose');
-    var bcrypt = require('bcrypt');
-
-    var userSchema = mongoose.Schema({
-        //_id is used as jwt's sub
-
-        //for local authentication
-        local: {
-            username: { type: String, index: {unique: true} }, 
-            password_hash: String, //bcrypt-ed password
-
-            email: { type: String, index: {unique: true} },  //email needs to be unique 
-            email_confirmed: { type: Boolean, default: false }
-        },
-
-        //for iucas authentication
-        iucas: {
-            id: { type: String, index: {unique: true} } //IU ID
-        },
-
-        //user profile
-        profile: {
-            fullname: String,
-            nickname: String //usually user's first name.. just to show in various places
-        },
-
-        login_date: Date, //date when the user last logged in
-        signup_date: { type: Date, default: Date.now }, //date when the user signed up
-
-        //user account can be deactivated (temporarily?) by administrator
-        active: { type: Boolean, default: true },
-
-        //access granted to this user
-        scopes: mongoose.Schema.Types.Mixed 
-    });
-    */
-
-    /////////////////////////////////////////////////////////////////////////
-    // 
-    // methods for record instance
-    //
-
-    //set bcrypted password on the record cb(err)
-
-    /////////////////////////////////////////////////////////////////////////
-    //
-    //guest can request for an invite
-    //
-
-    /*
-    userSchema.statics.requestInvite = function(email, cb) {
-        this.find({email: email}, function(err, users) {
-            if(users.length != 0) {
-                cb(new Error("requested email address already exists")); 
-            } else {
-                var user = new User({email: [email]});
-                user.save(cb);
-            }
-        });
-    }
-    */
-
-    //exports.sequelize = sequelize;
-
 }
