@@ -7,7 +7,7 @@ Usage:
 ./auth.js newuser --username hayashis --fullname "Soichi Hayashi" --email "hayashis@iu.edu"
 
 * Issue new JWT token
-./auth.js issue --scopes '{ "sca": ["user"] }' --sub 'test_service' #--out test.jwt
+./auth.js issue --scopes '{ "sca": ["user"] }' --sub 'test_service' [--out test.jwt] [--key test.key]
 
 * Reset password
 ./auth.js setpass --username hayashis --password "password#123"

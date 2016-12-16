@@ -37,7 +37,7 @@ function listuser() {
 
 function issue() {
     if(!argv.scopes || !argv.sub) {
-        logger.error("./auth.js issue --scopes '{common: [\"user\"]}' --sub 'my_service' --out token.jwt");
+        logger.error("./auth.js issue --scopes '{common: [\"user\"]}' --sub 'my_service' [--out token.jwt] [--key test.key]");
         process.exit(1);
     }
 
@@ -48,6 +48,19 @@ function issue() {
         "scopes": JSON.parse(argv.scopes),
         "sub": argv.sub,
     };
+    
+    if(argv.key) {
+        console.log("using specified private key");
+        config.auth.private_key = fs.readFileSync(argv.key);
+        //console.dir(config.auth);
+    }
+    /*
+    if(argv.pub) {
+        console.log("using specified public key");
+        config.auth.public_key = fs.readFileSync(argv.pub);
+        //console.dir(config.auth);
+    }
+    */
 
     var token = jwt.sign(claim, config.auth.private_key, config.auth.sign_opt);
     if(argv.out) {
@@ -56,12 +69,14 @@ function issue() {
         console.log(token);
     }
 
+    /*
     //verify to check
     jwt.verify(token, config.auth.public_key, function(err, decoded) {
         if(err) throw err;
         console.log("decoded:");
         console.log(JSON.stringify(decoded, null, 4));
     });
+    */
 }
 
 function modscope() {
