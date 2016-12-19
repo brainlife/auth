@@ -232,15 +232,25 @@ function($scope, $route, toaster, $http, serverconf, jwtHelper, scaMessage) {
     $scope.debug = {jwt: user};
 
     serverconf.then(function(_serverconf) { $scope.serverconf = _serverconf; });
-    $http.get($scope.appconf.api+'/me').success(function(info) { 
-        $scope.user = info; 
+    $http.get($scope.appconf.api+'/me').then(function(res) { 
+        $scope.user = res.data; 
+        console.dir(info);
+    }, function(res) {
+        if(res.data && res.data.message) toaster.error(res.data.message);
+        else toaster.error(res.statusText);
     });
 
     $scope.submit_profile = function() {
         $http.put($scope.appconf.api+'/profile', $scope.user)
         .then(function(res, status, headers, config) {
             toaster.success(res.data.message);
-            $http.get($scope.appconf.api+'/me').success(function(info) { $scope.user = info; });
+            //TODO - why can't put request return updated object?
+            $http.get($scope.appconf.api+'/me').then(function(res) { 
+                $scope.user = res.data; 
+            }, function(res) {
+                if(res.data && res.data.message) toaster.error(res.data.message);
+                else toaster.error(res.statusText);
+            });
         }, function(res, status, headers, config) {
             if(res.data && res.data.message) toaster.error(res.data.message);
             else toaster.error(res.statusText);
@@ -251,11 +261,16 @@ function($scope, $route, toaster, $http, serverconf, jwtHelper, scaMessage) {
         .then(function(res, status, headers, config) {
             toaster.success(res.data.message);
 
-            $http.get($scope.appconf.api+'/me').success(function(info) { $scope.user = info; }); //why do I need to do this?
+            //TODO - why can't put request return updated object?
+            $http.get($scope.appconf.api+'/me').then(function(res) { 
+                $scope.user = res.data; 
+            }, function(res) {
+                if(res.data && res.data.message) toaster.error(res.data.message);
+                else toaster.error(res.statusText);
+            }); //why do I need to do this?
 
             //reset the password reset form (mainly to give user visual feedback)
             $scope.form_password = {};
-
         }, function(res, status, headers, config) {
             if(res.data && res.data.message) toaster.error(res.data.message);
             else toaster.error(res.statusText);
