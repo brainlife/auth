@@ -39,14 +39,14 @@ router.get('/callback', jwt({
     passport.authenticate('facebook', function(err, user, info) {
         if(err) {
             console.error(err);
-            return res.redirect('/auth/#/signin?msg='+"Failed to authenticate");
+            return res.redirect('/auth/#!/signin?msg='+"Failed to authenticate");
         }
         if(req.user) {
             //association
             res.clearCookie('associate_jwt');
             if(user) {
                 //TODO - #/settings/account doesn't handle msg yet
-                return res.redirect('/auth/#/settings/account?msg=The google account is already associated to a SCA account');
+                return res.redirect('/auth/#!/settings/account?msg=The google account is already associated to a SCA account');
             }
             db.User.findOne({where: {id: req.user.sub}}).then(function(user) {
                 if(!user) throw new Error("couldn't find user record with SCA sub:"+req.user.sub);
@@ -55,12 +55,12 @@ router.get('/callback', jwt({
                     console.log("saved");
                     console.dir(user);
                     console.dir(info);
-                    res.redirect('/auth/#/settings/account');
+                    res.redirect('/auth/#!/settings/account');
                 });
             });
         } else {
             if(!user) {
-                return res.redirect('/auth/#/signin?msg='+"Your facebook account is not registered to SCA yet. Please login using your username/password first, then associate your facebook account inside account settings.");
+                return res.redirect('/auth/#!/signin?msg='+"Your facebook account is not registered to SCA yet. Please login using your username/password first, then associate your facebook account inside account settings.");
             }
             common.createClaim(user, function(err, claim) {
                 if(err) return next(err);
@@ -69,7 +69,7 @@ router.get('/callback', jwt({
                 user.save().then(function() {
                     //res.json({message: "Login Success!", jwt: jwt});
                     //res.set('jwt', jwt);
-                    res.redirect('/auth/#/success/'+jwt);
+                    res.redirect('/auth/#!/success/'+jwt);
                 });
             });
         }

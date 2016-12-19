@@ -40,7 +40,7 @@
         $http.get(appconf.api+'/iucas/verify?casticket='+casticket)
         .then(function(res) {
             localStorage.setItem(appconf.jwt_id, res.data.jwt);
-            if(res.data.registered) window.location = './#/complete';
+            if(res.data.registered) window.location = './#!/complete';
             else {
                 //this is called by both iucas login and iucas connect in account
                 //.. and there is noway to distinguish which

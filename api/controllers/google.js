@@ -112,14 +112,14 @@ router.get('/callback', jwt({
     passport.authenticate('google', function(err, user, info) {
         if(err) {
             console.error(err);
-            return res.redirect('/auth/#/signin?msg='+"Failed to authenticate");
+            return res.redirect('/auth/#!/signin?msg='+"Failed to authenticate");
         }
         if(req.user) {
             //association
             res.clearCookie('associate_jwt');
             if(user) {
                 //TODO - #/settings/account doesn't handle msg yet
-                return res.redirect('/auth/#/settings/account?msg=The github account is already associated to a SCA account');
+                return res.redirect('/auth/#!/settings/account?msg=The github account is already associated to a SCA account');
             }
             db.User.findOne({where: {id: req.user.sub}}).then(function(user) {
                 if(!user) throw new Error("couldn't find user record with SCA sub:"+req.user.sub);
@@ -127,13 +127,13 @@ router.get('/callback', jwt({
                 user.save().then(function() {
                     //console.log("saved");
                     //console.dir(user);
-                    res.redirect('/auth/#/settings/account');
+                    res.redirect('/auth/#!/settings/account');
                 });
             });
         } else {
             //normal sign in
             if(!user) {
-                return res.redirect('/auth/#/signin?msg='+"Your google account is not registered to SCA yet. Please login using your username/password first, then associate your google account inside account settings.");
+                return res.redirect('/auth/#!/signin?msg='+"Your google account is not registered to SCA yet. Please login using your username/password first, then associate your google account inside account settings.");
             }
             common.createClaim(user, function(err, claim) {
                 if(err) return next(err);
@@ -142,7 +142,7 @@ router.get('/callback', jwt({
                 user.save().then(function() {
                     //res.json({message: "Login Success!", jwt: jwt});
                     //res.set('jwt', jwt);
-                    res.redirect('/auth/#/success/'+jwt);
+                    res.redirect('/auth/#!/success/'+jwt);
                 });
             });
         }
@@ -183,7 +183,7 @@ function(req, res, next) {
             user.save().then(function() {
                 console.log("saved");
                 console.dir(user);
-                res.redirect('/auth/#/settings/account');
+                res.redirect('/auth/#!/settings/account');
             });
         });
     })(req, res, next);

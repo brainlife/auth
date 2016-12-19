@@ -299,6 +299,7 @@ function(appconf, $http, jwtHelper, $sce, scaMessage, scaMenu, toaster) {
         }
     }
 
+    /*
     if(menu.user) {
         //$http.get(appconf.profile_api+'/public/'+menu.user.sub).then(function(res) {
         $http.get(appconf.api+'/me/').then(function(res) {
@@ -306,6 +307,7 @@ function(appconf, $http, jwtHelper, $sce, scaMessage, scaMenu, toaster) {
             menu._profile = res.data;
         });
     }
+    */
     return menu;
 }]);
 
