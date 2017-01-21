@@ -36,26 +36,17 @@ describe('GET /health', function() {
     });
 });
 
+/*
 describe('GET /config', function() {
     it('return 200', function(done) {
         request(app)
         .get('/config')
         .set('Accept', 'application/json')
         .expect('Content-Type', /json/) 
-        /*
-        .expect(function(res) {
-            res.allow_signup = true;
-        })
-        */
-        /*
-        .expect(200, {
-            allow_signup: true
-        }, done);
-        */
         .end(done)
     });
 });
-
+*/
 describe('/local', function() {
     describe("create user", function() {
         it('should create user 1', function(done) {
