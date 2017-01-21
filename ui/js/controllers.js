@@ -57,8 +57,8 @@ function($scope, $route, toaster, $http, jwtHelper, $routeParams, $location, sca
     $scope.submit = function() {
         var url = "";
         //ldap auth takes precedence
-        if(appconf.show.local) url = $scope.appconf.api+"/local/auth";
-        if(appconf.show.ldap) url = $scope.appconf.api+"/ldap/auth";
+        if($scope.appconf.show.local) url = $scope.appconf.api+"/local/auth";
+        if($scope.appconf.show.ldap) url = $scope.appconf.api+"/ldap/auth";
         $http.post(url, $scope.userpass).then(handle_success, handle_error);
     }
 
@@ -356,12 +356,12 @@ app.controller('AdminUsersController', function($scope, $route, toaster, $http, 
 });
 
 app.controller('AdminUserController', 
-function($scope, appconf, $route, toaster, $http, jwtHelper, scaMessage, scaAdminMenu, $routeParams, $location, $window) {
+function($scope, $route, toaster, $http, jwtHelper, scaMessage, scaAdminMenu, $routeParams, $location, $window) {
     scaMessage.show(toaster);
     $scope.$parent.active_menu = 'admin';
     $scope.admin_menu = scaAdminMenu;
 
-    $http.get(appconf.api+'/user/'+$routeParams.id)
+    $http.get($scope.appconf.api+'/user/'+$routeParams.id)
     .then(function(res) { 
         $scope.user = res.data; 
         if($scope.user.x509dns) $scope.x509dns = JSON.stringify($scope.user.x509dns, null, 4);
@@ -379,7 +379,7 @@ function($scope, appconf, $route, toaster, $http, jwtHelper, scaMessage, scaAdmi
         $scope.user.x509dns = JSON.parse($scope.x509dns);
         $scope.user.scopes = JSON.parse($scope.scopes);
 
-        $http.put(appconf.api+'/user/'+$routeParams.id, $scope.user)
+        $http.put($scope.appconf.api+'/user/'+$routeParams.id, $scope.user)
         .then(function(res) { 
             $location.path("/admin/users");
             toaster.success(res.data.message);
