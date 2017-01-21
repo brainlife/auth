@@ -1,0 +1,9 @@
+node_modules
+debug
+coverage
+example
+test
+barn
+api/config
+docker/config
+docker/db

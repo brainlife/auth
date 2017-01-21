@@ -85,20 +85,6 @@ function modscope() {
         process.exit(1);
     }
 
-    /*
-    function add(base, sub) {
-        if(typeof sub == 'object' && sub.constructor == Array) {
-            sub.forEach(function(item) {
-                if(!~base.indexOf(item)) base.push(item);
-            });
-        } else if(typeof sub == 'object') {
-            for(var k in sub) {
-                if(base[k] === undefined) base[k] = sub[k];
-                else add(base[k], sub[k]);
-            }
-        }
-    }
-    */
     function add(base, sub) {
         if(sub.constructor == Array) {
             sub.forEach(function(item) {
@@ -112,7 +98,6 @@ function modscope() {
         }
         return base;
     }
-
 
     function del(base, sub) {
         if(typeof sub == 'object' && sub.constructor == Array) {
@@ -131,8 +116,6 @@ function modscope() {
     db.User.findOne({where: {"username": argv.username}})
     .then(function(user) {
         if(!user) return logger.error("can't find user:"+argv.username);
-        //logger.debug("before");
-        //logger.debug(JSON.stringify(user, null, 4));
         if(argv.set) {
             user.scopes = JSON.parse(argv.set);
         }
@@ -144,7 +127,6 @@ function modscope() {
         }
         user.save().then(function() {
             logger.info("successfully updated user scope. user must re-login for it to take effect)");
-            //logger.debug(JSON.stringify(user, null, 4));
         }).catch(function(err) {
             logger.error(err);
         });
