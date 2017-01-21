@@ -17,8 +17,8 @@ angular.module('app.config', [])
     //URL for auth service API
     api: '../api/auth',
     
-    //URL for x509 validation API
-    x509api: 'https://soichi7.ppa.iu.edu:9443/x509/auth',
+    //URL for x509 validation API base
+    x509api: 'https://soichi7.ppa.iu.edu:9443',
 
     //default location to redirect after successful login
     //default_redirect_url: '../profile', 

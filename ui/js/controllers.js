@@ -76,7 +76,7 @@ function($scope, $route, toaster, $http, jwtHelper, $routeParams, $location, sca
     }
 
     $scope.begin_x509 = function() {
-        $http.get($scope.appconf.x509api) //, {headers: null})
+        $http.get($scope.appconf.x509api+"/x509/auth") //, {headers: null})
         .then(handle_success, handle_error);
     }
 
