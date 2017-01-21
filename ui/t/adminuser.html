@@ -41,19 +41,19 @@
         </div>
         <hr>
 
-        <div class="form-group" ng-if="serverconf.iucas">
+        <div class="form-group" ng-if="appconf.show.iucas">
             <label>IUCAS</label>
             <input type="text" class="form-control" ng-model="user.iucas">
         </div>
-        <div class="form-group" ng-if="serverconf.google">
+        <div class="form-group" ng-if="appconf.show.google">
             <label>Google ID</label>
             <input type="text" class="form-control" ng-model="user.googleid">
         </div>
-        <div class="form-group" ng-if="serverconf.git">
+        <div class="form-group" ng-if="appconf.show.git">
             <label>GIT ID</label>
             <input type="text" class="form-control" ng-model="user.gitid">
         </div>
-        <div class="form-group" ng-if="serverconf.x509">
+        <div class="form-group" ng-if="appconf.show.x509">
             <label>X509</label>
             <p class="help-block">TODO.. I will update this to a bit more user friendly esitor</p>
             <textarea class="form-control" ng-model="x509dns" validjson></textarea>

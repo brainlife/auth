@@ -7,42 +7,43 @@ body {
 <div class="container">
     <div class="center-block">
         <img class="logo" ng-src="{{appconf.logo_400_url}}"/>
-        <div class="form-group" ng-if="serverconf.x509">
+        <div class="form-group" ng-if="appconf.show.x509">
             <button type="button" class="btn btn-warning btn-block" ng-click="begin_x509()">
                 <i class="fa fa-certificate" style="font-size: 150%"></i> Login with X509 Certificate
             </button>
         </div>
-        <div class="form-group" ng-if="serverconf.google">
+        <div class="form-group" ng-if="appconf.show.google">
             <button type="button" class="btn btn-danger btn-block" ng-click="begin('google')">
                 <i class="fa fa-google" style="font-size: 150%"></i> Login with Google
             </button>
         </div>
-        <div class="form-group" ng-if="serverconf.github">
+        <div class="form-group" ng-if="appconf.show.github">
             <button type="button" class="btn btn-info btn-block" ng-click="begin('github')">
                 <i class="fa fa-github" style="font-size: 150%"></i> Login with Github
             </button>
         </div>
-        <div class="form-group" ng-if="serverconf.facebook">
+        <div class="form-group" ng-if="appconf.show.facebook">
             <button type="button" class="btn btn-primary btn-block" ng-click="begin('facebook')">
                 <i class="fa fa-facebook" style="font-size: 150%"></i> Login with Facebook
             </button>
         </div>
-        <div class="form-group" ng-if="serverconf.iucas">
+        <div class="form-group" ng-if="appconf.show.iucas">
             <button type="button" class="btn btn-danger btn-block" ng-click="begin_iucas()">
                 <img src="images/trident.png"/>&nbsp;&nbsp;&nbsp;Login with IU Account
             </button>
         </div>
-        <div ng-if="serverconf.local || serverconf.ldap">
-            <div class="form-group" ng-if="serverconf.x509 || serverconf.git || serverconf.iucas">
+        <div ng-if="appconf.show.local || appconf.show.ldap">
+            <div class="form-group" 
+                ng-if="appconf.show.x509 || appconf.show.git || appconf.show.iucas">
                 <center>or</center>
             </div>
             <form ng-submit="submit()">
                 <div class="form-group">
-                    <div class="input-group" ng-if="serverconf.local && !serverconf.ldap">
+                    <div class="input-group" ng-if="appconf.show.local && !appconf.show.ldap">
                         <span class="input-group-addon"><i class="fa fa-envelope" style="width: 30px;"></i></span>
                         <input class="form-control" name="username" type="text" placeholder="Username or Email" ng-model="userpass.username" required/>
                     </div>
-                    <div class="input-group" ng-if="serverconf.ldap">
+                    <div class="input-group" ng-if="appconf.show.ldap">
                         <span class="input-group-addon">
                             <i ng-if="!appconf.ldap_logo" class="fa fa-envelope" style="width: 30px;"></i>
                             <img ng-if="appconf.ldap_logo" ng-src="{{appconf.ldap_logo}}" style="margin: 0 8px 0 7px" height="15"></img>
@@ -61,7 +62,7 @@ body {
                 </div>
             </form>
             <hr>
-            <div ng-if="serverconf.allow_signup !== false">
+            <div ng-if="appconf.show.signup !== false">
                 <center>First time here? &nbsp;&nbsp;<a href="#!/signup"><b>Sign Up</b></a></center>
                 <br>
             </div>

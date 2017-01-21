@@ -13,7 +13,6 @@
     <script src="/shared/js/shared.js"></script>
 
     <script src="config.js"></script>
-    <script src="common.js"></script>
 
     <script>
     function getParameterByName(name) {
@@ -25,22 +24,21 @@
 
     //if user has jwt, send to server so that iucas account will be associated to the user account
     var app = angular.module('iucascb', ['app.config', 'ngCookies', 'angular-jwt', 'sca-shared']);
-    app.config(['appconf', '$httpProvider', 'jwtInterceptorProvider', 
-    function(appconf, $httpProvider, jwtInterceptorProvider) {
+    app.config(function(appconf, $httpProvider, jwtInterceptorProvider) {
         jwtInterceptorProvider.tokenGetter = function(jwtHelper, $http) {
             return localStorage.getItem(appconf.jwt_id);
         }
         $httpProvider.interceptors.push('jwtInterceptor');
-    }]);
+    });
 
-    app.run(['$http', 'appconf', '$cookies', 'scaMessage',
-    function($http, appconf, $cookies, scaMessage, $location) {
-        console.log("run iucascb:"+document.referrer);
+    app.run(function($http, appconf, $cookies, scaMessage, $location) {
+        console.log("iucascb::app.run ref:"+document.referrer);
         var casticket = getParameterByName('casticket');
         $http.get(appconf.api+'/iucas/verify?casticket='+casticket)
         .then(function(res) {
             localStorage.setItem(appconf.jwt_id, res.data.jwt);
-            if(res.data.registered) window.location = './#!/complete';
+            /*
+            if(res.data.registered) $location.path = '/complete';
             else {
                 //this is called by both iucas login and iucas connect in account
                 //.. and there is noway to distinguish which
@@ -48,19 +46,21 @@
                 var redirect = sessionStorage.getItem('auth_redirect');
                 window.location = redirect; 
             }
+            */
+            var redirect = sessionStorage.getItem('auth_redirect');
+            console.log("done.. redirecting "+redirect);
+            if(redirect) window.location = redirect; 
+            else window.location = appconf.default_redirect_url;
         }, function(res) {
-            console.log("token verification failed");
-            console.dir(res.data);
-            if(res.data.message) {
-                scaMessage.error(res.data.message);
-            } else {
-                scaMessage.error('Failed to login with IU CAS :(');
+            if(res.data && res.data.path) {
+                $location.path(res.data.path);
+                if(res.data.message) scaMessage.error(res.data.message);
+            } else {        
+                if(res.data && res.data.message) scaMessage.error(res.data.message);
+                else scaMessage.error(res.statusText || "Oops.. unknown authentication error");
             }
-            var path = handle_auth_issues(res);
-            //document.location = path?'./#!'+hash:'./#1';
-            $location.path(path);
         }); 
-    }]);
+    });
     </script>
 </body>
 </html>

@@ -18,20 +18,31 @@ angular.module('app.config', [])
     api: '../api/auth',
     
     //URL for x509 validation API
-    x509api: 'https://soichi7.ppa.iu.edu:9443',
-
-    //shared servive api and ui urls (for menus and stuff)
-    shared_api: '../api/shared',
-    shared_url: '../shared',
+    x509api: 'https://soichi7.ppa.iu.edu:9443/x509/auth',
 
     //default location to redirect after successful login
     //default_redirect_url: '../profile', 
-    default_redirect_url: '#!/settings/account', 
+    default_redirect_url: '/auth/#!/settings/account',  //don't start with #
 
     jwt_id: 'jwt',
     iucas_url: 'https://cas.iu.edu/cas/login',
 
     jwt_whitelist: ['soichi7.ppa.iu.edu'],
+
+    //show/hide various login options
+    show: {
+        local: true,
+        ldap: false,
+
+        iucas: true,
+        google: true,
+        git: true,
+        x509: true,
+        github: true,
+        facebook: true,
+            
+        signup: true,
+    },
 });
 
 

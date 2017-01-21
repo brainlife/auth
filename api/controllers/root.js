@@ -74,6 +74,7 @@ router.get('/health', function(req, res) {
     res.json({status: 'ok'});
 });
 
+/*
 //server side config need to render ui (public)
 router.get('/config', function(req, res) {
     var c = {
@@ -102,6 +103,7 @@ router.get('/config', function(req, res) {
     }
     res.json(c); 
 });
+*/
 
 /**
  * @api {get} /me Get user details

@@ -1,5 +1,6 @@
 'use strict';
 
+/*
 //just a service to load all users from auth service
 app.factory('serverconf', ['appconf', '$http', function(appconf, $http) {
     return $http.get(appconf.api+'/config')
@@ -7,20 +8,20 @@ app.factory('serverconf', ['appconf', '$http', function(appconf, $http) {
         return res.data;
     });
 }]);
+*/
 
 app.controller('HeaderController', 
-function($scope, appconf, $route, toaster, $http, serverconf, menu, scaSettingsMenu) {
+function($scope, appconf, $route, toaster, $http, menu, scaSettingsMenu) {
     $scope.title = appconf.title;
-    serverconf.then(function(_c) { $scope.serverconf = _c; });
+    //serverconf.then(function(_c) { $scope.serverconf = _c; });
     $scope.menu = menu;
     $scope.appconf = appconf;
     $scope.settings_menu = scaSettingsMenu;
 });
 
 app.controller('SigninController', 
-function($scope, $route, toaster, $http, jwtHelper, $routeParams, $location, scaMessage, $sce, serverconf) {
+function($scope, $route, toaster, $http, jwtHelper, $routeParams, $location, scaMessage, $sce) {
     $scope.$parent.active_menu = 'signin';
-    serverconf.then(function(_c) { $scope.serverconf = _c; });
     scaMessage.show(toaster);
 
     if($routeParams.msg) {
@@ -35,7 +36,6 @@ function($scope, $route, toaster, $http, jwtHelper, $routeParams, $location, sca
     }
 
     function handle_error(res) {
-        var _handler = toaster.error;
         if(res.data && res.data.path) {
             //console.log("path requested "+res.data.path);
             $location.path(res.data.path);
@@ -57,8 +57,8 @@ function($scope, $route, toaster, $http, jwtHelper, $routeParams, $location, sca
     $scope.submit = function() {
         var url = "";
         //ldap auth takes precedence
-        if($scope.serverconf.local) url = $scope.appconf.api+"/local/auth";
-        if($scope.serverconf.ldap) url = $scope.appconf.api+"/ldap/auth";
+        if(appconf.show.local) url = $scope.appconf.api+"/local/auth";
+        if(appconf.show.ldap) url = $scope.appconf.api+"/ldap/auth";
         $http.post(url, $scope.userpass).then(handle_success, handle_error);
     }
 
@@ -76,7 +76,7 @@ function($scope, $route, toaster, $http, jwtHelper, $routeParams, $location, sca
     }
 
     $scope.begin_x509 = function() {
-        $http.get($scope.appconf.x509api+'/x509/auth') //, {headers: null})
+        $http.get($scope.appconf.x509api) //, {headers: null})
         .then(handle_success, handle_error);
     }
 
@@ -94,7 +94,7 @@ function($scope, $route, toaster, $http, jwtHelper, $routeParams, $location, sca
 });
 
 app.controller('SuccessController', 
-function($scope, $route, toaster, $http, jwtHelper, $routeParams, $location, scaMessage, $sce, serverconf) {
+function($scope, $route, toaster, $http, jwtHelper, $routeParams, $location, scaMessage, $sce) {
     scaMessage.success("Welcome back!");
     localStorage.setItem($scope.appconf.jwt_id, $routeParams.jwt);
     var redirect = sessionStorage.getItem('auth_redirect');
@@ -152,12 +152,11 @@ app.controller('SignupController', function($scope, $route, toaster, $http, jwtH
 //allow user to complete registration *after* successful initial 3rd party login
 //TODO - I believe this is deprecated - now that we redirect to profile page after initial successful login
 /*
-app.controller('RegisterController', function($scope, $route, toaster, $http, jwtHelper, $routeParams, scaMessage, serverconf) {
+app.controller('RegisterController', function($scope, $route, toaster, $http, jwtHelper, $routeParams, scaMessage) {
     $scope.$parent.active_menu = 'complete';
     scaMessage.show(toaster);
     var jwt = localStorage.getItem($scope.appconf.jwt_id);
     var user = jwtHelper.decodeToken(jwt);
-    serverconf.then(function(_serverconf) { $scope.serverconf = _serverconf; });
     
     //stores form
     $scope.form = {};
@@ -218,7 +217,7 @@ app.controller('RegisterController', function($scope, $route, toaster, $http, jw
 */
 
 app.controller('AccountController', 
-function($scope, $route, toaster, $http, serverconf, jwtHelper, scaMessage) {
+function($scope, $route, toaster, $http, jwtHelper, scaMessage) {
     $scope.$parent.active_menu = 'user';
     $scope.user = null;
     $scope.form_password = {};
@@ -229,10 +228,8 @@ function($scope, $route, toaster, $http, serverconf, jwtHelper, scaMessage) {
     $scope.user = user;
     $scope.debug = {jwt: user};
 
-    serverconf.then(function(_serverconf) { $scope.serverconf = _serverconf; });
     $http.get($scope.appconf.api+'/me').then(function(res) { 
         $scope.user = res.data; 
-        console.dir(info);
     }, function(res) {
         if(res.data && res.data.message) toaster.error(res.data.message);
         else toaster.error(res.statusText);
@@ -341,7 +338,7 @@ app.directive('passwordStrength', function() {
     };
 });
 
-app.controller('AdminUsersController', function($scope, $route, toaster, $http, serverconf, jwtHelper, scaMessage, scaAdminMenu, $location) {
+app.controller('AdminUsersController', function($scope, $route, toaster, $http, jwtHelper, scaMessage, scaAdminMenu, $location) {
     scaMessage.show(toaster);
     $scope.$parent.active_menu = 'admin';
     $scope.admin_menu = scaAdminMenu;
@@ -359,11 +356,10 @@ app.controller('AdminUsersController', function($scope, $route, toaster, $http, 
 });
 
 app.controller('AdminUserController', 
-function($scope, appconf, $route, toaster, $http, serverconf, jwtHelper, scaMessage, scaAdminMenu, $routeParams, $location, $window) {
+function($scope, appconf, $route, toaster, $http, jwtHelper, scaMessage, scaAdminMenu, $routeParams, $location, $window) {
     scaMessage.show(toaster);
     $scope.$parent.active_menu = 'admin';
     $scope.admin_menu = scaAdminMenu;
-    serverconf.then(function(_serverconf) { $scope.serverconf = _serverconf; });
 
     $http.get(appconf.api+'/user/'+$routeParams.id)
     .then(function(res) { 
@@ -394,7 +390,7 @@ function($scope, appconf, $route, toaster, $http, serverconf, jwtHelper, scaMess
     }
 });
 
-app.controller('GroupsController', function($scope, $route, toaster, $http, serverconf, jwtHelper, scaMessage, profiles, $location) {
+app.controller('GroupsController', function($scope, $route, toaster, $http, jwtHelper, scaMessage, profiles, $location) {
     $scope.$parent.active_menu = 'groups';
     scaMessage.show(toaster);
 
@@ -413,10 +409,9 @@ app.controller('GroupsController', function($scope, $route, toaster, $http, serv
     }
 });
 
-app.controller('GroupController', function($scope, $route, toaster, $http, serverconf, jwtHelper, scaMessage, $routeParams, $location, profiles) {
+app.controller('GroupController', function($scope, $route, toaster, $http, jwtHelper, scaMessage, $routeParams, $location, profiles) {
     scaMessage.show(toaster);
     $scope.$parent.active_menu = 'groups';
-    serverconf.then(function(_serverconf) { $scope.serverconf = _serverconf; });
     var jwt = localStorage.getItem($scope.appconf.jwt_id);
     var user = jwtHelper.decodeToken(jwt);
     $scope.group = {};
@@ -509,12 +504,12 @@ app.controller('GroupController', function($scope, $route, toaster, $http, serve
     }
 });
 
-app.controller('SendEmailConfirmationController', function($scope, $route, toaster, $http, serverconf, jwtHelper, scaMessage, scaAdminMenu, $routeParams, $location) {
+app.controller('SendEmailConfirmationController', function($scope, $route, toaster, $http, jwtHelper, scaMessage, scaAdminMenu, $routeParams, $location) {
     scaMessage.show(toaster);
     $scope.$parent.active_menu = 'user';
 });
 
-app.controller('ConfirmEmailController', function($scope, $route, toaster, $http, serverconf, jwtHelper, scaMessage, scaAdminMenu, $routeParams, $location) {
+app.controller('ConfirmEmailController', function($scope, $route, toaster, $http, jwtHelper, scaMessage, scaAdminMenu, $routeParams, $location) {
     scaMessage.show(toaster);
     $scope.$parent.active_menu = 'user';
     $scope.sub = $routeParams.sub;
