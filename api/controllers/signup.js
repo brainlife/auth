@@ -28,16 +28,6 @@ function registerUser(body, done) {
             user.addMemberGroups(u.gids, function() {
                 done(user);    
             });
-            /*
-            async.forEach(u.gids, function(gid, next) {
-                db.Group.findById(gid).then(function(group) {
-                    logger.info("adding new user to group "+gid);
-                    group.addMember(user.id).then(next);
-                });
-            }, function(err) {
-                done(user);    
-            });
-            */
         });
     });
 }

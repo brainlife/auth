@@ -31,14 +31,6 @@ app.directive('validjson', function () {
   return {
     require: 'ngModel',
     link: function (scope, elm, attrs, ctrl) {
-        /*
-        scope.$watch(elm[0].value, function (errorMsg) {
-            console.log("validating");
-            console.log(elm[0].value);
-            elm[0].setCustomValidity("invalid for whatever");
-            ctl.$setValidity('validjson', false);
-        });
-        */
         ctrl.$parsers.unshift(function(value) {
             var valid = true;
             try {
@@ -64,88 +56,6 @@ app.factory('profiles', ['appconf', '$http', 'jwtHelper', 'toaster', function(ap
         else toaster.error(res.statusText);
     });
 }]);
-
-/*replaced by scaRedirector
-//redirecto to whevever user needs to go after auccessful login
-app.factory('redirector', ['$location', '$routeParams', 'appconf', 
-function($location, $routeParams, appconf) {
-    if(!localStorage.getItem('post_auth_redirect')) {
-        if($routeParams.redirect) {
-            localStorage.setItem('post_auth_redirect', $routeParams.redirect);
-        } else if(document.referrer) {
-            console.log("referrer set to "+document.referrer);
-            localStorage.setItem('post_auth_redirect', document.referrer);
-        } else {
-            //last resort.. just forward some preconfigured location
-            localStorage.setItem('post_auth_redirect', appconf.default_redirect_url);
-        }
-    }
-
-    return {
-        //redirect to specified url
-        //returns true if redirecting out of the page
-        go: function() {
-            var redirect = localStorage.getItem('post_auth_redirect');
-            localStorage.removeItem('post_auth_redirect');
-            window.location = redirect;
-
-            //if url starts with #, then it's internal redirect
-            if(redirect[0] == "#") return false;
-            return true;
-        }
-    }
-}]);
-*/
-
-/*
-app.factory('cookie2toaster', ['$cookies', 'toaster', function($cookies, toaster) {
-    //sometime we get error messages via cookie (like iucas registration failurer)
-    var messages = $cookies.get("messages");
-    if(messages) {
-        JSON.parse(messages).forEach(function(message) {
-            if(message.type == "error") {
-                //make it sticky (show close button and no-timeout)
-                toaster.pop({
-                    type: message.type, 
-                    title: message.title, 
-                    body: message.message, 
-                    showCloseButton: true, timeout: 0
-                });
-            } else {
-                toaster.pop(message.type, message.title, message.message);
-            }
-        });
-        //why path="/"? Without it, it tries to remove cookie under just /auth path and not find messges
-        //that comes from other apps. (make sure to set cookie under "/" on your other apps)
-        $cookies.remove("messages", {path: "/"}); 
-    }
-    return null;
-}]);
-*/
-
-/*
-//use this service if you want to keep renewing jwt
-app.factory('jwt_refresher', ['appconf', '$http', 'toaster', 'jwtHelper', function(appconf, $http, toaster, jwtHelper) {
-    var refresher = setInterval(function() {
-        var jwt = localStorage.getItem('jwt');
-        if(jwt) {
-            console.log("renewing jwt");
-            $http.get(appconf.api+'/refresh')
-            .success(function(data, status, headers, config) {
-                localStorage.setItem(appconf.jwt_id, data.jwt);
-                
-                //debug
-                var token = jwtHelper.decodeToken(data.jwt);
-                console.log(token);
-            })
-            .error(function(data, status, headers, config) {
-                toaster.error(data.message);
-            }); 
-        }
-    }, 1000*60); //every minutes?
-    return refresher;
-}]);
-*/
 
 //show loading bar at the top
 app.config(['cfpLoadingBarProvider', function(cfpLoadingBarProvider) {
@@ -174,13 +84,6 @@ app.config(['$routeProvider', 'appconf', function($routeProvider, appconf) {
         template: '',
         controller: 'SignoutController'
     })
-    /*
-    .when('/register', {
-        templateUrl: 't/register.html',
-        controller: 'RegisterController',
-        requiresLogin: true
-    })
-    */
     .when('/forgotpass', {
         templateUrl: 't/forgotpass.html',
         controller: 'ForgotpassController'
@@ -235,7 +138,7 @@ app.config(['$routeProvider', 'appconf', function($routeProvider, appconf) {
             var jwt = localStorage.getItem(appconf.jwt_id);
             if(jwt == null || jwtHelper.isTokenExpired(jwt)) {
                 toaster.warning("Please singin first");
-                sessionStorage.setItem('auth_redirect', '#'+next.originalPath);
+                sessionStorage.setItem('auth_redirect', '#!'+next.originalPath);
                 $location.path("/signin");
                 event.preventDefault();
             }
@@ -299,26 +202,8 @@ function(appconf, $http, jwtHelper, $sce, scaMessage, toaster) {
         }
     }
 
-    /*
-    if(menu.user) {
-        //$http.get(appconf.profile_api+'/public/'+menu.user.sub).then(function(res) {
-        $http.get(appconf.api+'/me/').then(function(res) {
-            //console.dir(res.data);
-            menu._profile = res.data;
-        });
-    }
-    */
     return menu;
 }]);
-
-/*
-app.filter('pullcn', function() {
-    return function(input) {
-        var pos = input.indexOf("/CN=");
-        return input.substr(pos);
-    };
-});
-*/
 
 //http://plnkr.co/edit/juqoNOt1z1Gb349XabQ2?p=preview
 /**

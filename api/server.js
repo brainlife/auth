@@ -56,7 +56,6 @@ process.on('uncaughtException', function (err) {
     //TODO report this to somewhere!
     logger.error((new Date).toUTCString() + ' uncaughtException:', err.message)
     logger.error(err.stack)
-    //process.exit(1); //some people think we should do this.. but I am not so sure..
 })
 
 exports.app = app;

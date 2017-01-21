@@ -107,7 +107,6 @@ app.controller('SignoutController', function($scope, $route, toaster, $http, jwt
     localStorage.removeItem($scope.appconf.jwt_id);
     toaster.success("Good Bye!");
     menu.user = null; //scaMenubar watches for this and re-init
-    //window.location = "#/signin";
     $location.path("/signin");
 });
 
@@ -357,7 +356,6 @@ app.controller('AdminUsersController', function($scope, $route, toaster, $http, 
         else toaster.error(res.statusText);
     });
     $scope.edit = function(id) {
-        //window.location = "#/admin/user/"+id;
         $location.path("/admin/user/"+id);
     }
 });
@@ -389,7 +387,6 @@ function($scope, appconf, $route, toaster, $http, serverconf, jwtHelper, scaMess
 
         $http.put(appconf.api+'/user/'+$routeParams.id, $scope.user)
         .then(function(res) { 
-            //window.location = "#/admin/users"
             $location.path("/admin/users");
             toaster.success(res.data.message);
         }, function(res) {
@@ -413,9 +410,7 @@ app.controller('GroupsController', function($scope, $route, toaster, $http, serv
             else toaster.error(res.statusText);
         });
     });
-    //$scope.admin_menu = scaAdminMenu;
     $scope.edit = function(id) {
-        //window.location = "#/group/"+id;
         $location.path("/group/"+id);
     }
 });
@@ -493,7 +488,6 @@ app.controller('GroupController', function($scope, $route, toaster, $http, serve
             //new
             $http.post($scope.appconf.api+'/group', body)
             .then(function(res) { 
-                //window.location = "#/groups"
                 $location.path("/groups");
                 toaster.success(res.data.message);
             }, function(res) {
@@ -504,7 +498,6 @@ app.controller('GroupController', function($scope, $route, toaster, $http, serve
             //update
             $http.put($scope.appconf.api+'/group/'+$routeParams.id, body)
             .then(function(res) { 
-                //window.location = "#/groups"
                 $location.path("/groups");
                 toaster.success(res.data.message);
             }, function(res) {
@@ -514,7 +507,6 @@ app.controller('GroupController', function($scope, $route, toaster, $http, serve
         }
     }
     $scope.cancel = function() {
-        //window.location = "#/groups";
         $location.path("/groups");
     }
 });
@@ -527,8 +519,6 @@ app.controller('SendEmailConfirmationController', function($scope, $route, toast
 app.controller('ConfirmEmailController', function($scope, $route, toaster, $http, serverconf, jwtHelper, scaMessage, scaAdminMenu, $routeParams, $location) {
     scaMessage.show(toaster);
     $scope.$parent.active_menu = 'user';
-    //$scope.admin_menu = scaAdminMenu;
-    //serverconf.then(function(_serverconf) { $scope.serverconf = _serverconf; });
 
     $scope.resend = function() {
         $http.post($scope.appconf.api+'/send_email_confirmation', {sub: $routeParams.sub})
@@ -540,9 +530,7 @@ app.controller('ConfirmEmailController', function($scope, $route, toaster, $http
         });
     }
 
-    //$scope.token = $routeParams.t;
     if($routeParams.t) {
-        //window.location = "#/";
         $location.path("/");
         $http.post($scope.appconf.api+'/confirm_email', {token: $routeParams.t})
         .then(function(res) { 

@@ -1,14 +1,10 @@
 
-//node
-var fs = require('fs');
+const fs = require('fs');
+const jwt = require('jsonwebtoken');
+const nodemailer = require('nodemailer');
+const uuid = require('node-uuid');
 
-//contrib
-var jwt = require('jsonwebtoken');
-var nodemailer = require('nodemailer');
-var uuid = require('node-uuid');
-
-//mine
-var config = require('./config');
+const config = require('./config');
 
 exports.createClaim = function(user, cb) {
     //load groups (using sequelize generated code)
@@ -48,7 +44,7 @@ exports.signJwt = function(claim) {
 }
 
 function do_send_email_confirmation(url, user, cb) {
-    var fullurl = url+"#/confirm_email?t="+user.email_confirmation_token+"&sub="+user.id;
+    var fullurl = url+"#!/confirm_email?t="+user.email_confirmation_token+"&sub="+user.id;
 
     var transporter = nodemailer.createTransport(); //use direct mx transport
     transporter.sendMail({
