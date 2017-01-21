@@ -254,14 +254,14 @@ function(appconf, $httpProvider, jwtInterceptorProvider) {
     $httpProvider.interceptors.push('jwtInterceptor');
 }]);
 
-app.factory('menu', ['appconf', '$http', 'jwtHelper', '$sce', 'scaMessage', 'scaMenu', 'toaster',
-function(appconf, $http, jwtHelper, $sce, scaMessage, scaMenu, toaster) {
+app.factory('menu', ['appconf', '$http', 'jwtHelper', '$sce', 'scaMessage', 'toaster',
+function(appconf, $http, jwtHelper, $sce, scaMessage, toaster) {
     var jwt = localStorage.getItem(appconf.jwt_id);
     var menu = {
         header: {
             //label: appconf.title,
         },
-        top: scaMenu,
+        //top: scaMenu,
         user: null, //to-be-loaded
         _profile: null, //to-be-loaded
     };
