@@ -66,11 +66,20 @@ router.post('/', function(req, res, next) {
                             var jwt = common.signJwt(claim);
                             if(config.email_confirmation) {
                                 common.send_email_confirmation(req.headers.referer||config.email_confirmation.url, user, function(err) {
-                                    if(err) return next(err);
-                                    res.json({code:'confirm_email', jwt: jwt, sub: user.id});
+                                    if(err) {
+                                        //if we fail to send email, we should unregister the user
+                                        user.destroy({force: true}).then(function() {
+                                            logger.error("removed newly registred record - email failurer");
+                                            res.status(500).json({message: "Failed to send confirmation email. Please make sure your email address is valid."});
+                                        });
+                                    } else {
+                                        res.json({path:'/confirm_email/'+user.id, message: "Confirmation Email has been sent. Please check your email inbox.", jwt: jwt});
+                                    }
                                 });
                             } else {
+                                //no need for email confrmation..
                                 res.json({jwt: jwt, sub: user.id});
+                                
                             }
                         });
                     });        

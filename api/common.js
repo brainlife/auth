@@ -44,7 +44,7 @@ exports.signJwt = function(claim) {
 }
 
 function do_send_email_confirmation(url, user, cb) {
-    var fullurl = url+"#!/confirm_email?t="+user.email_confirmation_token+"&sub="+user.id;
+    var fullurl = url+"#!/confirm_email/"+user.id+"?t="+user.email_confirmation_token;
 
     var transporter = nodemailer.createTransport(); //use direct mx transport
     transporter.sendMail({

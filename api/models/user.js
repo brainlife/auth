@@ -93,7 +93,7 @@ module.exports = function(sequelize, DataTypes) {
             check: function() {
                 if(!this.active) return {message: "Account is disabled.", code: "inactive"};
                 if(config.email_confirmation && this.email_confirmed !== true) {
-                    return {message: "Email is not confirmed yet.", code: "confirm_email", sub: this.id};
+                    return {message: "Email is not confirmed yet", path: "/confirm_email/"+this.id};
                 }
                 return null;
             }

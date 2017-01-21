@@ -27,6 +27,7 @@ app.directive('match', function () {
     }
   };
 });
+
 app.directive('validjson', function () {
   return {
     require: 'ngModel',
@@ -47,7 +48,7 @@ app.directive('validjson', function () {
   };
 });
 
-app.factory('profiles', ['appconf', '$http', 'jwtHelper', 'toaster', function(appconf, $http, jwtHelper, toaster) {
+app.factory('profiles', function(appconf, $http, jwtHelper, toaster) {
     return $http.get(appconf.api+'/profiles')
     .then(function(res) {
         return res.data;
@@ -55,7 +56,7 @@ app.factory('profiles', ['appconf', '$http', 'jwtHelper', 'toaster', function(ap
         if(res.data && res.data.message) toaster.error(res.data.message);
         else toaster.error(res.statusText);
     });
-}]);
+});
 
 //show loading bar at the top
 app.config(['cfpLoadingBarProvider', function(cfpLoadingBarProvider) {
@@ -121,7 +122,7 @@ app.config(['$routeProvider', 'appconf', function($routeProvider, appconf) {
         templateUrl: 't/inactive.html',
         //controller: 'AdminUserController',
     })
-    .when('/confirm_email', {
+    .when('/confirm_email/:sub?', {
         templateUrl: 't/confirm_email.html',
         controller: 'ConfirmEmailController',
     })
@@ -147,18 +148,16 @@ app.config(['$routeProvider', 'appconf', function($routeProvider, appconf) {
 }]);
 
 //configure httpProvider to send jwt unless skipAuthorization is set in config (not tested yet..)
-app.config(['appconf', '$httpProvider', 'jwtInterceptorProvider', 
-function(appconf, $httpProvider, jwtInterceptorProvider) {
+app.config(function(appconf, $httpProvider, jwtInterceptorProvider) {
     jwtInterceptorProvider.tokenGetter = function(jwtHelper, $http) {
         //don't send jwt for template requests
         //if (config.url.substr(config.url.length - 5) == '.html') return null;
         return localStorage.getItem(appconf.jwt_id);
     }
     $httpProvider.interceptors.push('jwtInterceptor');
-}]);
+});
 
-app.factory('menu', ['appconf', '$http', 'jwtHelper', '$sce', 'scaMessage', 'toaster',
-function(appconf, $http, jwtHelper, $sce, scaMessage, toaster) {
+app.factory('menu', function(appconf, $http, jwtHelper, $sce, toaster) {
     var jwt = localStorage.getItem(appconf.jwt_id);
     var menu = {
         header: {
@@ -203,7 +202,7 @@ function(appconf, $http, jwtHelper, $sce, scaMessage, toaster) {
     }
 
     return menu;
-}]);
+});
 
 //http://plnkr.co/edit/juqoNOt1z1Gb349XabQ2?p=preview
 /**

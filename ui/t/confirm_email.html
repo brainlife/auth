@@ -1,11 +1,12 @@
-<sca-menubar header="menu.header" menu="menu.top" active="active_menu" profile="menu._profile" user="menu.user"></sca-menubar>
 <div class="container">
     <div id="page-wrapper">
-        <h1 class="page-header">Email Confirmation Required</h1>
+        <h1 class="page-header">Email Confirmation</h1>
         <p>Please check your email inbox and follow the instruction found in the email.</p>
-        <!--<p>The email address associated with your account has not been confirmed yet.</p>-->
         <br>
-        <p><button type="button" class="btn btn-sm" ng-click="resend()">Resend Confirmation Email</button></p>
+        <p ng-if="sub">
+            Or ...
+            <button type="button" class="btn btn-sm" ng-click="resend()">Resend Confirmation Email</button>
+        </p>
     </div>
     <ng-include src="'t/footer.html'"></ng-include> <!--should this be part of view?-->
 </div>

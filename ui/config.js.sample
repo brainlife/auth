@@ -25,7 +25,8 @@ angular.module('app.config', [])
     shared_url: '../shared',
 
     //default location to redirect after successful login
-    default_redirect_url: '../profile', 
+    //default_redirect_url: '../profile', 
+    default_redirect_url: '#!/settings/account', 
 
     jwt_id: 'jwt',
     iucas_url: 'https://cas.iu.edu/cas/login',

@@ -27,6 +27,25 @@ function($scope, $route, toaster, $http, jwtHelper, $routeParams, $location, sca
         toaster.error($routeParams.msg);
     }
 
+    function handle_success(res) {
+        scaMessage.success(res.data.message || "Welcome back!");
+        localStorage.setItem($scope.appconf.jwt_id, res.data.jwt);
+        sessionStorage.removeItem('auth_redirect');
+        document.location = redirect;
+    }
+
+    function handle_error(res) {
+        var _handler = toaster.error;
+        if(res.data && res.data.path) {
+            //console.log("path requested "+res.data.path);
+            $location.path(res.data.path);
+            if(res.data.message) scaMessage.error(res.data.message);
+        } else {
+            if(res.data && res.data.message) toaster.error(res.data.message);
+            else toaster.error(res.statusText || "Oops.. unknown authentication error");
+        }
+    }
+
     //decide where to go after auth
     var redirect = sessionStorage.getItem('auth_redirect');
     //TODO - try if user sent us redirect url via query param?
@@ -35,23 +54,12 @@ function($scope, $route, toaster, $http, jwtHelper, $routeParams, $location, sca
     sessionStorage.setItem('auth_redirect', redirect); //save it for iucas login which needs this later
 
     $scope.userpass = {};
-
     $scope.submit = function() {
-        //ldap auth takes precedence
         var url = "";
+        //ldap auth takes precedence
         if($scope.serverconf.local) url = $scope.appconf.api+"/local/auth";
         if($scope.serverconf.ldap) url = $scope.appconf.api+"/ldap/auth";
-        $http.post(url, $scope.userpass).then(function(res) {
-            scaMessage.success(res.data.message);
-            localStorage.setItem($scope.appconf.jwt_id, res.data.jwt);
-            sessionStorage.removeItem('auth_redirect');
-            document.location = redirect;
-        }, function(res) {
-            if(res.data && res.data.message) toaster.error(res.data.message);
-            else toaster.error(res.statusText);
-            var hash = handle_auth_issues(res);
-            if(hash) document.location = hash;
-        }); 
+        $http.post(url, $scope.userpass).then(handle_success, handle_error);
     }
 
     $scope.begin_iucas = function() {
@@ -69,17 +77,7 @@ function($scope, $route, toaster, $http, jwtHelper, $routeParams, $location, sca
 
     $scope.begin_x509 = function() {
         $http.get($scope.appconf.x509api+'/x509/auth') //, {headers: null})
-        .then(function(res) {
-            scaMessage.success("Welcome back!");
-            localStorage.setItem($scope.appconf.jwt_id, res.data.jwt);
-            var redirect = sessionStorage.getItem('auth_redirect');
-            window.location = redirect; 
-        }, function(res) {
-            if(res.data && res.data.message) toaster.error(res.data.message);
-            else toaster.error(res.statusText);
-            var hash = handle_auth_issues(res);
-            if(hash) document.location = hash;
-        }); 
+        .then(handle_success, handle_error);
     }
 
     function getQueryVariable(variable) {
@@ -110,7 +108,7 @@ app.controller('SignoutController', function($scope, $route, toaster, $http, jwt
     $location.path("/signin");
 });
 
-app.controller('SignupController', function($scope, $route, toaster, $http, jwtHelper, $routeParams, scaMessage) {
+app.controller('SignupController', function($scope, $route, toaster, $http, jwtHelper, $routeParams, scaMessage, $location) {
     $scope.$parent.active_menu = 'signup';
     scaMessage.show(toaster);
     $scope.form = {};
@@ -131,12 +129,12 @@ app.controller('SignupController', function($scope, $route, toaster, $http, jwtH
                 fullname: $scope.form.fullname,
             })
             .then(function(_res) {
-                if(res.data.code) {
-                    //need a bit more work (like confirming email)
-                    var hash = handle_auth_issues(res);
-                    document.location = hash;
-                } else {
-                    scaMessage.success("Successfully signed up!");
+                if(res.data.message) scaMessage.success(res.data.message);
+                else scaMessage.success("Successfully signed up!");
+
+                //redirect to somewhere..
+                if(res.data.path) $location.path(res.data.path); //maybe .. email_confirmation
+                else {
                     sessionStorage.removeItem('auth_redirect');
                     document.location = redirect;
                 }
@@ -519,9 +517,10 @@ app.controller('SendEmailConfirmationController', function($scope, $route, toast
 app.controller('ConfirmEmailController', function($scope, $route, toaster, $http, serverconf, jwtHelper, scaMessage, scaAdminMenu, $routeParams, $location) {
     scaMessage.show(toaster);
     $scope.$parent.active_menu = 'user';
+    $scope.sub = $routeParams.sub;
 
     $scope.resend = function() {
-        $http.post($scope.appconf.api+'/send_email_confirmation', {sub: $routeParams.sub})
+        $http.post($scope.appconf.api+'/send_email_confirmation', {sub: $scope.sub})
         .then(function(res) { 
             toaster.success(res.data.message);
         }, function(res) {
@@ -530,11 +529,13 @@ app.controller('ConfirmEmailController', function($scope, $route, toaster, $http
         });
     }
 
+    //this page also handles the actual confirmation request back from the email
     if($routeParams.t) {
-        $location.path("/");
         $http.post($scope.appconf.api+'/confirm_email', {token: $routeParams.t})
         .then(function(res) { 
-            toaster.success(res.data.message);
+            console.log("email confirmation successfull");
+            scaMessage.success(res.data.message);
+            $location.path("/"); 
         }, function(res) {
             if(res.data && res.data.message) toaster.error(res.data.message);
             else toaster.error(res.statusText);

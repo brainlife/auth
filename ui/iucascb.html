@@ -34,7 +34,7 @@
     }]);
 
     app.run(['$http', 'appconf', '$cookies', 'scaMessage',
-    function($http, appconf, $cookies, scaMessage) {
+    function($http, appconf, $cookies, scaMessage, $location) {
         console.log("run iucascb:"+document.referrer);
         var casticket = getParameterByName('casticket');
         $http.get(appconf.api+'/iucas/verify?casticket='+casticket)
@@ -56,8 +56,9 @@
             } else {
                 scaMessage.error('Failed to login with IU CAS :(');
             }
-            var hash = handle_auth_issues(res);
-            document.location = hash?'./'+hash:'./';
+            var path = handle_auth_issues(res);
+            //document.location = path?'./#!'+hash:'./#1';
+            $location.path(path);
         }); 
     }]);
     </script>
