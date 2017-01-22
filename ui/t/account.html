@@ -12,7 +12,7 @@
             <h4 class="list-group-item-heading">Account Profile</h4>
         </li>
         <li class="list-group-item">
-            <form ng-submit="submit_profile();">
+            <form name="profile_form" ng-submit="submit_profile();">
                 <p class="text-muted">You will need to sign out / login again before your change to account profile takes effect.</p>
                 <div class="form-group">
                     <label>Username</label>
@@ -25,34 +25,34 @@
                     <input type="text" class="form-control" ng-model="user.email" disabled/>
                 </div>
                 <div class="form-group">
-                    <label>Full Name</label>
-                    <input type="text" class="form-control" ng-model="user.fullname"/>
+                    <label>Full Name *</label>
+                    <input type="text" class="form-control" ng-model="user.fullname" required/>
                 </div>
-                <input type="submit" class="btn" value="Update"/>
+                <input type="submit" class="btn btn-primary" value="Update" ng-if="profile_form.$dirty"/>
             </form>
         </li>
         <li class="list-group-item heading" ng-if="appconf.show.local">
             <h4 class="list-group-item-heading">Change Password</h4>
         </li>
         <li class="list-group-item" ng-if="appconf.show.local">
-            <form ng-submit="submit_password();">
+            <form name="password_form" ng-submit="submit_password();">
                 <p class="text-muted" ng-if="!user.password_hash">You have not set your password for this application.</p>
                 <div class="form-group" ng-if="user.password_hash">
                     <a class="pull-right" href="#/forgotpass">I forgot my password</a>
-                    <label>Current Password</label>
+                    <label>Current Password *</label>
                     <input type="password" class="form-control" ng-model="form_password.old" required/>
                 </div>
                 <div class="form-group">
-                    <label>New Password</label>
+                    <label>New Password</label *>
                     <input type="password" class="form-control" ng-model="form_password.new" required/>
                     <!-- see https://blogs.dropbox.com/tech/2012/04/zxcvbn-realistic-password-strength-estimation/ -->
                     <password-strength password="form_password.new" user="user" profile="menu._profile"></password-strength>
                 </div>
                 <div class="form-group">
-                    <label>Confirm New Password</label>
+                    <label>Confirm New Password *</label>
                     <input type="password" class="form-control" ng-model="form_password.confirm" match="form_password.confirm != form_password.new? 'Passwords don\'t match' : ''"/>
                 </div>
-                <input type="submit" class="btn" value="Update Password"/>
+                <input type="submit" class="btn btn-primary" ng-if="password_form.$dirty" value="Update Password"/>
             </form><!--profile form-->
         </li>
         <li class="list-group-item heading">

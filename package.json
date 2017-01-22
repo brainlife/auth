@@ -10,7 +10,7 @@
   },
   "dependencies": {
     "async": "^2.0.1",
-    "bcrypt": "^0.8.7",
+    "bcrypt": "^1.0.2",
     "body-parser": "^1.15.2",
     "clone": "^2.0.0",
     "cookie-parser": "^1.4.3",
@@ -27,7 +27,7 @@
     "passport-facebook": "^2.1.1",
     "passport-github": "^1.1.0",
     "passport-google-oauth20": "^1.0.0",
-    "passport-ldapauth": "^0.6.0",
+    "passport-ldapauth": "^1.0.0",
     "passport-local": "~1.0.0",
     "promise": "^7.0.4",
     "request": "^2.78.0",

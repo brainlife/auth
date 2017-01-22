@@ -31,6 +31,7 @@ angular.module('app.config', [])
 
     //show/hide various login options
     show: {
+        //local and ldap shouldn't be used at the same time
         local: true,
         ldap: false,
 
