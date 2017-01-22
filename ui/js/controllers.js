@@ -1,15 +1,5 @@
 'use strict';
 
-/*
-//just a service to load all users from auth service
-app.factory('serverconf', ['appconf', '$http', function(appconf, $http) {
-    return $http.get(appconf.api+'/config')
-    .then(function(res) {
-        return res.data;
-    });
-}]);
-*/
-
 app.controller('HeaderController', 
 function($scope, appconf, $route, toaster, $http, menu, scaSettingsMenu) {
     $scope.title = appconf.title;
@@ -94,21 +84,23 @@ function($scope, $route, toaster, $http, jwtHelper, $routeParams, $location, sca
 });
 
 app.controller('SuccessController', 
-function($scope, $route, toaster, $http, jwtHelper, $routeParams, $location, scaMessage, $sce) {
+function($scope, $route, $http, jwtHelper, $routeParams, $location, scaMessage, $sce) {
     scaMessage.success("Welcome back!");
     localStorage.setItem($scope.appconf.jwt_id, $routeParams.jwt);
     var redirect = sessionStorage.getItem('auth_redirect');
     window.location = redirect; 
 });
 
-app.controller('SignoutController', function($scope, $route, toaster, $http, jwtHelper, $routeParams, menu, $location) {
+app.controller('SignoutController', 
+function($scope, $route, $http, jwtHelper, $routeParams, menu, $location, scaMessage) {
+    scaMessage.success("Good Bye!");
     localStorage.removeItem($scope.appconf.jwt_id);
-    toaster.success("Good Bye!");
     menu.user = null; //scaMenubar watches for this and re-init
     $location.path("/signin");
 });
 
-app.controller('SignupController', function($scope, $route, toaster, $http, jwtHelper, $routeParams, scaMessage, $location) {
+app.controller('SignupController', 
+function($scope, $route, toaster, $http, jwtHelper, $routeParams, scaMessage, $location) {
     $scope.$parent.active_menu = 'signup';
     scaMessage.show(toaster);
     $scope.form = {};

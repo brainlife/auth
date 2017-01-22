@@ -129,8 +129,6 @@ app.config(['$routeProvider', 'appconf', function($routeProvider, appconf) {
     .otherwise({
         redirectTo: '/signin'
     });
-    
-    //console.dir($routeProvider);
 }]).run(['$rootScope', '$location', 'toaster', 'jwtHelper', 'appconf', function($rootScope, $location, toaster, jwtHelper, appconf) {
     $rootScope.$on("$routeChangeStart", function(event, next, current) {
         //console.log("route changed from "+current+" to :"+next);
