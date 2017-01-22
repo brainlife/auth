@@ -131,7 +131,7 @@
     "url": "/profile",
     "title": "Query auth profiles",
     "description": "<p>Query auth profiles</p>",
-    "name": "GetProfile",
+    "name": "Get_auth__public__profiles",
     "parameter": {
       "fields": {
         "Parameter": [
@@ -261,7 +261,7 @@
     "type": "post",
     "url": "/refresh",
     "title": "Refresh JWT Token.",
-    "description": "<p>JWT Token normally lasts for a few hours. Application should call this API periodically to get it refreshed before it expires.</p>",
+    "description": "<p>JWT Token normally lasts for a few hours. Application should call this API periodically to get it refreshed before it expires. You can also use this API to temporarily drop certain privileges you previously had to simulate user with less privileges, or make your token more secure by removing unnecessary privileges (set scopes parameters)</p>",
     "name": "Refresh",
     "group": "User",
     "header": {
@@ -273,6 +273,19 @@
             "optional": false,
             "field": "authorization",
             "description": "<p>A valid JWT token (Bearer:)</p>"
+          }
+        ]
+      }
+    },
+    "parameter": {
+      "fields": {
+        "Parameter": [
+          {
+            "group": "Parameter",
+            "type": "Object",
+            "optional": false,
+            "field": "scopes",
+            "description": "<p>Desired scopes to intersect (you can remove certain scopes)</p>"
           }
         ]
       }

@@ -1,27 +1,32 @@
 'use strict';
 
-//contrib
-var express = require('express');
-var router = express.Router();
-var passport = require('passport');
-var winston = require('winston');
-var jwt = require('express-jwt');
-var async = require('async');
+const express = require('express');
+const router = express.Router();
+const passport = require('passport');
+const winston = require('winston');
+const jwt = require('express-jwt');
+const async = require('async');
 
 //mine
-var config = require('../config');
-var logger = new winston.Logger(config.logger.winston);
-var common = require('../common');
-var db = require('../models');
+const config = require('../config');
+const logger = new winston.Logger(config.logger.winston);
+const common = require('../common');
+const db = require('../models');
 
 /**
  * @api {post} /refresh Refresh JWT Token.
- * @apiDescription JWT Token normally lasts for a few hours. Application should call this API periodically
- * to get it refreshed before it expires.
+ * @apiDescription 
+ *              JWT Token normally lasts for a few hours. Application should call this API periodically
+ *              to get it refreshed before it expires. 
+ *              You can also use this API to temporarily drop certain privileges you previously had to 
+ *              simulate user with less privileges, or make your token more secure by removing unnecessary
+ *              privileges (set scopes parameters)
+ *
  * @apiName Refresh
  * @apiGroup User
  *
- * @apiHeader {String} authorization A valid JWT token (Bearer:)
+ * @apiHeader {String} authorization    A valid JWT token (Bearer:)
+ * @apiParam {Object} scopes    Desired scopes to intersect (you can remove certain scopes)
  *
  * @apiSuccess {Object} jwt New JWT token
  */
@@ -30,6 +35,10 @@ router.post('/refresh', jwt({secret: config.auth.public_key}), function(req, res
         if(!user) return next("Couldn't find any user with sub:"+req.user.sub);
         var err = user.check();
         if(err) return next(err);
+
+        //intersect requested scopes
+        if(req.body.scopes) user.scopes = common.intersect_scopes(user.scoppes, req.body.scopes);
+
         common.createClaim(user, function(err, claim) {
             if(err) return next(err);
             var jwt = common.signJwt(claim);
