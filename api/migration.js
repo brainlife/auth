@@ -77,6 +77,15 @@ var migrations = [
             next();
         });
     },
+    function(qi, next) {
+        next();
+    },
+    function(qi, next) {
+        logger.info("adding password_reset_cookie");
+        qi.addColumn('Users', 'password_reset_cookie', {type: Sequelize.STRING}).then(function() {
+            next();
+        });
+    },
 ];
 
 exports.run = function() {

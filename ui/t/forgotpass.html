@@ -1,7 +1,36 @@
 <div class="container">
     <div id="page-wrapper">
         <h1 class="page-header">Reset Password</h1>
-        <p>Please contact the <a href="mailto:{{appconf.admin_email}}">administrator</a></p>
+
+        <form ng-submit="submit_email()" ng-if="state == 'init'">
+            <div class="form-group">
+                <p class="help-block">Please enter an email address to send password reset instruction.</p>
+                <input type="email" class="form-control" ng-model="form.email" required placeholder="Enter Your Email"/>
+            </div>
+            <input type="submit" class="btn btn-primary" value="Submit"/>
+        </form>
+
+        <p class="help-block" ng-if="state == 'pending'">Password reset instruction email has been sent. Please follow the instruction on your email.</p>
+
+        <form ng-submit="submit_reset()" ng-if="state == 'reset'">
+            <p class="help-block">Please enter new password</p>
+            <div class="form-group">
+                <label>Password</label>
+                <input type="password" class="form-control" ng-model="form.password" placeholder="Choose your password" required/>
+                <password-strength password="form.password" user="form"></password-strength>
+            </div>
+            <div class="form-group">
+                <label>Password (Confirm)</label>
+                <input type="password" class="form-control" 
+                    ng-model="form.password_confirm" 
+                    placeholder="Enter the same password" 
+                    match="form.password_confirm != form.password ? 'Passwords don\'t match' : ''"/>
+            </div>
+            <input type="submit" class="btn btn-primary" value="Submit"/>
+        </form>
+        <br>
+        <br>
+        <p>Please contact the <a href="mailto:{{appconf.admin_email}}">administrator</a> for assistance.</p>
     </div>
     <ng-include src="'t/footer.html'"></ng-include> <!--should this be part of view?-->
 </div>

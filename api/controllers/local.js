@@ -89,23 +89,52 @@ router.put('/setpass', jwt({secret: config.auth.public_key}), function(req, res,
     });
 });
 
-//TODO untested
-//reset password (with a valid reset token) ?token=123
-router.put('/resetpass', function(req, res, next) {
-    var token = req.body.token;
-    var password = req.body.password;
-    if(!token || !password) return next("missing parameters");
-    db.User.findOne({where: {password_reset_token: token}}).then(function(user) {
-        if(user) {
-            user.setPassword(req.body.password, function(err) {
+//(post) will initiate password reset
+router.post('/resetpass', function(req, res, next) {
+    if(req.body.email)  {
+        //initiate password reset
+        var email = req.body.email;
+        db.User.findOne({where: {email: email}}).then(function(user) {
+            if(!user) return res.status(404).json({message: "No such email registered"});
+            //we need 2 tokens - 1 to confirm user, and 1 to match the browser (cookie)
+            user.password_reset_token = Math.random().toString(36).substr(2);
+            user.password_reset_cookie = Math.random().toString(36).substr(2);
+            common.send_resetemail(req.headers.referer||config.local.url, user, function(err) {
                 if(err) return next(err);
-                user.password_reset_token = null;
                 user.save().then(function() {
-                    res.json({status: "ok", message: "Password reset successfully."});
+                    res.cookie('password_reset', user.password_reset_cookie, {httpOnly: true, secure: true}); //should be default to session cookie
+                    res.json({message: "Reset token sent"});
                 });
             });
-        } else return next("couldn't find the token provided");
-    });
+
+        }).catch(next);
+    } else {
+        //fulfull password reset
+        var token = req.body.token;
+        var password = req.body.password;
+        var cookie = req.cookies.password_reset;
+        console.log("-------------------------------");
+        console.log(token);
+        console.log(cookie);
+        if(!token || !password) return next("missing parameters");
+        //TODO should I apply minimum password length?
+        db.User.findOne({where: {password_reset_token: token, password_reset_cookie: cookie}}).then(function(user) {
+            if(user) {
+                user.setPassword(password, function(err) {
+                    if(err) return next(err);
+                    user.password_reset_token = null;
+                    user.password_reset_cookie = null;
+                    user.save().then(function() {
+                        res.json({status: "ok", message: "Password reset successfully."});
+                    });
+                });
+            } else return next("couldn't find the token provided");
+        });
+    }
+});
+
+//reset password (with a valid reset token) ?token=123
+router.put('/resetpass', function(req, res, next) {
 });
 
 module.exports = router;

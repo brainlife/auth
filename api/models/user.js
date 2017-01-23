@@ -29,6 +29,8 @@ module.exports = function(sequelize, DataTypes) {
         //only used by local auth
         password_hash: Sequelize.STRING,
         password_reset_token: Sequelize.STRING, //used to reset password (via email?)
+        password_reset_cookie: Sequelize.STRING, //cookie token allowed to do reset
+        //password_reset_exp: Sequelize.DATE,
         
         ///////////////////////////////////////////////////////////////////////////////////////////
         //for 3rd party login (TODO - should I store all this in JSON fields?)
@@ -92,7 +94,7 @@ module.exports = function(sequelize, DataTypes) {
             },
             check: function() {
                 if(!this.active) return {message: "Account is disabled.", code: "inactive"};
-                if(config.email_confirmation && this.email_confirmed !== true) {
+                if(config.local.email_confirmation && this.email_confirmed !== true) {
                     return {message: "Email is not confirmed yet", path: "/confirm_email/"+this.id};
                 }
                 return null;

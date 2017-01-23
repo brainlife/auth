@@ -295,9 +295,41 @@ function($scope, $route, toaster, $http, jwtHelper, scaMessage) {
     }
 });
 
-app.controller('ForgotpassController', function($scope, $route, toaster, $http, jwtHelper, $routeParams, $location, scaMessage) {
-    $scope.$parent.active_menu = 'user'; //TODO - is there a better menu?
+//public interface
+app.controller('ForgotpassController', function($scope, $route, toaster, $http, scaMessage, $routeParams, $location) {
     scaMessage.show(toaster);
+    $scope.form = {};
+
+    if($routeParams.token) {
+        $scope.state = "reset";
+    } else {    
+        $scope.state = "init";
+    }
+
+    $scope.submit_email = function() {
+        $http.post($scope.appconf.api+'/local/resetpass', {email: $scope.form.email})
+        .then(function(res) { 
+            toaster.success(res.data.message);
+            $scope.state = "pending";
+        }, function(res) {
+            if(res.data && res.data.message) toaster.error(res.data.message);
+            else toaster.error(res.statusText);
+        });
+    }
+
+    $scope.submit_reset = function() {
+        $http.post($scope.appconf.api+'/local/resetpass', {token: $routeParams.token, password: $scope.form.password})
+        .then(function(res) { 
+            scaMessage.success(res.data.message);
+            $location.path("/");
+        }, function(res) {
+            //if(res.data && res.data.message) toaster.error(res.data.message);
+            //else toaster.error(res.statusText);
+            scaMessage.error("Failed to reset password");
+            $location.path("/forgotpass");
+        });
+    }
+
 });
 
 app.directive('passwordStrength', function() {
@@ -517,8 +549,8 @@ app.controller('ConfirmEmailController', function($scope, $route, toaster, $http
     }
 
     //this page also handles the actual confirmation request back from the email
-    if($routeParams.t) {
-        $http.post($scope.appconf.api+'/confirm_email', {token: $routeParams.t})
+    if($routeParams.token) {
+        $http.post($scope.appconf.api+'/confirm_email', {token: $routeParams.token})
         .then(function(res) { 
             console.log("email confirmation successfull");
             scaMessage.success(res.data.message);

@@ -64,8 +64,8 @@ router.post('/', function(req, res, next) {
                         common.createClaim(user, function(err, claim) {
                             if(err) return next(err);
                             var jwt = common.signJwt(claim);
-                            if(config.email_confirmation) {
-                                common.send_email_confirmation(req.headers.referer||config.email_confirmation.url, user, function(err) {
+                            if(config.local.email_confirmation) {
+                                common.send_email_confirmation(req.headers.referer||config.local.url, user, function(err) {
                                     if(err) {
                                         //if we fail to send email, we should unregister the user
                                         user.destroy({force: true}).then(function() {
@@ -79,7 +79,6 @@ router.post('/', function(req, res, next) {
                             } else {
                                 //no need for email confrmation..
                                 res.json({jwt: jwt, sub: user.id});
-                                
                             }
                         });
                     });        

@@ -44,13 +44,13 @@ exports.signJwt = function(claim) {
 }
 
 function do_send_email_confirmation(url, user, cb) {
-    var fullurl = url+"#!/confirm_email/"+user.id+"?t="+user.email_confirmation_token;
+    var fullurl = url+"#!/confirm_email/"+user.id+"/"+user.email_confirmation_token;
 
     var transporter = nodemailer.createTransport(); //use direct mx transport
     transporter.sendMail({
-        from: config.email_confirmation.from,
+        from: config.local.email_confirmation.from,
         to: user.email,
-        subject: config.email_confirmation.subject,
+        subject: config.local.email_confirmation.subject,
         text: "Hello!\n\nIf you has created a new SCA account, please visit following URL to confirm your email address.\n\n"+ fullurl,
         //html:  ejs.render(html_template, params),
     }, function(err, info) {
@@ -61,7 +61,6 @@ function do_send_email_confirmation(url, user, cb) {
 }
 
 exports.send_email_confirmation = function(url, user, cb) {
-    
     //need to generate token if it's not set yet
     if(!user.email_confirmation_token) {
         user.email_confirmation_token = uuid.v4();
@@ -71,6 +70,21 @@ exports.send_email_confirmation = function(url, user, cb) {
     } else {
         do_send_email_confirmation(url, user, cb);
     }
+}
+
+exports.send_resetemail = function(url, user, cb) {
+    var transporter = nodemailer.createTransport(); //use direct mx transport
+    var fullurl = url+"#!/forgotpass/"+user.password_reset_token;
+    transporter.sendMail({
+        from: config.local.email_passreset.from,
+        to: user.email,
+        subject: config.local.email_passreset.subject,
+        text: "Hello!\n\nIf you have requested to reset your password, please visit "+fullurl+" to reset your password (using the same browser you've used to send the request",
+    }, function(err, info) {
+        if(err) return cb(err);
+        if(info && info.response) logger.info("notification sent: "+info.response);
+        cb();
+    });
 }
 
 //probbably deprecated

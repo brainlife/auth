@@ -85,7 +85,7 @@ app.config(['$routeProvider', 'appconf', function($routeProvider, appconf) {
         template: '',
         controller: 'SignoutController'
     })
-    .when('/forgotpass', {
+    .when('/forgotpass/:token?', {
         templateUrl: 't/forgotpass.html',
         controller: 'ForgotpassController'
     })
@@ -122,7 +122,7 @@ app.config(['$routeProvider', 'appconf', function($routeProvider, appconf) {
         templateUrl: 't/inactive.html',
         //controller: 'AdminUserController',
     })
-    .when('/confirm_email/:sub?', {
+    .when('/confirm_email/:sub?/:token?', {
         templateUrl: 't/confirm_email.html',
         controller: 'ConfirmEmailController',
     })

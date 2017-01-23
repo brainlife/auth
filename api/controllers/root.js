@@ -56,7 +56,7 @@ router.post('/send_email_confirmation', function(req, res, next) {
         if(!req.headers.referer) return next("referer not set.. can't send confirmation");
         common.send_email_confirmation(req.headers.referer, user, function(err) {
             if(err) return next(err);
-            res.json({message: 'Sent confirmation email with subject: '+config.email_confirmation.subject});
+            res.json({message: 'Sent confirmation email with subject: '+config.local.email_confirmation.subject});
         });
     });
 });
