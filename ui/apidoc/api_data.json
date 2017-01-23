@@ -45,6 +45,64 @@
   },
   {
     "type": "post",
+    "url": "/local/resetpass",
+    "title": "Handle both resetpass request and fulfillment request",
+    "name": "LocalAuth",
+    "description": "<p>(mode 1) When this API is called with email field, it will create reset token associated with the owner of the email address and send reset request email with the token on the URL. While doing so, it sets httpOnly cookie with random string to be stored on user's browser. (mode 2) When user receives an email, click on the URL, it will open /forgotpass page which then provide user password reset form. The form then submits token, and new password along with the httpOnly cookie back to this API which will then do the actual resetting of the password, and clear the password_reset_token.</p>",
+    "group": "Local",
+    "parameter": {
+      "fields": {
+        "Parameter": [
+          {
+            "group": "Parameter",
+            "type": "String",
+            "optional": false,
+            "field": "email",
+            "description": "<p>(mode1) User's email address registere.</p>"
+          },
+          {
+            "group": "Parameter",
+            "type": "String",
+            "optional": false,
+            "field": "token",
+            "description": "<p>(mode2) User's password reset token</p>"
+          },
+          {
+            "group": "Parameter",
+            "type": "String",
+            "optional": false,
+            "field": "password",
+            "description": "<p>(mode2) User's new password</p>"
+          },
+          {
+            "group": "Parameter",
+            "type": "String",
+            "optional": false,
+            "field": "password_reset",
+            "description": "<p>(mode2) [via cookie] browser secret token to verify user is using the same browser to reset password</p>"
+          }
+        ]
+      }
+    },
+    "success": {
+      "fields": {
+        "Success 200": [
+          {
+            "group": "Success 200",
+            "type": "Object",
+            "optional": false,
+            "field": "message",
+            "description": "<p>Containing success message</p>"
+          }
+        ]
+      }
+    },
+    "version": "0.0.0",
+    "filename": "api/controllers/local.js",
+    "groupTitle": "Local"
+  },
+  {
+    "type": "post",
     "url": "/local/auth",
     "title": "Perform authentication",
     "name": "LocalAuth",
@@ -372,5 +430,33 @@
     "version": "0.0.0",
     "filename": "api/controllers/root.js",
     "groupTitle": "User"
+  },
+  {
+    "success": {
+      "fields": {
+        "Success 200": [
+          {
+            "group": "Success 200",
+            "optional": false,
+            "field": "varname1",
+            "description": "<p>No type.</p>"
+          },
+          {
+            "group": "Success 200",
+            "type": "String",
+            "optional": false,
+            "field": "varname2",
+            "description": "<p>With type.</p>"
+          }
+        ]
+      }
+    },
+    "type": "",
+    "url": "",
+    "version": "0.0.0",
+    "filename": "api/controllers/doc/main.js",
+    "group": "_usr_local_git_auth_api_controllers_doc_main_js",
+    "groupTitle": "_usr_local_git_auth_api_controllers_doc_main_js",
+    "name": ""
   }
 ]

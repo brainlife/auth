@@ -89,7 +89,26 @@ router.put('/setpass', jwt({secret: config.auth.public_key}), function(req, res,
     });
 });
 
-//(post) will initiate password reset
+/**
+ * @api {post} /local/resetpass Handle both resetpass request and fulfillment request
+ * @apiName LocalAuth
+ * @apiDescription  (mode 1)
+ *                  When this API is called with email field, it will create reset token associated with the owner of the email address 
+ *                  and send reset request email with the token on the URL. While doing so, it sets httpOnly cookie with random string
+ *                  to be stored on user's browser.
+ *                  (mode 2)
+ *                  When user receives an email, click on the URL, it will open /forgotpass page which then provide user password reset form.
+ *                  The form then submits token, and new password along with the httpOnly cookie back to this API which will then do the
+ *                  actual resetting of the password, and clear the password_reset_token.
+ * @apiGroup Local
+ *
+ * @apiParam {String} email     (mode1) User's email address registere.
+ * @apiParam {String} token     (mode2) User's password reset token
+ * @apiParam {String} password  (mode2) User's new password
+ * @apiParam {String} password_reset (mode2) [via cookie] browser secret token to verify user is using the same browser to reset password
+ *
+ * @apiSuccess {Object} message Containing success message
+ */
 router.post('/resetpass', function(req, res, next) {
     if(req.body.email)  {
         //initiate password reset
@@ -113,9 +132,6 @@ router.post('/resetpass', function(req, res, next) {
         var token = req.body.token;
         var password = req.body.password;
         var cookie = req.cookies.password_reset;
-        console.log("-------------------------------");
-        console.log(token);
-        console.log(cookie);
         if(!token || !password) return next("missing parameters");
         //TODO should I apply minimum password length?
         db.User.findOne({where: {password_reset_token: token, password_reset_cookie: cookie}}).then(function(user) {
