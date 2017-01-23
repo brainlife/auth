@@ -38,7 +38,7 @@
             <form name="password_form" ng-submit="submit_password();">
                 <p class="text-muted" ng-if="!user.password_hash">You have not set your password for this application.</p>
                 <div class="form-group" ng-if="user.password_hash">
-                    <a class="pull-right" href="#/forgotpass">I forgot my password</a>
+                    <a class="pull-right" href="#!/forgotpass">I forgot my password</a>
                     <label>Current Password *</label>
                     <input type="password" class="form-control" ng-model="form_password.old" required/>
                 </div>
