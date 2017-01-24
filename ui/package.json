@@ -24,7 +24,7 @@
     "bootswatch": "^3.3.7",
     "font-awesome": "^4.7.0",
     "jquery": "^3.1.1",
-    "sca-shared": "0.0.4",
+    "sca-shared": "0.0.5",
     "ui-select": "^0.19.6",
     "zxcvbn": "^4.4.1"
   }
