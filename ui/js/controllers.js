@@ -38,8 +38,7 @@ function($scope, $route, toaster, $http, jwtHelper, $routeParams, $location, sca
 
     //decide where to go after auth
     var redirect = sessionStorage.getItem('auth_redirect');
-    //TODO - try if user sent us redirect url via query param?
-    if(!redirect) redirect = document.referrer;
+    //if(!redirect) redirect = document.referrer; //TODO - try if user sent us redirect url via query param?
     if(!redirect) redirect = $scope.appconf.default_redirect_url;
     sessionStorage.setItem('auth_redirect', redirect); //save it for iucas login which needs this later
 
@@ -230,14 +229,18 @@ function($scope, $route, toaster, $http, jwtHelper, scaMessage) {
     $scope.submit_profile = function() {
         $http.put($scope.appconf.api+'/profile', $scope.user)
         .then(function(res, status, headers, config) {
-            toaster.success(res.data.message);
+            $scope.user = res.data; 
+            toaster.success("Profile updated successfully");
+            $scope.profile_form.$setPristine();
+            /*
             //TODO - why can't put request return updated object?
             $http.get($scope.appconf.api+'/me').then(function(res) { 
-                $scope.user = res.data; 
+                
             }, function(res) {
                 if(res.data && res.data.message) toaster.error(res.data.message);
                 else toaster.error(res.statusText);
             });
+            */
         }, function(res, status, headers, config) {
             if(res.data && res.data.message) toaster.error(res.data.message);
             else toaster.error(res.statusText);
@@ -248,6 +251,9 @@ function($scope, $route, toaster, $http, jwtHelper, scaMessage) {
         .then(function(res, status, headers, config) {
             toaster.success(res.data.message);
 
+            //somehow, I can't do this.. even though I can for profile_form..
+            //$scope.password_form.$setPristine();
+            
             //TODO - why can't put request return updated object?
             $http.get($scope.appconf.api+'/me').then(function(res) { 
                 $scope.user = res.data; 

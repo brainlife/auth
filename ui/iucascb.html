@@ -3,8 +3,20 @@
 <head>
     <meta charset="utf-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <link rel="stylesheet" href="node_modules/bootstrap/dist/css/bootstrap.min.css">
+    <link rel="stylesheet" href="node_modules/font-awesome/css/font-awesome.min.css">
 </head>
 <body ng-cloak>
+
+    <div class="container-fluid">
+        <h3>
+            <center>
+                Verifying your CAS token ... 
+                <i class="fa fa-cog fa-spin"></i> 
+            </center>
+        </h3>
+    </div>
+
     <script src="node_modules/angular/angular.min.js"></script>
     <script src="node_modules/angular-jwt/dist/angular-jwt.min.js"></script>
     <script src="node_modules/angular-cookies/angular-cookies.min.js"></script>
@@ -36,27 +48,21 @@
         $http.get(appconf.api+'/iucas/verify?casticket='+casticket)
         .then(function(res) {
             localStorage.setItem(appconf.jwt_id, res.data.jwt);
-            /*
-            if(res.data.registered) $location.path = '/complete';
-            else {
-                //this is called by both iucas login and iucas connect in account
-                //.. and there is noway to distinguish which
-                //scaMessage.success('Signed in successfully'); 
-                var redirect = sessionStorage.getItem('auth_redirect');
-                window.location = redirect; 
-            }
-            */
             var redirect = sessionStorage.getItem('auth_redirect');
+            sessionStorage.removeItem('auth_redirect');
+            scaMessage.success("Successfully logged in");
             console.log("done.. redirecting "+redirect);
             if(redirect) window.location = redirect; 
             else window.location = appconf.default_redirect_url;
         }, function(res) {
+            console.dir(res);
             if(res.data && res.data.path) {
-                $location.path(res.data.path);
+                window.location = "./#!"+res.data.path;
                 if(res.data.message) scaMessage.error(res.data.message);
             } else {        
                 if(res.data && res.data.message) scaMessage.error(res.data.message);
                 else scaMessage.error(res.statusText || "Oops.. unknown authentication error");
+                window.location = "./";
             }
         }); 
     });

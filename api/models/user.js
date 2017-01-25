@@ -56,8 +56,21 @@ module.exports = function(sequelize, DataTypes) {
                 var rec = this;
                 async.forEach(gids, function(gid, next) {
                     sequelize.models.Group.findById(gid).then(function(group) {
-                        logger.info("adding new user to group "+gid);
-                        group.addMember(rec.id).then(next);
+                        if(!group) {
+                            //need to register group first
+                            var group = sequelize.models.Group.build({
+                                name: "tbd",
+                                desc: "",
+                                active: true,
+                            });
+                            group.save().then(function() {
+                                logger.info("adding new user to group "+gid);
+                                group.addMember(rec.id).then(next);
+                            });
+                        } else {
+                            logger.info("adding new user to group "+gid);
+                            group.addMember(rec.id).then(next);
+                        }
                     });
                 }, cb);
             },

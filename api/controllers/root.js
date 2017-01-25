@@ -342,13 +342,14 @@ router.get('/group/:id', jwt({secret: config.auth.public_key}), function(req, re
  * @apiHeader {String} authorization A valid JWT token (Bearer:)
  * @apiParam {String} fullname User's fullname
  *
- * @apiSuccess {Object} jwt New JWT token
+ * @apiSuccess {Object} updated user object
  */
 router.put('/profile', jwt({secret: config.auth.public_key}), function(req, res, next) {
     db.User.findOne({where: {id: req.user.sub}}).then(function(user) {
         user.fullname = req.body.fullname;
         user.save().then(function() {
-            res.json({status: "ok", message: "Account profile updated successfully."});
+            //res.json({status: "ok", message: "Account profile updated successfully."});
+            res.json(user);
         });
     });
 });

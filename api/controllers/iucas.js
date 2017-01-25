@@ -24,7 +24,7 @@ function finduserByiucasid(id, cb) {
 function associate(jwt, uid, res, cb) {
     logger.info("associating user with iucas id:"+uid);
     db.User.findOne({where: {id: jwt.sub}}).then(function(user) {
-        if(!user) throw new Error("couldn't find user record with SCA sub:"+jwt.sub);
+        if(!user) return cb("couldn't find user record with SCA sub:"+jwt.sub);
         user.iucas = uid;
         user.save().then(function() {
             var messages = [{type: "success", /*title: "IUCAS ID Associated",*/ message: "We have associated IU ID:"+uid+" to your account"}];
