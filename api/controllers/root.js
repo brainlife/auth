@@ -80,7 +80,10 @@ router.post('/confirm_email', function(req, res, next) {
  * @apiSuccess {String} status 'ok' or 'failed'
  */
 router.get('/health', function(req, res) {
-    res.json({status: 'ok'});
+    res.json({
+        status: 'ok',
+        headers: req.headers, 
+    });
 });
 
 /*

@@ -29,7 +29,7 @@ default:
 }
 
 function listuser() {
-    db.User.findAll({attributes: ['id', 'username', 'email', 'active', 'scopes', 'times', 'createdAt'], raw: true})
+    db.User.findAll({/*attributes: ['id', 'username', 'email', 'active', 'scopes', 'times', 'createdAt'],*/ raw: true})
     .then(function(users) {
         console.dir(users);
     }); 

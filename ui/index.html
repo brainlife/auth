@@ -17,7 +17,7 @@
     <link rel="stylesheet" href="css/style.css">
 </head>
 <body ng-cloak>
-    <toaster-container toaster-options="{'position-class': 'toast-bottom-full-width'}"></toaster-container>
+    <toaster-container toaster-options="{'position-class': 'toast-bottom-full-width', 'close-button': {'toast-error': false}}"></toaster-container>
     <ng-view></ng-view><!-- <ng-view/> will cause route looping-->
 
     <script src="node_modules/jquery/dist/jquery.min.js"></script><!--bootstrap requires jquery-->
