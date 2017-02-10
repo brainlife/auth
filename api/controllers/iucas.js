@@ -89,6 +89,17 @@ function issue_jwt(user, cb) {
     });
 }
 
+/*
+router.get('/lock', function(req, res, next) {
+    logger.debug("trying to lock it up");
+    request('https://soichi7.ppa.iu.edu/api/profile/noret', function(err, _res, body) {
+        if(err) return next(err); 
+        logger.debug("out of request");
+        res.json(body);
+    });
+});
+*/
+
 router.get('/verify', jwt({secret: config.auth.public_key, credentialsRequired: false}), function(req, res, next) {
     var ticket = req.query.casticket;
 
@@ -96,7 +107,10 @@ router.get('/verify', jwt({secret: config.auth.public_key, credentialsRequired: 
     //var casurl = config.iucas.home_url;
     if(!req.headers.referer) return next("Referer not set in header..");
     casurl = req.headers.referer;
-    request('https://cas.iu.edu/cas/validate?cassvc=IU&casticket='+ticket+'&casurl='+casurl, function (err, response, body) {
+    request({
+        url: 'https://cas.iu.edu/cas/validate?cassvc=IU&casticket='+ticket+'&casurl='+casurl,
+        timeout: 1000*5, //long enough?
+    }, function (err, response, body) {
         if(err) return next(err);
         if (response.statusCode == 200) {
             var reslines = body.split("\n");

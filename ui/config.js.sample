@@ -27,7 +27,7 @@ angular.module('app.config', [])
     jwt_id: 'jwt',
     iucas_url: 'https://cas.iu.edu/cas/login',
 
-    jwt_whitelist: ['soichi7.ppa.iu.edu'],
+    jwt_whitelist: ['soichi7.ppa.iu.edu'], //list of domains to allow jwtInterceptor to send jwt to
 
     //show/hide various login options
     show: {

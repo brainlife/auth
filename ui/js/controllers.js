@@ -3,14 +3,13 @@
 app.controller('HeaderController', 
 function($scope, appconf, $route, toaster, $http, menu, scaSettingsMenu) {
     $scope.title = appconf.title;
-    //serverconf.then(function(_c) { $scope.serverconf = _c; });
     $scope.menu = menu;
     $scope.appconf = appconf;
     $scope.settings_menu = scaSettingsMenu;
 });
 
 app.controller('SigninController', 
-function($scope, $route, toaster, $http, jwtHelper, $routeParams, $location, scaMessage, $sce) {
+function($scope, $route, toaster, $http, jwtHelper, $routeParams, $location, scaMessage, $sce, $rootScope) {
     $scope.$parent.active_menu = 'signin';
     scaMessage.show(toaster);
 
@@ -22,7 +21,9 @@ function($scope, $route, toaster, $http, jwtHelper, $routeParams, $location, sca
         scaMessage.success(res.data.message || "Welcome back!");
         localStorage.setItem($scope.appconf.jwt_id, res.data.jwt);
         sessionStorage.removeItem('auth_redirect');
+        console.log("redirecting to "+redirect);
         document.location = redirect;
+        $rootScope.$broadcast("jwt_update", res.data.jwt)
     }
 
     function handle_error(res) {
@@ -83,9 +84,10 @@ function($scope, $route, toaster, $http, jwtHelper, $routeParams, $location, sca
 });
 
 app.controller('SuccessController', 
-function($scope, $route, $http, jwtHelper, $routeParams, $location, scaMessage, $sce) {
+function($scope, $route, $http, jwtHelper, $routeParams, $location, scaMessage, $sce, $rootScope) {
     scaMessage.success("Welcome back!");
     localStorage.setItem($scope.appconf.jwt_id, $routeParams.jwt);
+    $rootScope.$broadcast("jwt_update", $routeParams.jwt);
     var redirect = sessionStorage.getItem('auth_redirect');
     window.location = redirect; 
 });
@@ -99,7 +101,7 @@ function($scope, $route, $http, jwtHelper, $routeParams, menu, $location, scaMes
 });
 
 app.controller('SignupController', 
-function($scope, $route, toaster, $http, jwtHelper, $routeParams, scaMessage, $location) {
+function($scope, $route, toaster, $http, jwtHelper, $routeParams, scaMessage, $location, $rootScope) {
     $scope.$parent.active_menu = 'signup';
     scaMessage.show(toaster);
     $scope.form = {};
@@ -113,6 +115,7 @@ function($scope, $route, toaster, $http, jwtHelper, $routeParams, scaMessage, $l
         $http.post($scope.appconf.api+'/signup', $scope.form)
         .then(function(res, status, headers, config) {
             localStorage.setItem($scope.appconf.jwt_id, res.data.jwt);
+            $rootScope.$broadcast("jwt_update", res.data.jwt);
 
             //let's post auth profile for the first time
             $http.put($scope.appconf.api+'/profile/'/*+res.data.sub*/, {

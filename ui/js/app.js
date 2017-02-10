@@ -155,8 +155,7 @@ app.config(function(appconf, $httpProvider, jwtInterceptorProvider) {
     $httpProvider.interceptors.push('jwtInterceptor');
 });
 
-app.factory('menu', function(appconf, $http, jwtHelper, $sce, toaster) {
-    var jwt = localStorage.getItem(appconf.jwt_id);
+app.factory('menu', function(appconf, $http, jwtHelper, $sce, toaster, $rootScope) {
     var menu = {
         header: {
             //label: appconf.title,
@@ -167,9 +166,12 @@ app.factory('menu', function(appconf, $http, jwtHelper, $sce, toaster) {
     };
     if(appconf.icon_url) menu.header.icon = $sce.trustAsHtml("<img src=\""+appconf.icon_url+"\">");
     if(appconf.home_url) menu.header.url = appconf.home_url
-
+    
     var jwt = localStorage.getItem(appconf.jwt_id);
-    if(jwt) {
+    if(jwt) apply_jwt(jwt);
+    function apply_jwt(jwt) {
+        console.log("applying jwt");
+        console.log(jwt);
         try {
             var expdate = jwtHelper.getTokenExpirationDate(jwt);
         } catch (e) {
@@ -198,6 +200,9 @@ app.factory('menu', function(appconf, $http, jwtHelper, $sce, toaster) {
             }
         }
     }
+
+    //when jwt is updated, I need to re-apply it to update the menu
+    $rootScope.$on('jwt_update', function(event, jwt) {apply_jwt(jwt); });
 
     return menu;
 });
