@@ -1,42 +1,64 @@
 [![Build Status](https://travis-ci.org/soichih/sca-auth.svg?branch=master)](https://travis-ci.org/soichih/sca-auth)
 [![Coverage Status](https://coveralls.io/repos/github/soichih/sca-auth/badge.svg?branch=master)](https://coveralls.io/github/soichih/sca-auth?branch=master)
 
-SCA authentication module reponsible performing user authentication and token generation.
+Generic authentication service that allow user to authenticate against variety of identity provider and issue JWT token. This service also provides role administration that can be used for authorization and group administrations.
 
-All components who uses this auth module will need public key from this authentication module (via api or config?)
+Any services that then use authentication service's public key to validate the JWT token and do stateless authentication (and basic authorization through roles / groups)
 
-## Installation
+For DB backend, it can use PostgreSQL, MySQL, MariaDB, or SQLite.
 
-`npm install sca-auth`
+## Installation (pm2)
 
-## Test
-
-`npm test`
-
-# Token refresh
-
-JWT token's TTL is 3 days by default (configurable - see config/default_config.js). It's client's responsibility to refresh the token while it's still valid to prevent the JWT expiration by making POST request to /refresh
-
-Request
 ```
-POST https://test.com/api/auth/refresh
+git clone git@github.com:soichih/sca-auth.git sca-auth
+cd sca-auth && npm install
+cd ui && npm install
 ```
 
-Response
+You will need to create your configuration by copying `./api/config/index.js.sample` to `./api/config/index.js` (and edit the content)
+
+You also need to create your public and private keys.
+
 ```
-{"jwt": "....the jwt..."}
+openssl genrsa -out auth.key 2048
+chmod 600 auth.key
+openssl rsa -in auth.key -pubout > auth.pub
 ```
 
-In AngularJS, you can implement your jwtInterceptor so that if JWT token is expiring soon (like in an hour), it will make /refresh request before making the main request. You can see the sample code in ui/js/app.js
+## Installation (docker)
+
+Create configuration file first
+
+```
+mkdir /etc/sca-auth
+cd /etc/sca-auth
+wget https://raw.githubusercontent.com/soichih/sca-auth/master/api/config/index.js.sample
+cp index.js.sample index.js
+```
+And edit index.js. You need to point various paths to the right place. Just contact me if you aren't sure.
+
+You also need to create public / prviate keys (see above for `openssl genrsa`)
+
+Then, create sca-auth container..
+
+```
+docker run \
+    --restart=always \
+    --name sca-auth \
+    -v /etc/sca-auth:/app/api/config \
+    -v /usr/local/data/auth:/db \
+    -d soichih/sca-auth
+```
+
+You need to expose your container's port 80 (for UI) and 8080 (for API) directly, or via web proxy like nginx. Please feel free to contact me if you aren't sure how to do that.
+
+# APIDOC
+
+Once you have your UI up, you can view the API doc at `/apidoc` sub directory. Or you can see our hosted version at `https://sca.iu.edu/auth/apidoc/`
 
 # TODO
 
-Implement #/forgotpass
-Fix: trying to access https://soichi7.ppa.iu.edu/auth/#/settings without first login, forced to login, then jump back to /settings, it goes to https://soichi7.ppa.iu.edu/settings instead.
-
 If a user has multiple account, trying to associate with same IUCAS account ends up with basically logging in as the user account that's already associated with the IU CAS account.
-
-Don't forward jwt to pages under domain that's not configured to do so (by default, it should limit to the same-origin domain name)
 
 iucas/register_newuser. If the uid is already registered, instead of veto-ing, forward user to a special login page and once logged in successfully, associate the IUCAS IU to the user account
 
