@@ -1,7 +1,7 @@
 [![Build Status](https://travis-ci.org/soichih/sca-auth.svg?branch=master)](https://travis-ci.org/soichih/sca-auth)
 [![Coverage Status](https://coveralls.io/repos/github/soichih/sca-auth/badge.svg?branch=master)](https://coveralls.io/github/soichih/sca-auth?branch=master)
 
-Generic authentication service that allow user to authenticate against variety of identity provider and issue JWT token. This service also provides role administration that can be used for authorization and group administrations.
+Generic authentication service that allows user to authenticate against variety of identity providers and issue JWT token. This service also provides role administration that can be used for authorization and group administrations.
 
 Any services that then use authentication service's public key to validate the JWT token and do stateless authentication (and basic authorization through roles / groups)
 

@@ -23,7 +23,8 @@ case "modscope": modscope(); break;
 case "listuser": listuser(); break;
 case "issue": issue(); break;
 case "setpass": setpass(); break;
-case "newuser": newuser(); break;
+case "useradd": useradd(); break;
+case "userdel": userdel(); break;
 default:
     console.log(fs.readFileSync(__dirname+"/usage.txt", {encoding: "utf8"})); 
 }
@@ -80,8 +81,8 @@ function issue() {
 }
 
 function modscope() {
-    if(!argv.username) {
-        logger.error("please specify --username <username> --set/add/del '{{common: [\"user\", \"admin\"]}}'");
+    if(!argv.username && !argv.id) {
+        logger.error("please specify --username <username> (or --id <userid>) --set/add/del '{{common: [\"user\", \"admin\"]}}'");
         process.exit(1);
     }
 
@@ -113,8 +114,12 @@ function modscope() {
         return base;
     }
 
-    db.User.findOne({where: {"username": argv.username}})
-    .then(function(user) {
+    db.User.findOne({where: { 
+        $or: [
+            {username: argv.username}, 
+            {id: argv.id}, 
+        ]} 
+    }).then(function(user) {
         if(!user) return logger.error("can't find user:"+argv.username);
         if(argv.set) {
             user.scopes = JSON.parse(argv.set);
@@ -134,8 +139,8 @@ function modscope() {
 }
 
 function setpass() {
-    if(!argv.username) {
-        logger.error("please specify --username <username>");
+    if(!argv.username && !argv.id) {
+        logger.error("please specify --username <username> or --id <userid>");
         process.exit(1);
     }
     if(!argv.password) {
@@ -143,8 +148,12 @@ function setpass() {
         process.exit(1);
     }
 
-    db.User.findOne({where: {"username": argv.username}})
-    .then(function(user) {
+    db.User.findOne({where: { 
+        $or: [
+            {username: argv.username}, 
+            {id: argv.id}, 
+        ]} 
+    }).then(function(user) {
         if(!user) return logger.error("can't find user:"+argv.username);
         user.setPassword(argv.password, function(err) {
             if(err) throw err;
@@ -157,7 +166,7 @@ function setpass() {
     })
 }
 
-function newuser() {
+function useradd() {
     if(!argv.username) {
         logger.error("please specify --username <username>");
         process.exit(1);
@@ -171,13 +180,39 @@ function newuser() {
         process.exit(1);
     }
 
-    db.User.create({
-        username: argv.username,
-        fullname: argv.fullname,
-        email: argv.email,
-        email_confirmed: true,
-    }).then(function(_user) {
+    var user = db.User.build(
+        //extend from default
+        Object.assign({
+            username: argv.username,
+            fullname: argv.fullname,
+            email: argv.email,
+            email_confirmed: true,
+        }, config.auth.default)
+    );
+    user.save().then(function(_user) {
         if(!_user) return logger.error("couldn't register new user");
-        logger.info("successfully created a user - now you might want to reset password / setscope");
+        logger.info("successfully created a user");
+        if(argv.password) setpass();
+        else logger.info("you might want to reset password / setscope");
     });
 }
+
+function userdel() {
+    if(!argv.username && !argv.id) {
+        logger.error("please specify --username <username> or --id <userid>");
+        process.exit(1);
+    }
+
+    //TODO - does this cascade to group?
+    db.User.destroy({
+        where: { $or: [
+            {username: argv.username}, 
+            {id: argv.id}, 
+        ]} 
+    }).then(function(count) {
+        if(count == 1) logger.info("successfully removed user");
+        else logger.info("failed to remove user - maybe doesn't exist?")
+    });
+}
+
+

@@ -4,16 +4,19 @@ Usage:
 ./auth.js listuser 
 
 * register new user
-./auth.js newuser --username hayashis --fullname "Soichi Hayashi" --email "hayashis@iu.edu"
+./auth.js useradd --username hayashis --fullname "Soichi Hayashi" --email "hayashis@iu.edu" [--password "password4it"]
 
 * Issue new JWT token
 ./auth.js issue --scopes '{ "sca": ["user"] }' --sub 'test_service' [--out test.jwt] [--key test.key]
 
 * Reset password
-./auth.js setpass --username hayashis --password "password#123"
+./auth.js setpass --username hayashis [or --id 123] --password "password#123"
 
 * Modify (set/add/del) user scopes
-./auth.js modscope --username hayashis --set '{"common": ["user", "admin"]}'
-./auth.js modscope --username hayashis --add '{"common": ["user", "admin"]}'
-./auth.js modscope --username hayashis --del '{"common": ["user", "admin"]}'
+./auth.js modscope --username hayashis [or --id 123] --set '{"common": ["user", "admin"]}'
+./auth.js modscope --username hayashis [or --id 123] --add '{"common": ["user", "admin"]}'
+./auth.js modscope --username hayashis [or --id 123] --del '{"common": ["user", "admin"]}'
+
+* remove user
+./auth.js userdel --username hayashis [or --id 123]
 
