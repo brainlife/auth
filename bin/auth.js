@@ -37,7 +37,7 @@ function listuser() {
 }
 
 function issue() {
-    if(!argv.scopes || !argv.sub) {
+    if(!argv.scopes || argv.sub === undefined) {
         logger.error("./auth.js issue --scopes '{common: [\"user\"]}' --sub 'my_service' [--out token.jwt] [--key test.key]");
         process.exit(1);
     }
