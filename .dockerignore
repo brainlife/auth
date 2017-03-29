@@ -7,3 +7,4 @@ api/config
 ui/config.js
 docker/config
 docker/db
+node_modules

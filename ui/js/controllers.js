@@ -61,7 +61,6 @@ function($scope, $route, toaster, $http, jwtHelper, $routeParams, $location, sca
     }
 
     $scope.begin = function(type) {
-        //need to redirect - so that user can interact with github
         window.location.href = "/api/auth/"+type+"/signin"; 
     }
 

@@ -41,6 +41,9 @@ module.exports = function(sequelize, DataTypes) {
         facebook: Sequelize.STRING,
         x509dns: JsonField(sequelize, 'User', 'x509dns'),
 
+        //oauth2: Sequelize.STRING,
+        oidc_subs: JsonField(sequelize, 'User', 'oidc_subs'), //openid connect subs
+
         ///////////////////////////////////////////////////////////////////////////////////////////
         //
         times: JsonField(sequelize, 'User', 'times'),

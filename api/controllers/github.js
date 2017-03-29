@@ -77,6 +77,7 @@ function issue_jwt(user, cb) {
 
 //normal signin
 router.get('/signin', passport.authenticate('github'));
+
 //callback that handles both normal and association(if cookies.associate_jwt is set and valid)
 router.get('/callback', jwt({
     secret: config.auth.public_key,
@@ -109,7 +110,7 @@ router.get('/callback', jwt({
             });
         } else {
             if(!user) {
-                return res.redirect('/auth/#!/signin?msg='+"Your github account is not registered to SCA yet. Please login using your username/password first, then associate your github account inside account settings.");
+                return res.redirect('/auth/#!/signin?msg='+"Your github account is not yet registered. Please login using your username/password first, then associate your github account inside account settings.");
             }
             common.createClaim(user, function(err, claim) {
                 if(err) return next(err);

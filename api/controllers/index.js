@@ -34,5 +34,9 @@ if(config.google) {
 if(config.facebook) {
     router.use('/facebook', require('./facebook'));
 }
+if(config.oidc) {
+    router.use('/oidc', require('./oidc'));
+    router.use('/oauth2', require('./oidc')); //remove this when I update the cilogon registration
+}
 
 module.exports = router;

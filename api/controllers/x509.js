@@ -15,8 +15,7 @@ var db = require('../models');
 
 function finduserByDN(dn, done) {
     db.User.findOne({where: {x509dns: {$like: "%\""+dn+"\"%"}}}).then(function(user) {
-        //if (!user) return done("Couldn't find registered DN:"+dn);
-        return done(null, user);
+        done(null, user);
     });
 }
 
@@ -83,7 +82,7 @@ router.get('/connect', jwt({secret: config.auth.public_key}), function(req, res,
                 var dns = user.get('x509dns');
                 if(!dns) dns = [];
                 if(!~dns.indexOf(dn)) dns.push(dn);
-                user.set('x509dns', dns);
+                //user.set('x509dns', dns);
                 user.save().then(function() {
                     res.json({status: "ok", message: "Successfully associated x509D DN:"+dn+" to your account", user: user}); 
                 });
@@ -109,7 +108,7 @@ router.put('/disconnect', jwt({secret: config.auth.public_key}), function(req, r
         var dns = user.get('x509dns');
         var pos = dns.indexOf(dn);
         if(~pos) dns.splice(pos, 1);
-        user.set('x509dns', dns);
+        //user.set('x509dns', dns);
         user.save().then(function() {
             res.json({message: "Successfully disconnected X509 DN:"+dn, user: user});
         });    

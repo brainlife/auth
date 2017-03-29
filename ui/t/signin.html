@@ -13,7 +13,7 @@ body {
             </button>
         </div>
         <div class="form-group" ng-if="appconf.show.google">
-            <button type="button" class="btn btn-danger btn-block" ng-click="begin('google')">
+            <button type="button" class="btn btn-success btn-block" ng-click="begin('google')">
                 <i class="fa fa-google" style="font-size: 150%"></i> Login with Google
             </button>
         </div>
@@ -30,6 +30,12 @@ body {
         <div class="form-group" ng-if="appconf.show.iucas">
             <button type="button" class="btn btn-danger btn-block" ng-click="begin_iucas()">
                 <img src="images/trident.png"/>&nbsp;&nbsp;&nbsp;Login with IU Account
+            </button>
+        </div>
+        <div class="form-group" ng-if="appconf.show.oidc">
+            <button type="button" class="btn btn-default btn-block" ng-click="begin('oidc')">
+                <img src="{{appconf.oidc_logo}}" width="20px"/>&nbsp;&nbsp;&nbsp;Login with 
+                {{appconf.oidc_label||'OpenID Connect'}}
             </button>
         </div>
         <div ng-if="appconf.show.local || appconf.show.ldap">

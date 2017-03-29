@@ -45,6 +45,50 @@
   },
   {
     "type": "post",
+    "url": "/local/auth",
+    "title": "Perform authentication",
+    "name": "LocalAuth",
+    "description": "<p>Perform authentication using username(or email) and SCA password get JWT token.</p>",
+    "group": "Local",
+    "parameter": {
+      "fields": {
+        "Parameter": [
+          {
+            "group": "Parameter",
+            "type": "String",
+            "optional": false,
+            "field": "username",
+            "description": "<p>Username or email address</p>"
+          },
+          {
+            "group": "Parameter",
+            "type": "String",
+            "optional": false,
+            "field": "password",
+            "description": "<p>SCA local Password</p>"
+          }
+        ]
+      }
+    },
+    "success": {
+      "fields": {
+        "Success 200": [
+          {
+            "group": "Success 200",
+            "type": "Object",
+            "optional": false,
+            "field": "jwt",
+            "description": "<p>JWT token</p>"
+          }
+        ]
+      }
+    },
+    "version": "0.0.0",
+    "filename": "api/controllers/local.js",
+    "groupTitle": "Local"
+  },
+  {
+    "type": "post",
     "url": "/local/resetpass",
     "title": "Handle both resetpass request and fulfillment request",
     "name": "LocalAuth",
@@ -93,50 +137,6 @@
             "optional": false,
             "field": "message",
             "description": "<p>Containing success message</p>"
-          }
-        ]
-      }
-    },
-    "version": "0.0.0",
-    "filename": "api/controllers/local.js",
-    "groupTitle": "Local"
-  },
-  {
-    "type": "post",
-    "url": "/local/auth",
-    "title": "Perform authentication",
-    "name": "LocalAuth",
-    "description": "<p>Perform authentication using username(or email) and SCA password get JWT token.</p>",
-    "group": "Local",
-    "parameter": {
-      "fields": {
-        "Parameter": [
-          {
-            "group": "Parameter",
-            "type": "String",
-            "optional": false,
-            "field": "username",
-            "description": "<p>Username or email address</p>"
-          },
-          {
-            "group": "Parameter",
-            "type": "String",
-            "optional": false,
-            "field": "password",
-            "description": "<p>SCA local Password</p>"
-          }
-        ]
-      }
-    },
-    "success": {
-      "fields": {
-        "Success 200": [
-          {
-            "group": "Success 200",
-            "type": "Object",
-            "optional": false,
-            "field": "jwt",
-            "description": "<p>JWT token</p>"
           }
         ]
       }
@@ -281,8 +281,8 @@
             "group": "Success 200",
             "type": "Object",
             "optional": false,
-            "field": "jwt",
-            "description": "<p>New JWT token</p>"
+            "field": "updated",
+            "description": "<p>user object</p>"
           }
         ]
       }
@@ -430,33 +430,5 @@
     "version": "0.0.0",
     "filename": "api/controllers/root.js",
     "groupTitle": "User"
-  },
-  {
-    "success": {
-      "fields": {
-        "Success 200": [
-          {
-            "group": "Success 200",
-            "optional": false,
-            "field": "varname1",
-            "description": "<p>No type.</p>"
-          },
-          {
-            "group": "Success 200",
-            "type": "String",
-            "optional": false,
-            "field": "varname2",
-            "description": "<p>With type.</p>"
-          }
-        ]
-      }
-    },
-    "type": "",
-    "url": "",
-    "version": "0.0.0",
-    "filename": "api/controllers/doc/main.js",
-    "group": "_usr_local_git_auth_api_controllers_doc_main_js",
-    "groupTitle": "_usr_local_git_auth_api_controllers_doc_main_js",
-    "name": ""
   }
 ]

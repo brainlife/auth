@@ -86,6 +86,15 @@ var migrations = [
             next();
         });
     },
+    function(qi, next) {
+        next();
+    },
+    function(qi, next) {
+        logger.info("adding oidc_subs field for user table");
+        qi.addColumn('Users', 'oidc_subs', {type: Sequelize.TEXT, defaultValue: '[]'}).then(function() {
+            next();
+        });
+    },
 ];
 
 exports.run = function() {
