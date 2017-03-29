@@ -3,7 +3,7 @@
 //contrib
 var Sequelize = require('sequelize');
 var JsonField = require('sequelize-json');
-var bcrypt = require('bcrypt');
+var bcrypt = require('bcryptjs');
 var winston = require('winston');
 var async = require('async');
 

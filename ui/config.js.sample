@@ -36,7 +36,7 @@ angular.module('app.config', [])
     show: {
         //local and ldap shouldn't be used at the same time
         local: true,
-        ldap: false,
+        //ldap: true,
 
         iucas: true,
         google: true,
