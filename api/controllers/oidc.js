@@ -30,6 +30,7 @@ passport.use(new OAuth2Strategy({
     request.get({url: config.oidc.userinfo_url, qs: {access_token: accessToken}, json: true},  function(err, _res, profile) {
         if(err) return cb(err); 
         //profile contains { sub: given_name: family_name email: }
+        console.dir(profile);
         db.User.findOne({where: {"oidc_subs": {$like: "%\""+profile.sub+"\"%"}}}).then(function(user) {
             cb(null, user, profile);
         });
@@ -37,6 +38,14 @@ passport.use(new OAuth2Strategy({
 }));
 
 router.get('/signin', passport.authenticate('oauth2'));
+
+function find_profile(profiles, sub) {
+    var idx = -1;
+    profiles.forEach(function(profile, x) {
+        if(profile.sub == sub) idx = x;
+    });
+    return idx;
+}
 
 //this handles both normal callback from incommon and account association (if cookies.associate_jwt is set)
 router.get('/callback', 
@@ -49,14 +58,14 @@ function(req, res, next) {
             return res.redirect('/auth/#!/signin?msg='+"Failed to authenticate oidc");
         }
         if(req.user) {
+            //logged in via associate_jwt..
             logger.info("handling oidc association");
             res.clearCookie('associate_jwt');
             db.User.findOne({where: {id: req.user.sub}}).then(function(user) {
                 if(!user) throw new Error("couldn't find user record with sub:"+req.user.sub);
                 var subs = user.get('oidc_subs');
                 if(!subs) subs = [];
-                if(!~subs.indexOf(profile.sub)) subs.push(profile.sub);
-                //user.set('oidc_subs', subs);
+                if(!~find_profile(subs, profile.sub)) subs.push(profile);
                 user.save().then(function() {
                     res.redirect('/auth/#!/settings/account');
                 });
@@ -100,9 +109,8 @@ router.put('/disconnect', jwt({secret: config.auth.public_key}), function(req, r
     }).then(function(user) {
         if(!user) res.status(401).end();
         var subs = user.get('oidc_subs');
-        var pos = subs.indexOf(sub);
-        if(~pos) subs.splice(sub, 1);
-        //user.set('oidc_subs', subs); //maybe not needed?
+        var pos = find_profile(subs, sub);
+        if(~pos) subs.splice(pos, 1);
         user.save().then(function() {
             res.json({message: "Successfully disconnected an oauth2 account", user: user});
         });    
