@@ -36,7 +36,6 @@ if(config.facebook) {
 }
 if(config.oidc) {
     router.use('/oidc', require('./oidc'));
-    router.use('/oauth2', require('./oidc')); //remove this when I update the cilogon registration
 }
 
 module.exports = router;
