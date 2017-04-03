@@ -1,6 +1,6 @@
 {
   "name": "sca-auth",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "main": "api/auth.js",
   "scripts": {
     "start": "node api/auth.js",
@@ -35,7 +35,8 @@
     "sequelize-json": "^2.1.2",
     "sqlite3": "^3.1.8",
     "underscore": "^1.8.3",
-    "winston": "^2.3.0"
+    "winston": "^2.3.0",
+    "xml2js": "^0.4.17"
   },
   "devDependencies": {
     "chai": "^3.5.0",

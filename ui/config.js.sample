@@ -15,7 +15,7 @@ angular.module('app.config', [])
     ldap_label: 'IU Username',
 
     oidc_logo: 'images/cilogon.png',
-    oidc_label: 'CILogon',
+    //oidc_label: 'CILogon',
 
     //URL for auth service API
     api: '../api/auth',
@@ -38,14 +38,14 @@ angular.module('app.config', [])
         local: true,
         //ldap: true,
 
-        iucas: true,
-        google: true,
-        git: true,
         x509: true,
+        google: true,
         github: true,
+        iucas: false,
         facebook: true,
 
-        oidc: true, //openid connect (for cilogon)
+        oidc: true, //cilogon openid-connect service
+        oidc_selector: false, //show idp selector
             
         signup: true,
     },

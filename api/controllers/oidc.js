@@ -8,6 +8,7 @@ var jwt = require('express-jwt');
 var clone = require('clone');
 var passport = require('passport');
 var OAuth2Strategy = require('passport-oauth2').Strategy;
+var xml2js = require('xml2js');
 
 //mine
 var config = require('../config');
@@ -15,6 +16,26 @@ var logger = new winston.Logger(config.logger.winston);
 
 var common = require('../common');
 var db = require('../models');
+
+//cache idp list
+/*
+1|sca-auth | [ { '$': { entityID: 'https://login.aaiedu.hr/edugain/saml2/idp/metadata.php' },
+1|sca-auth |     Organization_Name: [ 'AAI@EduHr - Croatian Research and Education Federation' ],
+1|sca-auth |     Home_Page: [ 'http://www.aaiedu.hr' ],
+1|sca-auth |     Technical_Name: [ 'Dubravko Voncina' ],
+1|sca-auth |     Technical_Address: [ 'dubravko.voncina@srce.hr' ],
+1|sca-auth |     Whitelisted: [ '1' ] },
+*/
+var cache_idps = null;
+request.get({url: config.oidc.idplist}, (err, res, xml)=>{
+    if(err) throw err;
+    xml2js.parseString(xml, (err, list)=>{
+        if(err) throw err;
+        cache_idps = list.idps.idp;
+    });
+});
+
+
 
 passport.use(new OAuth2Strategy({
     authorizationURL: config.oidc.authorization_url,
@@ -37,7 +58,16 @@ passport.use(new OAuth2Strategy({
     });
 }));
 
-router.get('/signin', passport.authenticate('oauth2'));
+//initiate oauth2 login!
+OAuth2Strategy.prototype.authorizationParams = function(options) {
+    return { selected_idp: options.idp }
+}
+router.get('/signin', function(req, res, next) {
+    passport.authenticate('oauth2', {
+        //this will be used by my authorizationParams() and selected_idp will be injected to authorized url
+        idp: req.query.idp
+    })(req, res, next);
+});
 
 function find_profile(profiles, sub) {
     var idx = -1;
@@ -115,6 +145,29 @@ router.put('/disconnect', jwt({secret: config.auth.public_key}), function(req, r
             res.json({message: "Successfully disconnected an oauth2 account", user: user});
         });    
     });
+});
+
+//query idp
+router.get('/idp', function(req, res, next) {
+    if(!cache_idps) return next("idp list not yet loaded");
+    var query = req.query.q;
+    if(!query) return next("no query");
+    if(query) query = query.toLowerCase();
+    logger.debug(req.params);
+    var idps = [];
+    cache_idps.forEach(function(idp) {
+        var match = false;
+        if(idp.Organization_name && ~idp.Organization_Name[0].toLowerCase().indexOf(query)) match = true;
+        if(idp.Home_Page && ~idp.Home_Page[0].toLowerCase().indexOf(query)) match = true;
+        if(match) {
+            idps.push({
+                idp: idp.$.entityID,
+                org: idp.Organization_Name[0],
+                home: idp.Home_Page[0],
+            });
+        }
+    });
+    res.json(idps);
 });
 
 module.exports = router;

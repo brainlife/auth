@@ -65,8 +65,11 @@ function($scope, $route, toaster, $http, jwtHelper, $routeParams, $location, sca
     }
 
     $scope.begin_x509 = function() {
-        $http.get($scope.appconf.x509api+"/x509/auth") //, {headers: null})
+        $http.get($scope.appconf.x509api+"/x509/auth") 
         .then(handle_success, handle_error);
+    }
+    $scope.begin_oidc = function(idp) {
+        window.location.href = "/api/auth/oidc/signin?idp="+encodeURIComponent(idp); 
     }
 
     function getQueryVariable(variable) {
@@ -79,6 +82,22 @@ function($scope, $route, toaster, $http, jwtHelper, $routeParams, $location, sca
             }
         }
         console.log('Query variable %s not found', variable);
+    }
+
+    $scope.refreshIDPs = function(query) {
+        if(!query) {
+            $scope.oidc_idps = [];
+            return;
+        }
+        console.log("refreshing idps", query);
+        $http.get($scope.appconf.api+"/oidc/idp", {params: {q: query}}) 
+        .then(function(res) {
+            $scope.oidc_idps = res.data;
+        })
+        .catch(function(res) {
+            toaster.error("failed to load IDP list");
+            console.error(res);
+        });
     }
 });
 
@@ -446,7 +465,9 @@ app.controller('GroupController', function($scope, $route, toaster, $http, jwtHe
     $scope.$parent.active_menu = 'groups';
     var jwt = localStorage.getItem($scope.appconf.jwt_id);
     var user = jwtHelper.decodeToken(jwt);
-    $scope.group = {};
+    $scope.group = {
+        active: true,
+    };
     $scope.admins = [];
     $scope.members = [];
 

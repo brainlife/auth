@@ -32,15 +32,30 @@ body {
                 <img src="images/trident.png"/>&nbsp;&nbsp;&nbsp;Login with IU Account
             </button>
         </div>
-        <div class="form-group" ng-if="appconf.show.oidc">
-            <button type="button" class="btn btn-default btn-block" ng-click="begin('oidc')">
-                <img src="{{appconf.oidc_logo}}" width="20px"/>&nbsp;&nbsp;&nbsp;Login with 
-                {{appconf.oidc_label||'OpenID Connect'}}
-            </button>
-        </div>
+
+        <div ng-if="appconf.show.oidc">
+            <!--no selector-->
+            <div class="form-group" ng-if="!appconf.show.oidc_selector">
+                <button type="button" class="btn btn-default btn-block" ng-click="begin('oidc')">
+                    <img ng-src="{{appconf.oidc_logo}}" width="20px"/>&nbsp;&nbsp;&nbsp;Login with 
+                    {{appconf.oidc_label||'Your Institution'}}
+                </button>
+            </div>
+
+            <!--with selector-->
+            <div class="form-group" ng-if="appconf.show.oidc_selector">
+                <ui-select ng-model="notused_but_needed" on-select="begin_oidc($select.selected.idp)">
+                    <ui-select-match placeholder="Enter your institution name to login">
+                        Redirecting to <b>{{$select.selected.org}}</b>
+                    </ui-select-match>
+                    <ui-select-choices limit="10" refresh-delay="200" refresh="refreshIDPs($select.search)" repeat="idp in oidc_idps">
+                        <b>{{idp.org}}</b> <code>{{idp.home}}</code>
+                    </ui-select-choices>
+                </ui-select>
+            </div>
         <div ng-if="appconf.show.local || appconf.show.ldap">
             <div class="form-group" 
-                ng-if="appconf.show.x509 || appconf.show.git || appconf.show.iucas">
+                ng-if="appconf.show.x509 || appconf.show.git || appconf.show.iucas || appconf.show.facebook || appconf.show.google || appconf.show.oidc">
                 <center>or</center>
             </div>
             <form ng-submit="submit()">
