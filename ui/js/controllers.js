@@ -18,10 +18,11 @@ function($scope, $route, toaster, $http, jwtHelper, $routeParams, $location, sca
     }
 
     function handle_success(res) {
-        scaMessage.success(res.data.message || "Welcome back!");
+        //scaMessage.success(res.data.message || "Welcome back!");
         localStorage.setItem($scope.appconf.jwt_id, res.data.jwt);
+        var redirect = sessionStorage.getItem('auth_redirect');
         sessionStorage.removeItem('auth_redirect');
-        console.log("redirecting to "+redirect);
+        console.log("handle_success", redirect);
         document.location = redirect;
         $rootScope.$broadcast("jwt_update", res.data.jwt)
     }
@@ -36,12 +37,6 @@ function($scope, $route, toaster, $http, jwtHelper, $routeParams, $location, sca
             else toaster.error(res.statusText || "Oops.. unknown authentication error");
         }
     }
-
-    //decide where to go after auth
-    var redirect = sessionStorage.getItem('auth_redirect');
-    //if(!redirect) redirect = document.referrer; //TODO - try if user sent us redirect url via query param?
-    if(!redirect) redirect = $scope.appconf.default_redirect_url;
-    sessionStorage.setItem('auth_redirect', redirect); //save it for iucas login which needs this later
 
     $scope.userpass = {};
     $scope.submit = function() {
@@ -101,12 +96,15 @@ function($scope, $route, toaster, $http, jwtHelper, $routeParams, $location, sca
     }
 });
 
+//TODO - who uses this?
 app.controller('SuccessController', 
 function($scope, $route, $http, jwtHelper, $routeParams, $location, scaMessage, $sce, $rootScope) {
+    console.log("successcontroller called");
     scaMessage.success("Welcome back!");
     localStorage.setItem($scope.appconf.jwt_id, $routeParams.jwt);
     $rootScope.$broadcast("jwt_update", $routeParams.jwt);
     var redirect = sessionStorage.getItem('auth_redirect');
+    sessionStorage.removeItem('auth_redirect');
     window.location = redirect; 
 });
 
@@ -125,9 +123,9 @@ function($scope, $route, toaster, $http, jwtHelper, $routeParams, scaMessage, $l
     $scope.form = {};
 
     //decide where to go after signup
-    var redirect = sessionStorage.getItem('auth_redirect');
-    if(!redirect) redirect = document.referrer;
-    if(!redirect) redirect = $scope.appconf.default_redirect_url;
+    //var redirect = sessionStorage.getItem('auth_redirect');
+    //if(!redirect) redirect = document.referrer;
+    //if(!redirect) redirect = $scope.appconf.default_redirect_url;
 
     $scope.submit = function() {
         $http.post($scope.appconf.api+'/signup', $scope.form)
@@ -147,6 +145,7 @@ function($scope, $route, toaster, $http, jwtHelper, $routeParams, scaMessage, $l
                 //redirect to somewhere..
                 if(res.data.path) $location.path(res.data.path); //maybe .. email_confirmation
                 else {
+                    var redirect = sessionStorage.getItem('auth_redirect');
                     sessionStorage.removeItem('auth_redirect');
                     document.location = redirect;
                 }
@@ -160,73 +159,6 @@ function($scope, $route, toaster, $http, jwtHelper, $routeParams, scaMessage, $l
         });         
     }
 });
-
-//allow user to complete registration *after* successful initial 3rd party login
-//TODO - I believe this is deprecated - now that we redirect to profile page after initial successful login
-/*
-app.controller('RegisterController', function($scope, $route, toaster, $http, jwtHelper, $routeParams, scaMessage) {
-    $scope.$parent.active_menu = 'complete';
-    scaMessage.show(toaster);
-    var jwt = localStorage.getItem($scope.appconf.jwt_id);
-    var user = jwtHelper.decodeToken(jwt);
-    
-    //stores form
-    $scope.form = {};
-
-    $http.get($scope.appconf.api+'/me')
-    .then(function(res, status, headers, config) {
-        $scope.form.username = res.data.username;
-        $scope.form.email = res.data.email;
-    }, function(res) {
-        if(res.data && res.data.message) toaster.error(res.data.message);
-        else toaster.error(res.statusText);
-    }); 
-
-    //decide where to go after setting password
-    var redirect = sessionStorage.getItem('auth_redirect');
-    if(!redirect) redirect = document.referrer;
-    if(!redirect) redirect = $scope.appconf.default_redirect_url;
-
-    function put_profile(cb) {
-        $http.put($scope.appconf.api+'/local/setprofile/', {
-            //email: $scope.form.email,
-            fullname: $scope.form.fullname,
-        }).then(function(res) {
-            cb(res);
-        }, function(res) {
-            if(res.data && res.data.message) toaster.error(res.data.message);
-            else toaster.error(res.statusText);
-        });
-    }
-    function set_pass(cb) {
-        $http.put($scope.appconf.api+'/local/setpass', {password: $scope.form.password})
-        .then(function(res) {
-            cb(res);
-        }, function(res) {
-            if(res.data && res.data.message) toaster.error(res.data.message);
-            else toaster.error(res.statusText);
-        });         
-    }
-    function alldone() {
-        scaMessage.success("Registration Complete!");
-        sessionStorage.removeItem('auth_redirect');
-        document.location = redirect;
-    }
-    $scope.submit = function() {
-        if($scope.form.password) {
-            set_pass(function(res) {
-                put_profile(function(res) {
-                    alldone();
-                });
-            });
-        } else {
-            put_profile(function(res) {
-                alldone();
-            });
-        }
-    }
-});
-*/
 
 app.controller('AccountController', 
 function($scope, $route, toaster, $http, jwtHelper, scaMessage) {
@@ -253,15 +185,6 @@ function($scope, $route, toaster, $http, jwtHelper, scaMessage) {
             $scope.user = res.data; 
             toaster.success("Profile updated successfully");
             $scope.profile_form.$setPristine();
-            /*
-            //TODO - why can't put request return updated object?
-            $http.get($scope.appconf.api+'/me').then(function(res) { 
-                
-            }, function(res) {
-                if(res.data && res.data.message) toaster.error(res.data.message);
-                else toaster.error(res.statusText);
-            });
-            */
         }, function(res, status, headers, config) {
             if(res.data && res.data.message) toaster.error(res.data.message);
             else toaster.error(res.statusText);
@@ -272,9 +195,6 @@ function($scope, $route, toaster, $http, jwtHelper, scaMessage) {
         .then(function(res, status, headers, config) {
             toaster.success(res.data.message);
 
-            //somehow, I can't do this.. even though I can for profile_form..
-            //$scope.password_form.$setPristine();
-            
             //TODO - why can't put request return updated object?
             $http.get($scope.appconf.api+'/me').then(function(res) { 
                 $scope.user = res.data; 
