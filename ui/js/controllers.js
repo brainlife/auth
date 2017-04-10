@@ -18,13 +18,9 @@ function($scope, $route, toaster, $http, jwtHelper, $routeParams, $location, sca
     }
 
     function handle_success(res) {
-        //scaMessage.success(res.data.message || "Welcome back!");
         localStorage.setItem($scope.appconf.jwt_id, res.data.jwt);
-        var redirect = sessionStorage.getItem('auth_redirect');
-        sessionStorage.removeItem('auth_redirect');
-        console.log("handle_success", redirect);
-        document.location = redirect;
         $rootScope.$broadcast("jwt_update", res.data.jwt)
+        handle_redirect();
     }
 
     function handle_error(res) {
@@ -96,16 +92,21 @@ function($scope, $route, toaster, $http, jwtHelper, $routeParams, $location, sca
     }
 });
 
-//TODO - who uses this?
+function handle_redirect() {
+    var redirect = sessionStorage.getItem('auth_redirect');
+    sessionStorage.removeItem('auth_redirect');
+    //window.location = redirect||document.referrer||$scope.appconf.default_redirect_url; 
+    window.location = redirect||$scope.appconf.default_redirect_url; 
+}
+
+//used by oauth2 callbacks (github, etc..) to set the jwt and redirect
 app.controller('SuccessController', 
 function($scope, $route, $http, jwtHelper, $routeParams, $location, scaMessage, $sce, $rootScope) {
     console.log("successcontroller called");
     scaMessage.success("Welcome back!");
     localStorage.setItem($scope.appconf.jwt_id, $routeParams.jwt);
     $rootScope.$broadcast("jwt_update", $routeParams.jwt);
-    var redirect = sessionStorage.getItem('auth_redirect');
-    sessionStorage.removeItem('auth_redirect');
-    window.location = redirect; 
+    handle_redirect();
 });
 
 app.controller('SignoutController', 
@@ -121,11 +122,6 @@ function($scope, $route, toaster, $http, jwtHelper, $routeParams, scaMessage, $l
     $scope.$parent.active_menu = 'signup';
     scaMessage.show(toaster);
     $scope.form = {};
-
-    //decide where to go after signup
-    //var redirect = sessionStorage.getItem('auth_redirect');
-    //if(!redirect) redirect = document.referrer;
-    //if(!redirect) redirect = $scope.appconf.default_redirect_url;
 
     $scope.submit = function() {
         $http.post($scope.appconf.api+'/signup', $scope.form)
@@ -144,11 +140,7 @@ function($scope, $route, toaster, $http, jwtHelper, $routeParams, scaMessage, $l
 
                 //redirect to somewhere..
                 if(res.data.path) $location.path(res.data.path); //maybe .. email_confirmation
-                else {
-                    var redirect = sessionStorage.getItem('auth_redirect');
-                    sessionStorage.removeItem('auth_redirect');
-                    document.location = redirect;
-                }
+                else handle_redirect();
             }, function(res) {
                 if(res.data && res.data.message) toaster.error(res.data.message);
                 else toaster.error(res.statusText);
