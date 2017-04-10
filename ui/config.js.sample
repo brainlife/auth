@@ -23,9 +23,10 @@ angular.module('app.config', [])
     //URL for x509 validation API base
     x509api: 'https://soichi7.ppa.iu.edu:9443',
 
+    //deprecated - always set auth_redirect
     //default location to redirect after successful login
     //default_redirect_url: '../profile', 
-    default_redirect_url: '/auth/#!/settings/account',  //don't start with #
+    //default_redirect_url: '/auth/#!/settings/account',  //don't start with #
 
     jwt_id: 'jwt',
     iucas_url: 'https://cas.iu.edu/cas/login',
