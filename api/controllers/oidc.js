@@ -49,7 +49,7 @@ passport.use(new OAuth2Strategy({
     request.get({url: config.oidc.userinfo_url, qs: {access_token: accessToken}, json: true},  function(err, _res, profile) {
         if(err) return cb(err); 
         //profile contains { sub: given_name: family_name email: }
-        console.dir(profile);
+        //console.dir(profile);
         db.User.findOne({where: {"oidc_subs": {$like: "%\""+profile.sub+"\"%"}}}).then(function(user) {
             cb(null, user, profile);
         });
@@ -94,6 +94,7 @@ function(req, res, next) {
                 var subs = user.get('oidc_subs');
                 if(!subs) subs = [];
                 if(!~find_profile(subs, profile.sub)) subs.push(profile);
+                user.set('oidc_subs', subs);
                 user.save().then(function() {
                     res.redirect('/auth/#!/settings/account');
                 });
@@ -137,6 +138,7 @@ router.put('/disconnect', jwt({secret: config.auth.public_key}), function(req, r
         var subs = user.get('oidc_subs');
         var pos = find_profile(subs, sub);
         if(~pos) subs.splice(pos, 1);
+        user.set('oidc_subs', subs);
         user.save().then(function() {
             res.json({message: "Successfully disconnected an oauth2 account", user: user});
         });    
