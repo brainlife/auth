@@ -35,8 +35,6 @@ request.get({url: config.oidc.idplist}, (err, res, xml)=>{
     });
 });
 
-
-
 passport.use(new OAuth2Strategy({
     authorizationURL: config.oidc.authorization_url,
     tokenURL: config.oidc.token_url,
@@ -110,8 +108,6 @@ function(req, res, next) {
                 var jwt = common.signJwt(claim);
                 user.updateTime('oidc_login:'+profile.sub);
                 user.save().then(function() {
-                    //res.json({message: "Login Success!", jwt: jwt});
-                    //res.set('jwt', jwt);
                     res.redirect('/auth/#!/success/'+jwt);
                 });
             });

@@ -34,6 +34,8 @@ app.use(expressWinston.logger(config.logger.winston));
 app.use(cookieParser());
 app.use(passport.initialize());//needed for express-based application
 
+app.options('*', cors()); //enable pre-flight across the board
+
 app.use('/', require('./controllers'));
 
 //error handling

@@ -29,6 +29,7 @@ function($scope, $route, toaster, $http, jwtHelper, $routeParams, $location, sca
             $location.path(res.data.path);
             if(res.data.message) scaMessage.error(res.data.message);
         } else {
+            console.dir(res);
             if(res.data && res.data.message) toaster.error(res.data.message);
             else toaster.error(res.statusText || "Oops.. unknown authentication error");
         }
