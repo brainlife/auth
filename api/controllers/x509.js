@@ -30,15 +30,16 @@ function issue_jwt(user, dn, cb) {
     });
 }
 
+/*
 var allowCrossDomain = function(req, res, next) {
     console.log("setting header");
     res.header('Access-Control-Allow-Origin', config.x509.allow_origin||'*'); 
-    //res.header('Access-Control-Allow-Methods', 'GET,PUT,POST,DELETE');
     res.header('Access-Control-Allow-Methods', 'GET');
     res.header('Access-Control-Allow-Headers', 'Pragma,Cache-Control,If-Modified-Since,Authorization');
     next();
 }
 router.use(allowCrossDomain); //for OPTIONS method
+*/
 
 //!! this endpoint needs to be exposed via webserver that's requiring x509 DN
 router.get('/auth', /*jwt({secret: config.auth.public_key, credentialsRequired: false}),*/ function(req, res, next) {

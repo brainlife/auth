@@ -51,7 +51,7 @@ function do_send_email_confirmation(url, user, cb) {
         from: config.local.email_confirmation.from,
         to: user.email,
         subject: config.local.email_confirmation.subject,
-        text: "Hello!\n\nIf you has created a new SCA account, please visit following URL to confirm your email address.\n\n"+ fullurl,
+        text: "Hello!\n\nIf you have created a new SCA account, please visit following URL to confirm your email address.\n\n"+ fullurl,
         //html:  ejs.render(html_template, params),
     }, function(err, info) {
         if(err) return cb(err);

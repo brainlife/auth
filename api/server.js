@@ -27,15 +27,24 @@ if(config.auth.default_scopes) {
 
 //init express
 var app = express();
-app.use(cors());
 app.use(bodyParser.json()); //parse application/json
 app.use(bodyParser.urlencoded({extended: false})); //parse application/x-www-form-urlencoded //TODO - do we need this?
 app.use(expressWinston.logger(config.logger.winston)); 
 app.use(cookieParser());
 app.use(passport.initialize());//needed for express-based application
 
-app.options('*', cors()); //enable pre-flight across the board
-
+app.use(cors());
+//app.options('*', cors()); //enable pre-flight across the board
+/*
+app.all('*', (req, res, next)=>{
+    console.log("handling options");
+    console.log(req.headers);
+    res.header('Access-Control-Allow-Origin', 'https://soichi7.ppa.iu.edu');
+    res.header('Access-Control-Allow-Methods', 'GET,HEAD,PUT,PATCH,POST,DELETE');
+    res.header('Access-Control-Allow-Headers', 'authorization,cache-control,if-modified-since,pragma');
+    next();
+});
+*/
 app.use('/', require('./controllers'));
 
 //error handling
