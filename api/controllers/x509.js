@@ -63,7 +63,7 @@ router.get('/signin', /*jwt({secret: config.auth.public_key, credentialsRequired
         issue_jwt(user, dn, function(err, jwt) {
             if(err) return next(err);
             //res.json({jwt:jwt});
-            res.redirect(config.x509.callback_url+"#!/success/"+jwt);
+            res.redirect(req.headers.referer+"#!/success/"+jwt);
         });
     });
 });
@@ -91,20 +91,21 @@ function(req, res, next) {
                 user.save().then(function() {
                     var messages = [{type: "success", message: "Successfully associated your DN to your account."}];
                     res.cookie('messages', JSON.stringify(messages)/*, {path: '/'}*/);
-                    res.redirect(config.x509.callback_url+"#!/settings/account");
+                    res.redirect(req.headers.referer+"#!/settings/account");
                 });
             });
         } else {
             var messages;
             if(user.id == req.user.sub) {
-                messages = [{type: "error", message: "The certificate you have provided("+dn+") is already connected to your account."}];
+                messages = [{type: "info", message: "The certificate you have provided("+dn+") is already connected to your account."}];
 
             } else { 
                 messages = [{type: "error", message: "The certificate you have provided("+dn+") is already connected to another account."}];
                 //TODO - does user wish to merge 2 accounts into 1?
             }
             res.cookie('messages', JSON.stringify(messages)/*, {path: '/'}*/);
-            res.redirect(config.x509.callback_url+"#!/settings/account");
+            console.dir(req.headers);
+            res.redirect(req.headers.referer+"#!/settings/account");
         }
     });
 });
