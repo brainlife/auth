@@ -49,19 +49,21 @@ function($scope, $route, toaster, $http, jwtHelper, $routeParams, $location, sca
         //so let's let another html page handle the callback, do the token validation through iucas and generate the jwt 
         //and either redirect to profile page (default) or force user to setup user/pass if it's brand new user
         var casurl = window.location.origin+window.location.pathname+'iucascb.html';
-        window.location.href = $scope.appconf.iucas_url+'?cassvc=IU&casurl='+casurl;
+        window.location = $scope.appconf.iucas_url+'?cassvc=IU&casurl='+casurl;
     }
 
     $scope.begin = function(type) {
-        window.location.href = "/api/auth/"+type+"/signin"; 
+        window.location = "/api/auth/"+type+"/signin"; 
     }
 
     $scope.begin_x509 = function() {
-        $http.get($scope.appconf.x509api+"/x509/auth") 
-        .then(handle_success, handle_error);
+        //TODO - can't use CORS for x509 auth..
+        //$http.get($scope.appconf.x509api+"/x509/auth") 
+        //.then(handle_success, handle_error);
+        window.location = $scope.appconf.x509api+"/x509/signin";
     }
     $scope.begin_oidc = function(idp) {
-        window.location.href = "/api/auth/oidc/signin?idp="+encodeURIComponent(idp); 
+        window.location = "/api/auth/oidc/signin?idp="+encodeURIComponent(idp); 
     }
 
     function getQueryVariable(variable) {
@@ -216,7 +218,7 @@ function($scope, $route, toaster, $http, jwtHelper, scaMessage) {
     }
 
     $scope.iucas_connect = function() {
-        sessionStorage.setItem('auth_redirect', window.location.href); 
+        sessionStorage.setItem('auth_redirect', window.location); 
         var casurl = window.location.origin+window.location.pathname+'iucascb.html';
         window.location = $scope.appconf.iucas_url+'?cassvc=IU&casurl='+casurl;
     }
@@ -224,6 +226,8 @@ function($scope, $route, toaster, $http, jwtHelper, scaMessage) {
         window.location = "/api/auth/"+type+"/associate/"+jwt;
     }
     $scope.x509_connect = function() {
+        window.location = $scope.appconf.x509api+'/x509/associate/'+jwt;
+        /*
         $http.get($scope.appconf.x509api+'/x509/connect') //, {headers: null})
         .then(function(res, status, headers, config) {
             toaster.success(res.data.message);
@@ -232,6 +236,7 @@ function($scope, $route, toaster, $http, jwtHelper, scaMessage) {
             if(res.data && res.data.message) toaster.error(res.data.message);
             else toaster.error(res.statusText);
         }); 
+        */
     }
 });
 

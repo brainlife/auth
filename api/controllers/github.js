@@ -127,8 +127,7 @@ router.get('/callback', jwt({
 });
 
 //start github account association
-router.get('/associate/:jwt', jwt({secret: config.auth.public_key, 
-getToken: function(req) { return req.params.jwt; }}), 
+router.get('/associate/:jwt', jwt({secret: config.auth.public_key, getToken: function(req) { return req.params.jwt; }}), 
 function(req, res, next) {
     //var exp = new Date();
     //exp.setMinutes(exp.getMinutes()+5); //only valid for 5 minutes (and will be removed once account is associated)

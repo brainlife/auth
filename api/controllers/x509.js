@@ -41,8 +41,9 @@ var allowCrossDomain = function(req, res, next) {
 router.use(allowCrossDomain); //for OPTIONS method
 */
 
-//!! this endpoint needs to be exposed via webserver that's requiring x509 DN
-router.get('/auth', /*jwt({secret: config.auth.public_key, credentialsRequired: false}),*/ function(req, res, next) {
+// this endpoint needs to be exposed via webserver that's requiring x509 DN
+// unlike /auth, this page will redirect back to #!/success/<jwt>
+router.get('/signin', /*jwt({secret: config.auth.public_key, credentialsRequired: false}),*/ function(req, res, next) {
     //logger.debug(req.user);
     //res.header("Access-Control-Allow-Headers", "X-Requested-With");
     //return res.json({status: "ok", dn: req.headers[config.x509.dn_header], /*headers: req.headers*/});
@@ -61,13 +62,16 @@ router.get('/auth', /*jwt({secret: config.auth.public_key, credentialsRequired: 
         logger.debug("x509 authentication successful with "+dn);
         issue_jwt(user, dn, function(err, jwt) {
             if(err) return next(err);
-            res.json({jwt:jwt});
+            //res.json({jwt:jwt});
+            res.redirect(config.x509.callback_url+"#!/success/"+jwt);
         });
     });
 });
 
-//!! this endpoint needs to be exposed via webserver that's requiring x509 DN
-router.get('/connect', jwt({secret: config.auth.public_key}), function(req, res, next) {
+// this endpoint needs to be exposed via webserver that's requiring x509 DN
+router.get('/associate/:jwt', jwt({secret: config.auth.public_key, getToken: function(req) { return req.params.jwt; }}), 
+function(req, res, next) {
+//router.get('/connect', jwt({secret: config.auth.public_key}), function(req, res, next) {
     var dn = req.headers[config.x509.dn_header];
     if(!dn) {
         console.dir(req.headers);
@@ -85,16 +89,22 @@ router.get('/connect', jwt({secret: config.auth.public_key}), function(req, res,
                 if(!~dns.indexOf(dn)) dns.push(dn);
                 user.set('x509dns', dns);
                 user.save().then(function() {
-                    res.json({status: "ok", message: "Successfully associated x509D DN:"+dn+" to your account", user: user}); 
+                    var messages = [{type: "success", message: "Successfully associated your DN to your account."}];
+                    res.cookie('messages', JSON.stringify(messages)/*, {path: '/'}*/);
+                    res.redirect(config.x509.callback_url+"#!/settings/account");
                 });
             });
         } else {
+            var messages;
             if(user.id == req.user.sub) {
-                res.status(500).json({status: "failed", message: "The certificate you have provided("+dn+") is already connected to your account."});
+                messages = [{type: "error", message: "The certificate you have provided("+dn+") is already connected to your account."}];
+
             } else { 
-                res.status(500).json({status: "failed", message: "The certificate you have provided("+dn+") is already connected to another account."});
+                messages = [{type: "error", message: "The certificate you have provided("+dn+") is already connected to another account."}];
                 //TODO - does user wish to merge 2 accounts into 1?
             }
+            res.cookie('messages', JSON.stringify(messages)/*, {path: '/'}*/);
+            res.redirect(config.x509.callback_url+"#!/settings/account");
         }
     });
 });
