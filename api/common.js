@@ -28,7 +28,10 @@ exports.createClaim = function(user, cb) {
             "exp": (Date.now() + config.auth.ttl)/1000,
             "iat": (Date.now())/1000,
             "scopes": user.scopes,
-            "sub": user.id, //can't use user.username because it could be not set
+            
+            //can't use user.username which might not be set
+            "sub": user.id,  //TODO - toString() this!?
+
             "gids": gids,
             "profile": { 
                 username: user.username,

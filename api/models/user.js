@@ -15,14 +15,14 @@ module.exports = function(sequelize, DataTypes) {
     return sequelize.define('User', {
         
         ///////////////////////////////////////////////////////////////////////////////////////////
-        //always filled
+        //always filled (really?)
         username: {type: Sequelize.STRING, unique: 'true'},
 
         ///////////////////////////////////////////////////////////////////////////////////////////
         //auth profile
         fullname: Sequelize.STRING,
-        email: Sequelize.STRING,  //profile email is stored in profile service db
-        email_confirmed: { type: Sequelize.BOOLEAN, defaultValue: false }, //TODO
+        email: Sequelize.STRING,
+        email_confirmed: { type: Sequelize.BOOLEAN, defaultValue: false }, 
         email_confirmation_token: Sequelize.STRING,
 
         ///////////////////////////////////////////////////////////////////////////////////////////

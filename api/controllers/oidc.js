@@ -48,8 +48,6 @@ passport.use(new OAuth2Strategy({
     logger.debug("oidc loading userinfo ..", accessToken, profile);
     request.get({url: config.oidc.userinfo_url, qs: {access_token: accessToken}, json: true},  function(err, _res, profile) {
         if(err) return cb(err); 
-        //profile contains { sub: given_name: family_name email: }
-        //console.dir(profile);
         db.User.findOne({where: {"oidc_subs": {$like: "%\""+profile.sub+"\"%"}}}).then(function(user) {
             cb(null, user, profile);
         });
@@ -88,33 +86,75 @@ function(req, res, next) {
         if(req.user) {
             //logged in via associate_jwt..
             logger.info("handling oidc association");
-            res.clearCookie('associate_jwt');
-            db.User.findOne({where: {id: req.user.sub}}).then(function(user) {
-                if(!user) throw new Error("couldn't find user record with sub:"+req.user.sub);
-                var subs = user.get('oidc_subs');
-                if(!subs) subs = [];
-                if(!~find_profile(subs, profile.sub)) subs.push(profile);
-                user.set('oidc_subs', subs);
-                user.save().then(function() {
-                    res.redirect('/auth/#!/settings/account');
+            if(user) {
+                //SUB is already registered to another account..
+                //TODO - should I let user *steal* the OIDC sub from another account?
+                var messages = [{type: "error", message: "There is another account with the same OIDC ID registered. Please contact support."}];
+                res.cookie('messages', JSON.stringify(messages), {path: '/'});
+                res.redirect('/auth/#!/settings/account');
+            } else {
+                res.clearCookie('associate_jwt');
+                db.User.findOne({where: {id: req.user.sub}}).then(function(user) {
+                    if(!user) throw new Error("couldn't find user record with sub:"+req.user.sub);
+                    var subs = user.get('oidc_subs');
+                    if(!subs) subs = [];
+                    if(!~find_profile(subs, profile.sub)) subs.push(profile);
+                    user.set('oidc_subs', subs);
+                    user.save().then(function() {
+                    var messages = [{type: "success", message: "Successfully associated your OIDC account"}];
+                    res.cookie('messages', JSON.stringify(messages), {path: '/'});
+                        res.redirect('/auth/#!/settings/account');
+                    });
                 });
-            });
+            }
         } else {
             logger.info("handling oidc callback");
             if(!user) {
-                return res.redirect('/auth/#!/signin?msg='+"Your InCommon account("+profile.sub+") is not yet registered. Please login using your username/password first, then associate your InCommon account inside account settings.");
-            }
-            common.createClaim(user, function(err, claim) {
-                if(err) return next(err);
-                var jwt = common.signJwt(claim);
-                user.updateTime('oidc_login:'+profile.sub);
-                user.save().then(function() {
+                if(config.oidc.auto_register) {
+                    register_newuser(profile, res, next);
+                } else {
+                    res.redirect('/auth/#!/signin?msg='+"Your InCommon account("+profile.sub+") is not yet registered. Please login using your username/password first, then associate your InCommon account inside the account settings.");
+                }
+            } else {
+                issue_jwt(user, profile, function(err, jwt) {
+                    if(err) return next(err);
                     res.redirect('/auth/#!/success/'+jwt);
                 });
-            });
+            }            
         }
     })(req, res, next);
 });
+
+function register_newuser(profile, res, next) {
+
+    var u = clone(config.auth.default);
+    //u.username = ...;  //will this break our system?
+    u.email = profile.email;
+    u.email_confirmed = true; //let's trust InCommon
+    u.oidc_subs = [profile];
+    u.fullname = profile.given_name+" "+profile.family_name;
+    db.User.create(u).then(function(user) {
+        logger.info("registered new user", JSON.stringify(user));
+        user.addMemberGroups(u.gids, function() {
+            issue_jwt(user, profile, function(err, jwt) {
+                if(err) return next(err);
+                logger.info("registration success", jwt);
+                res.redirect('/auth/#!/success/'+jwt);
+            });
+        });
+    });
+}
+
+function issue_jwt(user, profile, cb) {
+    common.createClaim(user, function(err, claim) {
+        if(err) return cb(err);
+        var jwt = common.signJwt(claim);
+        user.updateTime('oidc_login:'+profile.sub);
+        user.save().then(function() {
+            cb(null, jwt);
+        });
+    });
+}
 
 //start oidc account association
 router.get('/associate/:jwt', jwt({secret: config.auth.public_key, getToken: req=>req.params.jwt}), 
