@@ -17,6 +17,11 @@ body {
                 <i class="fa fa-google" style="font-size: 150%"></i> Login with Google
             </button>
         </div>
+        <div class="form-group" ng-if="appconf.show.orcid">
+            <button type="button" class="btn btn-info btn-block" ng-click="begin('orcid')">
+                <i class="fa fa-orcid" style="font-size: 150%"></i> Login with ORCID
+            </button>
+        </div>
         <div class="form-group" ng-if="appconf.show.github">
             <button type="button" class="btn btn-info btn-block" ng-click="begin('github')">
                 <i class="fa fa-github" style="font-size: 150%"></i> Login with Github

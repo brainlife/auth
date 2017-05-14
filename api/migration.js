@@ -95,6 +95,12 @@ var migrations = [
             next();
         });
     },
+    function(qi, next) {
+        logger.info("adding orcid");
+        qi.addColumn('Users', 'orcid', {type: Sequelize.STRING}).then(function() {
+            next();
+        });
+    },
 ];
 
 exports.run = function() {

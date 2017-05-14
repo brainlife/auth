@@ -83,9 +83,6 @@
                     <h4>Indiana University CAS</h4>
                 </div> 
                 <div class="well" ng-if="appconf.show.google">
-                    <!--
-                    <img src="images/google.account_logo.png" class="account pull-left" style="padding-right: 10px;">
-                    -->
                     <button class="btn pull-right" ng-if="user.googleid" ng-click="disconnect('google')">Disconnect</button>
                     <button class="btn pull-right" ng-if="!user.googleid" ng-click="connect('google')">Connect</button>
                     <p class="pull-right text-muted" style="margin: 11px;">
@@ -97,9 +94,6 @@
                     <h4><i class="fa fa-google" aria-hidden="true"></i> Google</h4>
                 </div>
                 <div class="well" ng-if="appconf.show.github">
-                    <!--
-                    <img src="images/github.account_logo.png" class="account pull-left" style="padding-right: 10px;">
-                    -->
                     <button class="btn pull-right" ng-if="user.github" ng-click="disconnect('github')">Disconnect</button>
                     <button class="btn pull-right" ng-if="!user.github" ng-click="connect('github')">Connect</button>
                     <p class="pull-right text-muted" style="margin: 11px;">
@@ -109,6 +103,17 @@
                         <time ng-if="user.times.github_login">{{user.times.github_login | date:'medium'}}</time>
                     </p>
                     <h4><i class="fa fa-github" aria-hidden="true"></i> Github</h4>
+                </div>
+                <div class="well" ng-if="appconf.show.orcid">
+                    <button class="btn pull-right" ng-if="user.orcid" ng-click="disconnect('orcid')">Disconnect</button>
+                    <button class="btn pull-right" ng-if="!user.orcid" ng-click="connect('orcid')">Connect</button>
+                    <p class="pull-right text-muted" style="margin: 11px;">
+                        <span ng-if="user.orcid"><b>{{user.orcid}}</b> |</span>
+                        Last Login: 
+                        <span ng-if="!user.times.orcid_login">Never</span>
+                        <time ng-if="user.times.orcid_login">{{user.times.orcid_login | date:'medium'}}</time>
+                    </p>
+                    <h4><i class="fa fa-orcid" aria-hidden="true"></i> ORCID</h4>
                 </div>
                 <div class="well" ng-if="appconf.show.facebook">
                     <button class="btn pull-right" ng-if="user.facebook" ng-click="disconnect('facebook')">Disconnect</button>
