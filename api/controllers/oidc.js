@@ -78,7 +78,7 @@ router.get('/callback',
 jwt({ secret: config.auth.public_key, credentialsRequired: false, getToken: req=>req.cookies.associate_jwt }),
 function(req, res, next) {
     passport.authenticate('oauth2', function(err, user, profile) {
-        logger.debug("callback", profile);
+        logger.debug("oidc callback", profile);
         if(err) {
             console.error(err);
             return res.redirect('/auth/#!/signin?msg='+"Failed to authenticate oidc");
@@ -86,14 +86,17 @@ function(req, res, next) {
         if(req.user) {
             //logged in via associate_jwt..
             logger.info("handling oidc association");
+            res.clearCookie('associate_jwt');
             if(user) {
                 //SUB is already registered to another account..
                 //TODO - should I let user *steal* the OIDC sub from another account?
-                var messages = [{type: "error", message: "There is another account with the same OIDC ID registered. Please contact support."}];
+                var messages = [{
+                    type: "error", 
+                    message: "There is another account with the same OIDC ID registered. Please contact support."
+                }];
                 res.cookie('messages', JSON.stringify(messages), {path: '/'});
                 res.redirect('/auth/#!/settings/account');
             } else {
-                res.clearCookie('associate_jwt');
                 db.User.findOne({where: {id: req.user.sub}}).then(function(user) {
                     if(!user) throw new Error("couldn't find user record with sub:"+req.user.sub);
                     var subs = user.get('oidc_subs');
@@ -101,8 +104,11 @@ function(req, res, next) {
                     if(!~find_profile(subs, profile.sub)) subs.push(profile);
                     user.set('oidc_subs', subs);
                     user.save().then(function() {
-                    var messages = [{type: "success", message: "Successfully associated your OIDC account"}];
-                    res.cookie('messages', JSON.stringify(messages), {path: '/'});
+                        var messages = [{
+                            type: "success", 
+                            message: "Successfully associated your OIDC account"
+                        }];
+                        res.cookie('messages', JSON.stringify(messages), {path: '/'});
                         res.redirect('/auth/#!/settings/account');
                     });
                 });
@@ -126,7 +132,6 @@ function(req, res, next) {
 });
 
 function register_newuser(profile, res, next) {
-
     var u = clone(config.auth.default);
     //u.username = ...;  //will this break our system?
     u.email = profile.email;
