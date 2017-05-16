@@ -89,7 +89,7 @@ app.config(['$routeProvider', 'appconf', function($routeProvider, appconf) {
         templateUrl: 't/forgotpass.html',
         controller: 'ForgotpassController'
     })
-    .when('/signup', {
+    .when('/signup/:jwt?', {
         templateUrl: 't/signup.html',
         controller: 'SignupController'
     })

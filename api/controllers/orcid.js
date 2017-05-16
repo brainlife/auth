@@ -17,17 +17,6 @@ const logger = new winston.Logger(config.logger.winston);
 const common = require('../common');
 const db = require('../models');
 
-/*
-var cache_idps = null;
-request.get({url: config.orcid.idplist}, (err, res, xml)=>{
-    if(err) throw err;
-    xml2js.parseString(xml, (err, list)=>{
-        if(err) throw err;
-        cache_idps = list.idps.idp;
-    });
-});
-*/
-
 passport.use(new OAuth2Strategy({
     authorizationURL: config.orcid.authorization_url,
     tokenURL: config.orcid.token_url,
@@ -41,9 +30,13 @@ passport.use(new OAuth2Strategy({
         cb(null, user, profile);
     });
 
-    /* can't do anything with /authenticate token.. I get 'invalid_token'
-    request.get({url: "https://api.sandbox.orcid.org/v2.0/search", qs: {access_token: accessToken}, json: true},  function(err, _res, profile) {
-        console.log(profile);
+    /* In ORCID, email address is private by default.. I need to ask user their email address..
+    //get public record
+    //http://members.orcid.org/api/tutorial/read-orcid-records
+    request.get({url: "https://pub.orcid.org/v2.0/"+profile.orcid+"/record", headers: {
+        Authorization: "Bearer "+ accessToken,
+    }, json: true},  function(err, _res, body) {
+        console.log("body---------------------", body);
     });
     */
 }));
@@ -125,8 +118,6 @@ function(req, res, next) {
 function register_newuser(profile, res, next) {
     var u = clone(config.auth.default);
     //u.username = ...;  //will this break our system?
-    u.email = profile.email;
-    u.email_confirmed = true; //let's trust InCommon
     u.orcid = profile.orcid;
     u.fullname = profile.name;
     db.User.create(u).then(function(user) {
@@ -135,7 +126,7 @@ function register_newuser(profile, res, next) {
             issue_jwt(user, profile, function(err, jwt) {
                 if(err) return next(err);
                 logger.info("registration success", jwt);
-                res.redirect('/auth/#!/success/'+jwt);
+                res.redirect('/auth/#!/signup/'+jwt);
             });
         });
     });
@@ -177,30 +168,5 @@ router.put('/disconnect', jwt({secret: config.auth.public_key}), function(req, r
         });    
     });
 });
-
-/*
-//query idp
-router.get('/idp', function(req, res, next) {
-    if(!cache_idps) return next("idp list not yet loaded");
-    var query = req.query.q;
-    if(!query) return next("no query");
-    if(query) query = query.toLowerCase();
-    logger.debug(req.params);
-    var idps = [];
-    cache_idps.forEach(function(idp) {
-        var match = false;
-        if(idp.Organization_name && ~idp.Organization_Name[0].toLowerCase().indexOf(query)) match = true;
-        if(idp.Home_Page && ~idp.Home_Page[0].toLowerCase().indexOf(query)) match = true;
-        if(match) {
-            idps.push({
-                idp: idp.$.entityID,
-                org: idp.Organization_Name[0],
-                home: idp.Home_Page[0],
-            });
-        }
-    });
-    res.json(idps);
-});
-*/
 
 module.exports = router;

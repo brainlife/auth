@@ -105,6 +105,7 @@
                     <h4><i class="fa fa-github" aria-hidden="true"></i> Github</h4>
                 </div>
                 <div class="well" ng-if="appconf.show.orcid">
+                    <img src="images/orcid.ico" class="account pull-left" style="padding-right: 10px;">
                     <button class="btn pull-right" ng-if="user.orcid" ng-click="disconnect('orcid')">Disconnect</button>
                     <button class="btn pull-right" ng-if="!user.orcid" ng-click="connect('orcid')">Connect</button>
                     <p class="pull-right text-muted" style="margin: 11px;">
@@ -113,7 +114,7 @@
                         <span ng-if="!user.times.orcid_login">Never</span>
                         <time ng-if="user.times.orcid_login">{{user.times.orcid_login | date:'medium'}}</time>
                     </p>
-                    <h4><i class="fa fa-orcid" aria-hidden="true"></i> ORCID</h4>
+                    <h4>ORCID</h4>
                 </div>
                 <div class="well" ng-if="appconf.show.facebook">
                     <button class="btn pull-right" ng-if="user.facebook" ng-click="disconnect('facebook')">Disconnect</button>

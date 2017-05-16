@@ -1,17 +1,17 @@
 
 //contrib
-var express = require('express');
-var router = express.Router();
-var passport = require('passport');
-var passport_localst = require('passport-local').Strategy;
-var winston = require('winston');
-var jwt = require('express-jwt');
+const express = require('express');
+const router = express.Router();
+const passport = require('passport');
+const passport_localst = require('passport-local').Strategy;
+const winston = require('winston');
+const jwt = require('express-jwt');
 
 //mine
-var config = require('../config');
-var logger = new winston.Logger(config.logger.winston);
-var common = require('../common');
-var db = require('../models');
+const config = require('../config');
+const logger = new winston.Logger(config.logger.winston);
+const common = require('../common');
+const db = require('../models');
 
 passport.use(new passport_localst(
     function(username, password, done) {

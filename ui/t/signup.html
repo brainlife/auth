@@ -2,6 +2,7 @@
     <div id="page-wrapper">
         <h1 class="page-header">Signup</h1>
         <form ng-submit="submit();">
+            <p class="help-block" ng-if="jwt">This is your first time you've accessed this application. Please complete your registration.</p>
             <div class="form-group">
                 <label>Username</label>
                 <input type="text" class="form-control" ng-model="form.username" name="username" placeholder="Pick a username" required/>

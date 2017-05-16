@@ -9,7 +9,7 @@ function($scope, appconf, $route, toaster, $http, menu, scaSettingsMenu) {
 });
 
 app.controller('SigninController', 
-function($scope, $route, toaster, $http, jwtHelper, $routeParams, $location, scaMessage, $sce, $rootScope) {
+function($scope, $route, toaster, $http, $routeParams, $location, scaMessage, $sce, $rootScope) {
     $scope.$parent.active_menu = 'signin';
     scaMessage.show(toaster);
 
@@ -104,7 +104,7 @@ function handle_redirect() {
 
 //used by oauth2 callbacks (github, etc..) to set the jwt and redirect
 app.controller('SuccessController', 
-function($scope, $route, $http, jwtHelper, $routeParams, $location, scaMessage, $sce, $rootScope) {
+function($scope, $route, $http, $routeParams, $location, scaMessage, $sce, $rootScope) {
     console.log("successcontroller called");
     scaMessage.success("Welcome back!");
     localStorage.setItem($scope.appconf.jwt_id, $routeParams.jwt);
@@ -113,7 +113,7 @@ function($scope, $route, $http, jwtHelper, $routeParams, $location, scaMessage, 
 });
 
 app.controller('SignoutController', 
-function($scope, $route, $http, jwtHelper, $routeParams, menu, $location, scaMessage) {
+function($scope, $route, $http, $routeParams, menu, $location, scaMessage) {
     scaMessage.success("Good Bye!");
     localStorage.removeItem($scope.appconf.jwt_id);
     menu.user = null; //scaMenubar watches for this and re-init
@@ -121,20 +121,31 @@ function($scope, $route, $http, jwtHelper, $routeParams, menu, $location, scaMes
 });
 
 app.controller('SignupController', 
-function($scope, $route, toaster, $http, jwtHelper, $routeParams, scaMessage, $location, $rootScope) {
+function($scope, $route, toaster, $http, $routeParams, scaMessage, $location, $rootScope, jwtHelper) {
     $scope.$parent.active_menu = 'signup';
     scaMessage.show(toaster);
     $scope.form = {};
 
+    if($routeParams.jwt) {
+        $scope.jwt = $routeParams.jwt;
+        localStorage.setItem($scope.appconf.jwt_id, $routeParams.jwt);
+        
+        //register_new sometimes forward here with jwt to finish registration (like setting up email)
+        var user = jwtHelper.decodeToken($routeParams.jwt);
+        $scope.form.username = user.profile.username;
+        $scope.form.email = user.profile.email;
+        $scope.form.fullname = user.profile.fullname;
+    }
+
     $scope.submit = function() {
+        //new registration (or do registration complete with jwt)
         $http.post($scope.appconf.api+'/signup', $scope.form)
         .then(function(res, status, headers, config) {
             localStorage.setItem($scope.appconf.jwt_id, res.data.jwt);
             $rootScope.$broadcast("jwt_update", res.data.jwt);
 
             //let's post auth profile for the first time
-            $http.put($scope.appconf.api+'/profile/'/*+res.data.sub*/, {
-                //email: $scope.form.email,
+            $http.put($scope.appconf.api+'/profile', {
                 fullname: $scope.form.fullname,
             })
             .then(function(_res) {
@@ -307,7 +318,7 @@ app.directive('passwordStrength', function() {
     };
 });
 
-app.controller('AdminUsersController', function($scope, $route, toaster, $http, jwtHelper, scaMessage, scaAdminMenu, $location) {
+app.controller('AdminUsersController', function($scope, $route, toaster, $http, scaMessage, scaAdminMenu, $location) {
     scaMessage.show(toaster);
     $scope.$parent.active_menu = 'admin';
     $scope.admin_menu = scaAdminMenu;
@@ -325,7 +336,7 @@ app.controller('AdminUsersController', function($scope, $route, toaster, $http, 
 });
 
 app.controller('AdminUserController', 
-function($scope, $route, toaster, $http, jwtHelper, scaMessage, scaAdminMenu, $routeParams, $location, $window) {
+function($scope, $route, toaster, $http, scaMessage, scaAdminMenu, $routeParams, $location, $window) {
     scaMessage.show(toaster);
     $scope.$parent.active_menu = 'admin';
     $scope.admin_menu = scaAdminMenu;
@@ -359,7 +370,7 @@ function($scope, $route, toaster, $http, jwtHelper, scaMessage, scaAdminMenu, $r
     }
 });
 
-app.controller('GroupsController', function($scope, $route, toaster, $http, jwtHelper, scaMessage, profiles, $location) {
+app.controller('GroupsController', function($scope, $route, toaster, $http, scaMessage, profiles, $location) {
     $scope.$parent.active_menu = 'groups';
     scaMessage.show(toaster);
 
@@ -475,12 +486,12 @@ app.controller('GroupController', function($scope, $route, toaster, $http, jwtHe
     }
 });
 
-app.controller('SendEmailConfirmationController', function($scope, $route, toaster, $http, jwtHelper, scaMessage, scaAdminMenu, $routeParams, $location) {
+app.controller('SendEmailConfirmationController', function($scope, $route, toaster, $http, scaMessage, scaAdminMenu, $routeParams, $location) {
     scaMessage.show(toaster);
     $scope.$parent.active_menu = 'user';
 });
 
-app.controller('ConfirmEmailController', function($scope, $route, toaster, $http, jwtHelper, scaMessage, scaAdminMenu, $routeParams, $location) {
+app.controller('ConfirmEmailController', function($scope, $route, toaster, $http, scaMessage, scaAdminMenu, $routeParams, $location) {
     scaMessage.show(toaster);
     $scope.$parent.active_menu = 'user';
     $scope.sub = $routeParams.sub;
