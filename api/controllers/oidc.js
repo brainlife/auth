@@ -36,7 +36,7 @@ request.get({url: config.oidc.idplist}, (err, res, xml)=>{
     });
 });
 
-passport.use(new OAuth2Strategy({
+const oidc_strat = new OAuth2Strategy({
     authorizationURL: config.oidc.authorization_url,
     tokenURL: config.oidc.token_url,
     clientID: config.oidc.client_id,
@@ -53,14 +53,17 @@ passport.use(new OAuth2Strategy({
             cb(null, user, profile);
         });
     });
-}));
+});
+oidc_strat.name = "oauth2-oidc";
+passport.use(oidc_strat);
 
 //initiate oauth2 login!
 OAuth2Strategy.prototype.authorizationParams = function(options) {
     return { selected_idp: options.idp }
 }
 router.get('/signin', function(req, res, next) {
-    passport.authenticate('oauth2', {
+    logger.debug("oidc signin commencing");
+    passport.authenticate(oidc_strat.name, {
         //this will be used by my authorizationParams() and selected_idp will be injected to authorized url
         idp: req.query.idp
     })(req, res, next);
@@ -78,7 +81,7 @@ function find_profile(profiles, sub) {
 router.get('/callback', 
 jwt({ secret: config.auth.public_key, credentialsRequired: false, getToken: req=>req.cookies.associate_jwt }),
 function(req, res, next) {
-    passport.authenticate('oauth2', function(err, user, profile) {
+    passport.authenticate(oidc_strat.name, function(err, user, profile) {
         logger.debug("oidc callback", profile);
         if(err) {
             console.error(err);
@@ -135,8 +138,12 @@ function(req, res, next) {
 function register_newuser(profile, res, next) {
     var u = clone(config.auth.default);
     //u.username = ...;  //will this break our system?
-    u.email = profile.email;
-    u.email_confirmed = true; //let's trust InCommon
+
+    //email maynot be set on some IdP(?)
+    //more importantly, it could collide with already existing account - let signup take care of this
+    //u.email = profile.email;
+    //u.email_confirmed = true; //let's trust InCommon
+
     u.oidc_subs = [profile];
     u.fullname = profile.given_name+" "+profile.family_name;
     db.User.create(u).then(function(user) {
@@ -145,7 +152,7 @@ function register_newuser(profile, res, next) {
             issue_jwt(user, profile, function(err, jwt) {
                 if(err) return next(err);
                 logger.info("registration success", jwt);
-                res.redirect('/auth/#!/success/'+jwt);
+                res.redirect('/auth/#!/signup/'+jwt);
             });
         });
     });
@@ -171,7 +178,7 @@ function(req, res, next) {
         secure: true,
         maxAge: 1000*60*5,//5 minutes should be enough
     });
-    passport.authenticate('oauth2')(req, res, next);
+    passport.authenticate(oidc_strat.name)(req, res, next);
 });
 
 //should I refactor?
@@ -186,7 +193,8 @@ router.put('/disconnect', jwt({secret: config.auth.public_key}), function(req, r
         if(~pos) subs.splice(pos, 1);
         user.set('oidc_subs', subs);
         user.save().then(function() {
-            res.json({message: "Successfully disconnected an oauth2 account", user: user});
+            logger.debug(user.toString());
+            res.json({message: "Successfully disconnected an OIDC account", user: user});
         });    
     });
 });

@@ -21,7 +21,7 @@ module.exports = function(sequelize, DataTypes) {
         ///////////////////////////////////////////////////////////////////////////////////////////
         //auth profile
         fullname: Sequelize.STRING,
-        email: Sequelize.STRING,
+        email: {type: Sequelize.STRING, unique: 'true'},
         email_confirmed: { type: Sequelize.BOOLEAN, defaultValue: false }, 
         email_confirmation_token: Sequelize.STRING,
 

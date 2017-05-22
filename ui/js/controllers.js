@@ -132,8 +132,16 @@ function($scope, $route, toaster, $http, $routeParams, scaMessage, $location, $r
         
         //register_new sometimes forward here with jwt to finish registration (like setting up email)
         var user = jwtHelper.decodeToken($routeParams.jwt);
-        $scope.form.username = user.profile.username;
-        $scope.form.email = user.profile.email;
+        if(user.profile.username) {
+            $scope.form.username = user.profile.username;
+            $scope.username_readonly = true; //if set, user can't change it
+        }
+        if(user.profile.email) {
+            $scope.form.email = user.profile.email;
+            $scope.email_readonly = true; //if set, user can't change it
+        }
+
+        //user can change this - because this goes to auth profile
         $scope.form.fullname = user.profile.fullname;
     }
 

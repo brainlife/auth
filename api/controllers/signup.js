@@ -77,7 +77,7 @@ router.post('/', jwt({secret: config.auth.public_key, credentialsRequired: false
         common.createClaim(user, function(err, claim) {
             if(err) return next(err);
             var jwt = common.signJwt(claim);
-            if(config.local.email_confirmation) {
+            if(config.local.email_confirmation && !user.email_confirmed) {
                 common.send_email_confirmation(req.headers.referer||config.local.url, user, function(err) {
                     if(err) {
                         if(!req.user) {

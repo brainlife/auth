@@ -17,7 +17,7 @@ const logger = new winston.Logger(config.logger.winston);
 const common = require('../common');
 const db = require('../models');
 
-passport.use(new OAuth2Strategy({
+const orcid_strat = new OAuth2Strategy({
     authorizationURL: config.orcid.authorization_url,
     tokenURL: config.orcid.token_url,
     clientID: config.orcid.client_id,
@@ -30,7 +30,8 @@ passport.use(new OAuth2Strategy({
         cb(null, user, profile);
     });
 
-    /* In ORCID, email address is private by default.. I need to ask user their email address..
+    /* In ORCID, email address is private by default.. user need to explicitly release it so we can get it
+     * which makes ORCID/email unreliable.. so let's forget it and ask user during signup stage
     //get public record
     //http://members.orcid.org/api/tutorial/read-orcid-records
     request.get({url: "https://pub.orcid.org/v2.0/"+profile.orcid+"/record", headers: {
@@ -39,14 +40,16 @@ passport.use(new OAuth2Strategy({
         console.log("body---------------------", body);
     });
     */
-}));
+});
+orcid_strat.name = "oauth2-orcid";
+passport.use(orcid_strat);
 
 //initiate oauth2 login!
 OAuth2Strategy.prototype.authorizationParams = function(options) {
     return { selected_idp: options.idp }
 }
 router.get('/signin', function(req, res, next) {
-    passport.authenticate('oauth2', {
+    passport.authenticate(orcid_strat.name, {
         //this will be used by my authorizationParams() and selected_idp will be injected to authorized url
         idp: req.query.idp
     })(req, res, next);
@@ -64,7 +67,7 @@ function find_profile(profiles, sub) {
 router.get('/callback', 
 jwt({ secret: config.auth.public_key, credentialsRequired: false, getToken: req=>req.cookies.associate_jwt }),
 function(req, res, next) {
-    passport.authenticate('oauth2', function(err, user, profile) {
+    passport.authenticate(orcid_strat.name, function(err, user, profile) {
         logger.debug("orcid callback", profile);
         if(err) {
             console.error(err);
@@ -152,7 +155,7 @@ function(req, res, next) {
         secure: true,
         maxAge: 1000*60*5,//5 minutes should be enough
     });
-    passport.authenticate('oauth2')(req, res, next);
+    passport.authenticate(orcid_strat.name)(req, res, next);
 });
 
 //should I refactor?
@@ -164,7 +167,7 @@ router.put('/disconnect', jwt({secret: config.auth.public_key}), function(req, r
         if(!user) res.status(401).end();
         user.orcid = null;
         user.save().then(function() {
-            res.json({message: "Successfully disconnected an oauth2 account", user: user});
+            res.json({message: "Successfully disconnected an ORCID account", user: user});
         });    
     });
 });
