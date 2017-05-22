@@ -88,8 +88,11 @@ router.get('/callback', jwt({
 function register_newuser(profile, res, next) {
     var u = clone(config.auth.default);
     //u.username = profile.username;
-    u.email = profile.emails[0].value; //TODO always set?
-    u.email_confirmed = true; //let's trust github
+    
+    //email could collide with already existing account - let signup take care of this
+    //u.email = profile.emails[0].value; //TODO always set?
+    //u.email_confirmed = true; //let's trust github
+
     u.github = profile.username;
     u.fullname = profile.displayName;
     db.User.create(u).then(function(user) {
@@ -98,7 +101,8 @@ function register_newuser(profile, res, next) {
             issue_jwt(user, profile, function(err, jwt) {
                 if(err) return next(err);
                 logger.info("registration success", jwt);
-                res.redirect('/auth/#!/success/'+jwt);
+                res.redirect('/auth/#!/signup/'+jwt);
+                //res.redirect('/auth/#!/success/'+jwt);
             });
         });
     });
