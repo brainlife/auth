@@ -45,10 +45,14 @@ function issue() {
     var claim = {
         "iss": config.auth.iss,
         "iat": (Date.now())/1000,
-        "scopes": JSON.parse(argv.scopes),
-        "profile": JSON.parse(argv.profile),
         "sub": argv.sub,
     };
+    if(argv.scopes) {
+        claim.scopes = JSON.parse(argv.scopes);
+    }
+    if(argv.profile) {
+        claim.profile = JSON.parse(argv.profile);
+    }
     
     if(argv.exp) {
         claim.exp = argv.exp;
