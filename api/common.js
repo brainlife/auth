@@ -3,8 +3,10 @@ const fs = require('fs');
 const jwt = require('jsonwebtoken');
 const nodemailer = require('nodemailer');
 const uuid = require('node-uuid');
+const winston = require('winston');
 
 const config = require('./config');
+const logger = new winston.Logger(config.logger.winston);
 
 exports.createClaim = function(user, cb) {
     //load groups (using sequelize generated code)
@@ -49,7 +51,7 @@ exports.signJwt = function(claim) {
 function do_send_email_confirmation(url, user, cb) {
     var fullurl = url+"#!/confirm_email/"+user.id+"/"+user.email_confirmation_token;
 
-    var transporter = nodemailer.createTransport(); //use direct mx transport
+    var transporter = nodemailer.createTransport(config.local.mailer); 
     transporter.sendMail({
         from: config.local.email_confirmation.from,
         to: user.email,
@@ -76,7 +78,7 @@ exports.send_email_confirmation = function(url, user, cb) {
 }
 
 exports.send_resetemail = function(url, user, cb) {
-    var transporter = nodemailer.createTransport(); //use direct mx transport
+    var transporter = nodemailer.createTransport(config.local.mailer); 
     var fullurl = url+"#!/forgotpass/"+user.password_reset_token;
     transporter.sendMail({
         from: config.local.email_passreset.from,

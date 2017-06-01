@@ -1,24 +1,20 @@
 #!/usr/bin/node
 
-//os
-var fs = require('fs');
-var path = require('path');
+const fs = require('fs');
+const path = require('path');
+const express = require('express');
+const cookieParser = require('cookie-parser'); //google auth uses this
+const bodyParser = require('body-parser');
+const Sequelize = require('sequelize');
+const passport = require('passport');
+const winston = require('winston');
+const expressWinston = require('express-winston');
+const cors = require('cors');
 
-//contrib
-var express = require('express');
-var cookieParser = require('cookie-parser'); //google auth uses this
-var bodyParser = require('body-parser');
-var Sequelize = require('sequelize');
-var passport = require('passport');
-var winston = require('winston');
-var expressWinston = require('express-winston');
-var cors = require('cors');
-
-//mine
-var config = require('./config');
-var logger = new winston.Logger(config.logger.winston);
-var db = require('./models');
-var migration = require('./migration');
+const config = require('./config');
+const logger = new winston.Logger(config.logger.winston);
+const db = require('./models');
+const migration = require('./migration');
 
 //prevent startup if config is old
 if(config.auth.default_scopes) {
