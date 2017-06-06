@@ -19,6 +19,7 @@ function registerUser(body, done) {
     u.fullname = body.fullname;
     u.email = body.email;
     var user = db.User.build(u);
+    //console.dir(user);
     logger.info("registering new user: "+u.username);
     user.setPassword(body.password, function(err) {
         if(err) return done(err);
@@ -26,7 +27,7 @@ function registerUser(body, done) {
         user.save().then(function() {
             //add to default groups
             user.addMemberGroups(u.gids, function() {
-                done(user);    
+                done(null, user);    
             });
         });
     });
