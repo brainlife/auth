@@ -40,16 +40,16 @@ angular.module('app.config', [])
         //ldap: true,
 
         x509: true,
-        google: true,
+        google: false,
         github: true,
         iucas: false,
-        facebook: true,
+        facebook: false,
+        orcid: true, 
 
         oidc: true, //cilogon openid-connect service
         oidc_selector: false, //show idp selector
 
-        orcid: true, //orcid
-            
+           
         signup: true,
     },
 });

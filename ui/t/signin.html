@@ -58,9 +58,10 @@ body {
                     </ui-select-choices>
                 </ui-select>
             </div>
+        </div>
         <div ng-if="appconf.show.local || appconf.show.ldap">
             <div class="form-group" 
-                ng-if="appconf.show.x509 || appconf.show.git || appconf.show.iucas || appconf.show.facebook || appconf.show.google || appconf.show.oidc">
+                ng-if="appconf.show.x509 || appconf.show.git || appconf.show.iucas || appconf.show.facebook || appconf.show.google || appconf.show.oidc || appconf.show.orcid">
                 <center>or</center>
             </div>
             <form ng-submit="submit()">
