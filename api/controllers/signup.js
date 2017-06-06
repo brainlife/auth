@@ -20,7 +20,6 @@ function registerUser(body, done) {
     u.email = body.email;
     var user = db.User.build(u);
     logger.info("registering new user: "+u.username);
-    //logger.info(user);
     user.setPassword(body.password, function(err) {
         if(err) return done(err);
         logger.debug("set password done");
