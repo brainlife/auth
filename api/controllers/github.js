@@ -50,7 +50,7 @@ router.get('/callback', jwt({
             if(user) {
                 var messages = [{
                     type: "error", 
-                    message: "The google account is already associated to a SCA account"
+                    message: "Your github account is already associated to another account. Please signoff / login with your github account."
                 }];
                 res.cookie('messages', JSON.stringify(messages), {path: '/'});
                 res.redirect('/auth/#!/settings/account');
