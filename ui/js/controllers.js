@@ -364,7 +364,7 @@ function($scope, $route, toaster, $http, scaMessage, scaAdminMenu, $routeParams,
     }
 
     $scope.submit = function() {
-        $scope.user.x509dns = JSON.parse($scope.x509dns);
+        if($scope.x509dns) $scope.user.x509dns = JSON.parse($scope.x509dns);
         $scope.user.scopes = JSON.parse($scope.scopes);
 
         $http.put($scope.appconf.api+'/user/'+$routeParams.id, $scope.user)
