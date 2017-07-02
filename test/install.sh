@@ -19,6 +19,9 @@ fi
 if [ ! -f api/config/ldap.password ]; then
     echo "testpass" > api/config/ldap.password
 fi
+if [ ! -f api/config/smtp.password ]; then
+    echo "testpass" > api/config/smtp.password
+fi
 
 #########################################################
 

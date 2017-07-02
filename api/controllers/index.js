@@ -34,5 +34,11 @@ if(config.google) {
 if(config.facebook) {
     router.use('/facebook', require('./facebook'));
 }
+if(config.oidc) {
+    router.use('/oidc', require('./oidc'));
+}
+if(config.orcid) {
+    router.use('/orcid', require('./orcid'));
+}
 
 module.exports = router;

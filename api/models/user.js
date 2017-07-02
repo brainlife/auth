@@ -3,7 +3,7 @@
 //contrib
 var Sequelize = require('sequelize');
 var JsonField = require('sequelize-json');
-var bcrypt = require('bcrypt');
+var bcrypt = require('bcryptjs');
 var winston = require('winston');
 var async = require('async');
 
@@ -15,14 +15,14 @@ module.exports = function(sequelize, DataTypes) {
     return sequelize.define('User', {
         
         ///////////////////////////////////////////////////////////////////////////////////////////
-        //always filled
+        //always filled (really?)
         username: {type: Sequelize.STRING, unique: 'true'},
 
         ///////////////////////////////////////////////////////////////////////////////////////////
         //auth profile
         fullname: Sequelize.STRING,
-        email: Sequelize.STRING,  //profile email is stored in profile service db
-        email_confirmed: { type: Sequelize.BOOLEAN, defaultValue: false }, //TODO
+        email: {type: Sequelize.STRING, unique: 'true'},
+        email_confirmed: { type: Sequelize.BOOLEAN, defaultValue: false }, 
         email_confirmation_token: Sequelize.STRING,
 
         ///////////////////////////////////////////////////////////////////////////////////////////
@@ -40,6 +40,10 @@ module.exports = function(sequelize, DataTypes) {
         github: Sequelize.STRING,
         facebook: Sequelize.STRING,
         x509dns: JsonField(sequelize, 'User', 'x509dns'),
+        orcid: Sequelize.STRING,
+
+        //oauth2: Sequelize.STRING,
+        oidc_subs: JsonField(sequelize, 'User', 'oidc_subs'), //openid connect subs
 
         ///////////////////////////////////////////////////////////////////////////////////////////
         //

@@ -64,16 +64,6 @@ function register_newuser(uid, res, next) {
                     });
                 });
             });
-            /*
-            db.User.create(u).then(function(user) {
-                user.addGroupMembers(u.gids, function(err) {
-                    issue_jwt(user, function(err, jwt) {
-                        if(err) return next(err);
-                        res.json({jwt:jwt, registered: true});
-                    });
-                });
-            });
-            */
         }
     });
 }
@@ -129,8 +119,10 @@ router.get('/verify', jwt({secret: config.auth.public_key, credentialsRequired: 
                             associate(req.user, uid, res, function(err, jwt) {
                                 res.json({jwt: jwt});
                             });
-                        } else {
+                        } else if(config.iucas.auto_register) {
                             register_newuser(uid, res, next);
+                        } else {
+                            res.redirect('/auth/#!/signin?msg='+"Your IU account("+profile.sub+") is not yet registered. Please login using your username/password first, then associate your IU account inside the account settings.");
                         }
                     } else {
                         var err = user.check();

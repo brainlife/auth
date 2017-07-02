@@ -17,14 +17,18 @@ angular.module('app.config', [])
     oauth2_logo: 'images/cilogon.png',
     oauth2_label: 'InCommon Institutional',
 
+    oidc_logo: 'images/cilogon.png',
+    //oidc_label: 'CILogon',
+
     //URL for auth service API
     api: '../api/auth',
 
     //URL for x509 validation API base
     x509api: 'https://dev1.soichi.us:9443',
 
+    //deprecated - always set auth_redirect
     //default location to redirect after successful login
-    //default_redirect_url: '../profile',
+
     default_redirect_url: '/auth/#!/settings/account',  //don't start with #
 
     jwt_id: 'jwt',
@@ -36,14 +40,19 @@ angular.module('app.config', [])
     show: {
         //local and ldap shouldn't be used at the same time
         local: true,
-        ldap: false,
+        //ldap: true,
 
-        iucas: true,
-        google: true,
-        git: true,
         x509: true,
+        google: false,
         github: true,
         facebook: true,
+
+        iucas: false,
+        facebook: false,
+        orcid: true, 
+
+        oidc: true, //cilogon openid-connect service
+        oidc_selector: false, //show idp selector
 
         signup: true,
     },

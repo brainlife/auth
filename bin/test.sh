@@ -10,3 +10,18 @@
 #./auth.js modscope --username jdwest --add '{"dicom": ["admin"]}'
 
 #./auth.js listuser
+
+./auth.js issue --scopes '{
+    "sca": [
+      "user",
+      "admin"
+    ],
+    "mca": [
+      "user",
+      "admin"
+    ],
+    "dicom": [
+      "user",
+      "admin"
+    ]
+}' --sub '1'

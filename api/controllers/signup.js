@@ -1,16 +1,17 @@
 
 //contrib
-var express = require('express');
-var router = express.Router();
-var winston = require('winston');
-var clone = require('clone');
-var async = require('async');
+const express = require('express');
+const router = express.Router();
+const winston = require('winston');
+const clone = require('clone');
+const async = require('async');
+const jwt = require('express-jwt');
 
 //mine
-var config = require('../config');
-var logger = new winston.Logger(config.logger.winston);
-var db = require('../models');
-var common = require('../common');
+const config = require('../config');
+const logger = new winston.Logger(config.logger.winston);
+const db = require('../models');
+const common = require('../common');
 
 function registerUser(body, done) {
     var u = clone(config.auth.default);
@@ -18,17 +19,40 @@ function registerUser(body, done) {
     u.fullname = body.fullname;
     u.email = body.email;
     var user = db.User.build(u);
+    //console.dir(user);
     logger.info("registering new user: "+u.username);
-    //logger.info(user);
     user.setPassword(body.password, function(err) {
         if(err) return done(err);
         logger.debug("set password done");
         user.save().then(function() {
             //add to default groups
             user.addMemberGroups(u.gids, function() {
-                done(user);    
+                done(null, user);    
             });
         });
+    });
+}
+
+function updateUser(req, done) {
+    db.User.findOne({where: {id: req.user.sub} }).then(function(user) {
+        if(!user) return done("can't find user");
+
+        //set things if it's not set yet
+        if(!user.username) user.username = req.body.username;
+        if(!user.fullname) user.fullname = req.body.fullname;
+        if(!user.email) user.email = req.body.email;
+        if(!user.password_hash) {
+            user.setPassword(req.body.password, function(err) {
+                if(err) return done(err);
+                user.save().then(()=>{
+                    done(null, user);
+                });
+            });
+        } else {
+            user.save().then(()=>{
+                done(null, user);
+            });
+        }
     });
 }
 
@@ -43,9 +67,38 @@ function registerUser(body, done) {
  * @apiParam {String} email Email
  *
  */
-router.post('/', function(req, res, next) {
+
+router.post('/', jwt({secret: config.auth.public_key, credentialsRequired: false}), function(req, res, next) {
     var username = req.body.username;
     var email = req.body.email;
+
+    function post_process(err, user) {
+        if(err) return next(err);
+        common.createClaim(user, function(err, claim) {
+            if(err) return next(err);
+            var jwt = common.signJwt(claim);
+            if(config.local.email_confirmation && !user.email_confirmed) {
+                common.send_email_confirmation(req.headers.referer||config.local.url, user, function(err) {
+                    if(err) {
+                        if(!req.user) {
+                            //if we fail to send email, we should unregister the user we just created
+                            user.destroy({force: true}).then(function() {
+                                logger.error("removed newly registred record - email failurer");
+                                res.status(500).json({message: "Failed to send confirmation email. Please make sure your email address is valid."});
+                            });
+                        } else {
+                            res.status(500).json({message: "Failed to send confirmation email. Please make sure your email address is valid"});
+                        }
+                    } else {
+                        res.json({path:'/confirm_email/'+user.id, message: "Confirmation Email has been sent. Please check your email inbox.", jwt: jwt});
+                    }
+                });
+            } else {
+                //no need for email confrmation..
+                res.json({jwt: jwt, sub: user.id});
+            }
+        });
+    }
 
     //TODO - validate password strength? (req.body.password)
     //check for username already taken
@@ -60,28 +113,11 @@ router.post('/', function(req, res, next) {
                     //TODO - maybe I should go ahead and forward user to login form?
                     return next('The email address you chose is already registered. If it is yours, please try signing in, or register with a different email address.');
                 } else {
-                    registerUser(req.body, function(user) {
-                        common.createClaim(user, function(err, claim) {
-                            if(err) return next(err);
-                            var jwt = common.signJwt(claim);
-                            if(config.local.email_confirmation) {
-                                common.send_email_confirmation(req.headers.referer||config.local.url, user, function(err) {
-                                    if(err) {
-                                        //if we fail to send email, we should unregister the user
-                                        user.destroy({force: true}).then(function() {
-                                            logger.error("removed newly registred record - email failurer");
-                                            res.status(500).json({message: "Failed to send confirmation email. Please make sure your email address is valid."});
-                                        });
-                                    } else {
-                                        res.json({path:'/confirm_email/'+user.id, message: "Confirmation Email has been sent. Please check your email inbox.", jwt: jwt});
-                                    }
-                                });
-                            } else {
-                                //no need for email confrmation..
-                                res.json({jwt: jwt, sub: user.id});
-                            }
-                        });
-                    });        
+                    if(req.user) {
+                        updateUser(req, post_process);
+                    } else {
+                        registerUser(req.body, post_process);
+                    }
                 }
             });
         }

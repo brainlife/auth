@@ -3,8 +3,10 @@ const fs = require('fs');
 const jwt = require('jsonwebtoken');
 const nodemailer = require('nodemailer');
 const uuid = require('node-uuid');
+const winston = require('winston');
 
 const config = require('./config');
+const logger = new winston.Logger(config.logger.winston);
 
 exports.createClaim = function(user, cb) {
     //load groups (using sequelize generated code)
@@ -28,7 +30,10 @@ exports.createClaim = function(user, cb) {
             "exp": (Date.now() + config.auth.ttl)/1000,
             "iat": (Date.now())/1000,
             "scopes": user.scopes,
-            "sub": user.id, //can't use user.username because it could be not set
+            
+            //can't use user.username which might not be set
+            "sub": user.id,  //TODO - toString() this!?
+
             "gids": gids,
             "profile": { 
                 username: user.username,
@@ -46,12 +51,12 @@ exports.signJwt = function(claim) {
 function do_send_email_confirmation(url, user, cb) {
     var fullurl = url+"#!/confirm_email/"+user.id+"/"+user.email_confirmation_token;
 
-    var transporter = nodemailer.createTransport(); //use direct mx transport
+    var transporter = nodemailer.createTransport(config.local.mailer); 
     transporter.sendMail({
         from: config.local.email_confirmation.from,
         to: user.email,
         subject: config.local.email_confirmation.subject,
-        text: "Hello!\n\nIf you has created a new SCA account, please visit following URL to confirm your email address.\n\n"+ fullurl,
+        text: "Hello!\n\nIf you have created a new SCA account, please visit following URL to confirm your email address.\n\n"+ fullurl,
         //html:  ejs.render(html_template, params),
     }, function(err, info) {
         if(err) return cb(err);
@@ -73,7 +78,7 @@ exports.send_email_confirmation = function(url, user, cb) {
 }
 
 exports.send_resetemail = function(url, user, cb) {
-    var transporter = nodemailer.createTransport(); //use direct mx transport
+    var transporter = nodemailer.createTransport(config.local.mailer); 
     var fullurl = url+"#!/forgotpass/"+user.password_reset_token;
     transporter.sendMail({
         from: config.local.email_passreset.from,

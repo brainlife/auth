@@ -38,22 +38,28 @@ function listuser() {
 
 function issue() {
     if(!argv.scopes || argv.sub === undefined) {
-        logger.error("./auth.js issue --scopes '{common: [\"user\"]}' --sub 'my_service' [--out token.jwt] [--key test.key]");
+        logger.error("./auth.js issue --scopes '{common: [\"user\"]}' --sub 'my_service' [--exp 1514764800]  [--out token.jwt] [--key test.key]");
         process.exit(1);
     }
 
     var claim = {
         "iss": config.auth.iss,
-        //"exp": (Date.now() + "+(argv.exp*1000*3600*24)+")/1000, //no expiration?
         "iat": (Date.now())/1000,
-        "scopes": JSON.parse(argv.scopes),
         "sub": argv.sub,
     };
+    if(argv.scopes) {
+        claim.scopes = JSON.parse(argv.scopes);
+    }
+    if(argv.profile) {
+        claim.profile = JSON.parse(argv.profile);
+    }
     
+    if(argv.exp) {
+        claim.exp = argv.exp;
+    }
     if(argv.key) {
         console.log("using specified private key");
         config.auth.private_key = fs.readFileSync(argv.key);
-        //console.dir(config.auth);
     }
     /*
     if(argv.pub) {

@@ -89,7 +89,7 @@ app.config(['$routeProvider', 'appconf', function($routeProvider, appconf) {
         templateUrl: 't/forgotpass.html',
         controller: 'ForgotpassController'
     })
-    .when('/signup', {
+    .when('/signup/:jwt?', {
         templateUrl: 't/signup.html',
         controller: 'SignupController'
     })
@@ -136,7 +136,7 @@ app.config(['$routeProvider', 'appconf', function($routeProvider, appconf) {
         if(next.requiresLogin) {
             var jwt = localStorage.getItem(appconf.jwt_id);
             if(jwt == null || jwtHelper.isTokenExpired(jwt)) {
-                toaster.warning("Please singin first");
+                toaster.warning("Please sign in first");
                 sessionStorage.setItem('auth_redirect', '#!'+next.originalPath);
                 $location.path("/signin");
                 event.preventDefault();

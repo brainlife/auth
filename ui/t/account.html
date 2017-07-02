@@ -83,9 +83,6 @@
                     <h4>Indiana University CAS</h4>
                 </div> 
                 <div class="well" ng-if="appconf.show.google">
-                    <!--
-                    <img src="images/google.account_logo.png" class="account pull-left" style="padding-right: 10px;">
-                    -->
                     <button class="btn pull-right" ng-if="user.googleid" ng-click="disconnect('google')">Disconnect</button>
                     <button class="btn pull-right" ng-if="!user.googleid" ng-click="connect('google')">Connect</button>
                     <p class="pull-right text-muted" style="margin: 11px;">
@@ -97,9 +94,6 @@
                     <h4><i class="fa fa-google" aria-hidden="true"></i> Google</h4>
                 </div>
                 <div class="well" ng-if="appconf.show.github">
-                    <!--
-                    <img src="images/github.account_logo.png" class="account pull-left" style="padding-right: 10px;">
-                    -->
                     <button class="btn pull-right" ng-if="user.github" ng-click="disconnect('github')">Disconnect</button>
                     <button class="btn pull-right" ng-if="!user.github" ng-click="connect('github')">Connect</button>
                     <p class="pull-right text-muted" style="margin: 11px;">
@@ -109,6 +103,18 @@
                         <time ng-if="user.times.github_login">{{user.times.github_login | date:'medium'}}</time>
                     </p>
                     <h4><i class="fa fa-github" aria-hidden="true"></i> Github</h4>
+                </div>
+                <div class="well" ng-if="appconf.show.orcid">
+                    <img src="images/orcid.ico" class="account pull-left" style="padding-right: 10px;">
+                    <button class="btn pull-right" ng-if="user.orcid" ng-click="disconnect('orcid')">Disconnect</button>
+                    <button class="btn pull-right" ng-if="!user.orcid" ng-click="connect('orcid')">Connect</button>
+                    <p class="pull-right text-muted" style="margin: 11px;">
+                        <span ng-if="user.orcid"><b>{{user.orcid}}</b> |</span>
+                        Last Login: 
+                        <span ng-if="!user.times.orcid_login">Never</span>
+                        <time ng-if="user.times.orcid_login">{{user.times.orcid_login | date:'medium'}}</time>
+                    </p>
+                    <h4>ORCID</h4>
                 </div>
                 <div class="well" ng-if="appconf.show.facebook">
                     <button class="btn pull-right" ng-if="user.facebook" ng-click="disconnect('facebook')">Disconnect</button>
@@ -123,7 +129,7 @@
                 </div>
                 <div class="well" ng-if="appconf.show.x509">
                     <span class="pull-left" style="font-size: 200%; padding-right: 10px;"><i class="fa fa-certificate"></i></span>
-                    <button class="btn pull-right" ng-if="!user.x509dn" ng-click="x509_connect()">Connect</button>
+                    <button class="btn pull-right" ng-click="x509_connect()">Connect</button>
                     <h4>X509 Certificate</h4>
                     <ul class="list-group" style="padding-top: 10px" ng-if="user.x509dns.length > 0">
                         <li class="list-group-item" ng-repeat="dn in user.x509dns">
@@ -133,6 +139,23 @@
                                 <span class="text-muted"> | Last Login: 
                                     <span ng-if="!user.times['x509_login:'+dn]">Never</span>
                                     <time>{{user.times['x509_login:'+dn] | date:'medium'}}</time>
+                                </span>
+                            </p>
+                        </li>
+                    </ul>
+                </div>
+                <div class="well" ng-if="appconf.show.oidc">
+                    <img ng-src="{{appconf.oidc_logo}}" class="account pull-left" style="padding-right: 10px;">
+                    <button class="btn pull-right" ng-click="connect('oidc')">Connect</button>
+                    <h4>{{appconf.oidc_label||'OpenID Connect'}}</h4>
+                    <ul class="list-group" style="padding-top: 10px" ng-if="user.oidc_subs.length > 0">
+                        <li class="list-group-item" ng-repeat="profile in user.oidc_subs">
+                            <button class="btn btn-xs pull-right" ng-if="user.oidc_subs" ng-click="disconnect('oidc', {sub: profile.sub})">Disconnect</button>
+                            <p>
+                                {{profile.idp_name}} <small>{{profile.email}}</small>
+                                <span class="text-muted"> | Last Login: 
+                                    <span ng-if="!user.times['oidc_login:'+profile.sub]">Never</span>
+                                    <time>{{user.times['oidc_login:'+profile.sub] | date:'medium'}}</time>
                                 </span>
                             </p>
                         </li>

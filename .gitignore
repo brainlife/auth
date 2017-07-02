@@ -10,6 +10,5 @@ nohup*.out
 **/*.log
 debug
 coverage
-typings
 docker/config
 docker/db
