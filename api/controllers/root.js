@@ -238,6 +238,25 @@ router.get('/user/:id', jwt({secret: config.auth.public_key}), function(req, res
     });
 });
 
+//issue user jwt (admin only)
+router.get('/jwt/:id', jwt({secret: config.auth.public_key}), function(req, res, next) {
+    if(!req.user.scopes.sca || !~req.user.scopes.sca.indexOf("admin")) return res.send(401);
+    db.User.findOne({
+        where: {id: req.params.id},
+        /*
+        attributes: [
+            'id', 'username', 'fullname',
+            'email', 'email_confirmed', 'iucas', 'googleid', 'github', 'x509dns', 
+            'times', 'scopes', 'active'],
+        */
+    }).then(function(user) {
+		common.createClaim(user, function(err, claim) {
+			if(err) return next(err);
+			res.json({jwt: common.signJwt(claim)});
+		});
+    }).catch(next);
+});
+
 //update user info (admin only)
 router.put('/user/:id', jwt({secret: config.auth.public_key}), function(req, res, next) {
     if(!~req.user.scopes.sca.indexOf("admin")) return res.send(401);
@@ -246,7 +265,7 @@ router.put('/user/:id', jwt({secret: config.auth.public_key}), function(req, res
         user.update(req.body).then(function(err) {
             res.json({message: "User updated successfully"});
         });
-    });
+    }).catch(next);
 });
 
 //return list of all groups (open to all users)
