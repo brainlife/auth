@@ -53,7 +53,9 @@ function issue() {
     if(argv.profile) {
         claim.profile = JSON.parse(argv.profile);
     }
-    
+    if(argv.gids) {
+        claim.gids = JSON.parse(argv.gids);
+    }
     if(argv.exp) {
         claim.exp = argv.exp;
     }
@@ -61,29 +63,12 @@ function issue() {
         console.log("using specified private key");
         config.auth.private_key = fs.readFileSync(argv.key);
     }
-    /*
-    if(argv.pub) {
-        console.log("using specified public key");
-        config.auth.public_key = fs.readFileSync(argv.pub);
-        //console.dir(config.auth);
-    }
-    */
-
     var token = jwt.sign(claim, config.auth.private_key, config.auth.sign_opt);
     if(argv.out) {
         fs.writeFileSync(argv.out, token);
     } else {
         console.log(token);
     }
-
-    /*
-    //verify to check
-    jwt.verify(token, config.auth.public_key, function(err, decoded) {
-        if(err) throw err;
-        console.log("decoded:");
-        console.log(JSON.stringify(decoded, null, 4));
-    });
-    */
 }
 
 function modscope() {

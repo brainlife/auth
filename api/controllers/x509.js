@@ -20,12 +20,11 @@ function finduserByDN(dn, done) {
 }
 
 function issue_jwt(user, dn, cb) {
-    user.updateTime('x509_login:'+dn);
-    user.save().then(function() {
-        var claim = common.createClaim(user, function(err, claim) {
-            if(err) return cb(err);
-            var jwt = common.signJwt(claim);
-            cb(null, jwt);
+    common.createClaim(user, function(err, claim) {
+        if(err) return cb(err);
+        user.updateTime('x509_login:'+dn);
+        user.save().then(function() {
+            cb(null, common.signJwt(claim));
         });
     });
 }

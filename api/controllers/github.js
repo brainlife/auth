@@ -76,7 +76,7 @@ router.get('/callback', jwt({
                     res.redirect('/auth/#!/signin?msg='+"Your github account is not yet registered. Please login using your username/password first, then associate your github account inside account settings.");
                 }
             } else {
-                issue_jwt(user, profile, function(err, jwt) {
+                issue_jwt(user, function(err, jwt) {
                     if(err) return next(err);
                     res.redirect('/auth/#!/success/'+jwt);
                 });
@@ -98,7 +98,7 @@ function register_newuser(profile, res, next) {
     db.User.create(u).then(function(user) {
         logger.info("registered new user", JSON.stringify(user));
         user.addMemberGroups(u.gids, function() {
-            issue_jwt(user, profile, function(err, jwt) {
+            issue_jwt(user, function(err, jwt) {
                 if(err) return next(err);
                 logger.info("registration success", jwt);
                 res.redirect('/auth/#!/signup/'+jwt);
@@ -108,17 +108,15 @@ function register_newuser(profile, res, next) {
     });
 }
 
-function issue_jwt(user, profile, cb) {
+function issue_jwt(user, cb) {
     common.createClaim(user, function(err, claim) {
         if(err) return cb(err);
-        var jwt = common.signJwt(claim);
         user.updateTime('github_login');
         user.save().then(function() {
-            cb(null, jwt);
+            cb(null, common.signJwt(claim));
         });
     });
 }
-
 
 //start github account association
 router.get('/associate/:jwt', jwt({secret: config.auth.public_key, getToken: function(req) { return req.params.jwt; }}), 

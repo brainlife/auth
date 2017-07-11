@@ -69,26 +69,14 @@ function register_newuser(uid, res, next) {
 }
 
 function issue_jwt(user, cb) {
-    user.updateTime('iucas_login');
-    user.save().then(function() {
-        common.createClaim(user, function(err, claim) {
-            if(err) return cb(err);
-            var jwt = common.signJwt(claim);
-            cb(null, jwt);
+    common.createClaim(user, function(err, claim) {
+        if(err) return cb(err);
+        user.updateTime('iucas_login');
+        user.save().then(function() {
+            cb(null, common.signJwt(claim));
         });
     });
 }
-
-/*
-router.get('/lock', function(req, res, next) {
-    logger.debug("trying to lock it up");
-    request('https://soichi7.ppa.iu.edu/api/profile/noret', function(err, _res, body) {
-        if(err) return next(err); 
-        logger.debug("out of request");
-        res.json(body);
-    });
-});
-*/
 
 router.get('/verify', jwt({secret: config.auth.public_key, credentialsRequired: false}), function(req, res, next) {
     var ticket = req.query.casticket;

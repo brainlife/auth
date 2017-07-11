@@ -56,48 +56,6 @@ passport.use(new GoogleStrategy({
 1|sca-auth |      cover: { layout: 'banner', coverPhoto: [Object], coverInfo: [Object] } } }
 */
 
-/*
-function register_newuser(uid, res, next) {
-    logger.info("registering new user with iucas id:"+uid);
-    db.User.findOne({where: {'username': uid}}).then(function(user) {
-        if(user) {
-            logger.warn("username already registered:"+uid+"(can't auto register)");
-            //TODO - instead of showing this error message, maybe I should redirect user to
-            //a page to force user to login via user/pass, then associate the IU CAS IU once user logs in 
-            next("This is the first time you login with IU CAS account, "+
-                 "but we couldn't register this account since the username '"+uid+"' is already registered in our system. "+
-                 "If you have already registered with username / password, please login with username / password first, ");
-        } else {
-            //brand new user - go ahead and create a new account using IU id as sca user id
-            var u = clone(config.auth.default);
-            u.username = uid; //let's use IU id as local username
-            u.email = uid+"@iu.edu";
-            u.email_confirmed = true; //let's trust IU..
-            u.iucas = uid;
-            db.User.create(u).then(function(user) {
-                issue_jwt(user, function(err, jwt) {
-                    if(err) return next(err);
-                    res.json({jwt:jwt, registered: true});
-                });
-            });
-        }
-    });
-}
-*/
-
-/*
-function issue_jwt(user, cb) {
-    user.updateTime('google_login');
-    user.save().then(function() {
-        common.createClaim(user, function(err, claim) {
-            if(err) return cb(err);
-            var jwt = common.signJwt(claim);
-            cb(null, jwt);
-        });
-    });
-}
-*/
-
 //normal signin
 router.get('/signin', passport.authenticate('google', {scope: ['profile']}));
 //callback that handles both normal and association(if cookies.associate_jwt is set and valid)
@@ -153,12 +111,8 @@ router.get('/callback', jwt({
 router.get('/associate/:jwt', jwt({secret: config.auth.public_key, 
 getToken: function(req) { return req.params.jwt; }}), 
 function(req, res, next) {
-    //TODO - maybe I should create a temporarly token ?
-    //var callbackurl = "https://soichi7.ppa.iu.edu/api/auth/google/callback/associate/"+req.params.jwt;
-    //var exp = new Date();
-    //exp.setMinutes(exp.getMinutes()+5); //only valid for 5 minutes (and will be removed once account is associated)
     res.cookie("associate_jwt", req.params.jwt, {
-        //it's really overkill but .. why not? (maybe helps to hide from log?)
+        //it's really overkill .. but why not? (maybe helps to hide from log?)
         httpOnly: true,
         secure: true,
         maxAge: 1000*60*5,//5 minutes should be enough

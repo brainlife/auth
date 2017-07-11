@@ -30,17 +30,6 @@ app.use(cookieParser());
 app.use(passport.initialize());//needed for express-based application
 
 app.use(cors());
-//app.options('*', cors()); //enable pre-flight across the board
-/*
-app.all('*', (req, res, next)=>{
-    console.log("handling options");
-    console.log(req.headers);
-    res.header('Access-Control-Allow-Origin', 'https://soichi7.ppa.iu.edu');
-    res.header('Access-Control-Allow-Methods', 'GET,HEAD,PUT,PATCH,POST,DELETE');
-    res.header('Access-Control-Allow-Headers', 'authorization,cache-control,if-modified-since,pragma');
-    next();
-});
-*/
 app.use('/', require('./controllers'));
 
 //error handling
