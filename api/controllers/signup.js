@@ -13,17 +13,27 @@ const logger = new winston.Logger(config.logger.winston);
 const db = require('../models');
 const common = require('../common');
 
-function registerUser(body, done) {
+function registerUser(req, done) {
     var u = clone(config.auth.default);
-    u.username = body.username;
-    u.fullname = body.fullname;
-    u.email = body.email;
+    
+    //signup is used to finalize first time 3rd party login (like github)
+    //when github auth succeeds for the first time, it creates a temporary jwt token 
+    //containing github ID for example. We can apply that info here
+    if(req.user && req.user.user) {
+        for(var k in req.user.user) u[k] = req.user.user[k];
+    }
+
+    //from form
+    u.username = req.body.username;
+    u.fullname = req.body.fullname;
+    u.email = req.body.email;
+
+    //now register
     var user = db.User.build(u);
-    //console.dir(user);
-    logger.info("registering new user: "+u.username);
-    user.setPassword(body.password, function(err) {
+    logger.info("registering new user", u);
+    user.setPassword(req.body.password, function(err) {
         if(err) return done(err);
-        logger.debug("set password done");
+        logger.debug("password set");
         user.save().then(function() {
             //add to default groups
             user.addMemberGroups(u.gids, function() {
@@ -33,6 +43,7 @@ function registerUser(body, done) {
     });
 }
 
+/*
 function updateUser(req, done) {
     db.User.findOne({where: {id: req.user.sub} }).then(function(user) {
         if(!user) return done("can't find user");
@@ -55,6 +66,7 @@ function updateUser(req, done) {
         }
     });
 }
+*/
 
 /**
  * @api {post} /signup Register new user
@@ -101,6 +113,7 @@ router.post('/', jwt({secret: config.auth.public_key, credentialsRequired: false
     }
 
     //TODO - validate password strength? (req.body.password)
+    
     //check for username already taken
     db.User.findOne({where: {username: username} }).then(function(user) {
         if(user) {
@@ -113,11 +126,14 @@ router.post('/', jwt({secret: config.auth.public_key, credentialsRequired: false
                     //TODO - maybe I should go ahead and forward user to login form?
                     return next('The email address you chose is already registered. If it is yours, please try signing in, or register with a different email address.');
                 } else {
+                    /*
                     if(req.user) {
                         updateUser(req, post_process);
                     } else {
                         registerUser(req.body, post_process);
                     }
+                    */
+                    registerUser(req, post_process);
                 }
             });
         }

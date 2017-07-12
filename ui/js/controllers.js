@@ -20,7 +20,7 @@ function($scope, $route, toaster, $http, $routeParams, $location, scaMessage, $s
     function handle_success(res) {
         localStorage.setItem($scope.appconf.jwt_id, res.data.jwt);
         $rootScope.$broadcast("jwt_update", res.data.jwt)
-        handle_redirect();
+        handle_redirect($scope.appconf);
     }
 
     function handle_error(res) {
@@ -95,11 +95,10 @@ function($scope, $route, toaster, $http, $routeParams, $location, scaMessage, $s
     }
 });
 
-function handle_redirect() {
+function handle_redirect(appconf) {
     var redirect = sessionStorage.getItem('auth_redirect');
     sessionStorage.removeItem('auth_redirect');
-    //window.location = redirect||document.referrer||$scope.appconf.default_redirect_url; 
-    window.location = redirect||"/";
+    window.location = redirect||appconf.default_redirect_url||'/';
 }
 
 //used by oauth2 callbacks (github, etc..) to set the jwt and redirect
@@ -109,7 +108,7 @@ function($scope, $route, $http, $routeParams, $location, scaMessage, $sce, $root
     scaMessage.success("Welcome back!");
     localStorage.setItem($scope.appconf.jwt_id, $routeParams.jwt);
     $rootScope.$broadcast("jwt_update", $routeParams.jwt);
-    handle_redirect();
+    handle_redirect($scope.appconf);
 });
 
 app.controller('SignoutController', 
@@ -126,29 +125,34 @@ function($scope, $route, toaster, $http, $routeParams, scaMessage, $location, $r
     scaMessage.show(toaster);
     $scope.form = {};
 
-    if($routeParams.jwt) {
-        $scope.jwt = $routeParams.jwt;
-        localStorage.setItem($scope.appconf.jwt_id, $routeParams.jwt);
-        
-        //register_new sometimes forward here with jwt to finish registration (like setting up email)
-        var user = jwtHelper.decodeToken($routeParams.jwt);
-        if(user.profile.username) {
-            $scope.form.username = user.profile.username;
-            $scope.username_readonly = true; //if set, user can't change it
-        }
-        if(user.profile.email) {
-            $scope.form.email = user.profile.email;
-            $scope.email_readonly = true; //if set, user can't change it
-        }
+    var postconfig = {};
 
-        //user can change this - because this goes to auth profile
-        $scope.form.fullname = user.profile.fullname;
+    //register_new sometimes forwards temp jwt to finish registration (like setting up email)
+    if($routeParams.jwt) {
+        $scope.jwt = $routeParams.jwt; //to let UI now that we are *completing* signup
+        var user = jwtHelper.decodeToken($routeParams.jwt);
+        console.dir(user);
+        $scope.form.username = user.user.username;
+        $scope.form.email = user.user.email;
+        $scope.form.fullname = user.user.fullname;
+        
+        //localStorage.setItem($scope.appconf.jwt_id, $routeParams.jwt);
+        postconfig.headers =  {
+            'Authorization': 'Bearer '+$routeParams.jwt
+        }
+    }
+
+    $scope.cancel = function() {
+        window.location = "#"; //back to login form
     }
 
     $scope.submit = function() {
-        //new registration (or do registration complete with jwt)
-        $http.post($scope.appconf.api+'/signup', $scope.form)
+        //new registration (or do registration complete with temp jwt)
+        var config = {};
+        $http.post($scope.appconf.api+'/signup', $scope.form, postconfig)
         .then(function(res, status, headers, config) {
+
+            //set the real jwt!
             localStorage.setItem($scope.appconf.jwt_id, res.data.jwt);
             $rootScope.$broadcast("jwt_update", res.data.jwt);
 
@@ -162,7 +166,7 @@ function($scope, $route, toaster, $http, $routeParams, scaMessage, $location, $r
 
                 //redirect to somewhere..
                 if(res.data.path) $location.path(res.data.path); //maybe .. email_confirmation
-                else handle_redirect();
+                else handle_redirect($scope.appconf);
             }, function(res) {
                 if(res.data && res.data.message) toaster.error(res.data.message);
                 else toaster.error(res.statusText);
@@ -502,7 +506,14 @@ app.controller('SendEmailConfirmationController', function($scope, $route, toast
 app.controller('ConfirmEmailController', function($scope, $route, toaster, $http, scaMessage, scaAdminMenu, $routeParams, $location) {
     scaMessage.show(toaster);
     $scope.$parent.active_menu = 'user';
-    $scope.sub = $routeParams.sub;
+
+    if($routeParams.sub) {
+        setTimeout(()=>{
+            $scope.$apply(function() {
+                $scope.sub = $routeParams.sub;
+            });
+        }, 2000);
+    }
 
     $scope.resend = function() {
         $http.post($scope.appconf.api+'/send_email_confirmation', {sub: $scope.sub})

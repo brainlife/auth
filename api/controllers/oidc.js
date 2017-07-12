@@ -136,16 +136,23 @@ function(req, res, next) {
 });
 
 function register_newuser(profile, res, next) {
-    var u = clone(config.auth.default);
-    //u.username = ...;  //will this break our system?
+    //var u = clone(config.auth.default);
 
-    //email maynot be set on some IdP(?)
+    //email may not be set on some IdP(?)
     //more importantly, it could collide with already existing account - let signup take care of this
     //u.email = profile.email;
     //u.email_confirmed = true; //let's trust InCommon
+    
+    var user = {
+        oidc_subs: [profile],
+        fullname: profile.given_name+" "+profile.family_name,
+        email: profile.email, //not sure if this exists
+    }
+    var temp_jwt = common.signJwt({ exp: (Date.now() + config.auth.ttl)/1000, user })
+    logger.info("signed temporary jwt token for oidc signup:", temp_jwt);
+    res.redirect('/auth/#!/signup/'+temp_jwt);
 
-    u.oidc_subs = [profile];
-    u.fullname = profile.given_name+" "+profile.family_name;
+    /*
     db.User.create(u).then(function(user) {
         logger.info("registered new user", JSON.stringify(user));
         user.addMemberGroups(u.gids, function() {
@@ -156,6 +163,7 @@ function register_newuser(profile, res, next) {
             });
         });
     });
+    */
 }
 
 function issue_jwt(user, profile, cb) {

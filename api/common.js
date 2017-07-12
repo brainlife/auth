@@ -26,16 +26,16 @@ exports.createClaim = function(user, cb) {
         */
 
         cb(null, {
-            "iss": config.auth.iss,
-            "exp": (Date.now() + config.auth.ttl)/1000,
-            "iat": (Date.now())/1000,
-            "scopes": user.scopes,
+            iss: config.auth.iss,
+            exp: (Date.now() + config.auth.ttl)/1000,
+            //"iat": (Date.now())/1000, //this gets set automatically
+            scopes: user.scopes,
             
             //can't use user.username which might not be set
-            "sub": user.id,  //TODO - toString() this!?
+            sub: user.id,  //TODO - toString() this!?
 
-            "gids": gids,
-            "profile": { 
+            gids: gids,
+            profile: { 
                 username: user.username,
                 email: user.email,
                 fullname: user.fullname 

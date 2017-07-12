@@ -119,8 +119,8 @@ function(req, res, next) {
 });
 
 function register_newuser(profile, res, next) {
+    /*
     var u = clone(config.auth.default);
-    //u.username = ...;  //will this break our system?
     u.orcid = profile.orcid;
     u.fullname = profile.name;
     db.User.create(u).then(function(user) {
@@ -133,6 +133,16 @@ function register_newuser(profile, res, next) {
             });
         });
     });
+    */
+    var user = {
+        orcid: profile.orcid,
+        fullname: profile.name,
+        email: profile.email, //not sure if this is the right kkey
+    }
+    var temp_jwt = common.signJwt({ exp: (Date.now() + config.auth.ttl)/1000, user })
+    logger.info("signed temporary jwt token for orcid signup:", temp_jwt, profile);
+    res.redirect('/auth/#!/signup/'+temp_jwt);
+
 }
 
 function issue_jwt(user, profile, cb) {

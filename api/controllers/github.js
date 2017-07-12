@@ -39,7 +39,7 @@ router.get('/callback', jwt({
 }), function(req, res, next) {
     console.log("github signin /callback called ");
     passport.authenticate('github', /*{failureRedirect: '/auth/error'},*/ function(err, user, profile) {
-        logger.debug("github callback", JSON.stringify(profile, null, 4));
+        //logger.debug("github callback", JSON.stringify(profile, null, 4));
         if(err) {
             console.error(err);
             return res.redirect('/auth/#!/signin?msg='+"Failed to authenticate");
@@ -86,15 +86,28 @@ router.get('/callback', jwt({
 });
 
 function register_newuser(profile, res, next) {
-    var u = clone(config.auth.default);
+    //var u = clone(config.auth.default);
     //u.username = profile.username;
+    //u.github = profile.username;
+    //u.fullname = profile.displayName; //not always set
     
-    //email could collide with already existing account - let signup take care of this
+    //email could collide with already existing account - 
+    //let's not set email yet.. but let signup take care of this
     //u.email = profile.emails[0].value; //TODO always set?
     //u.email_confirmed = true; //let's trust github
 
-    u.github = profile.username;
-    u.fullname = profile.displayName;
+    //issue temporary token to complete the signup process
+    var user = {
+        username: profile.username, //try github username..
+        github: profile.username,
+        fullname: profile.displayName,
+    }
+    if(profile.emails.length > 0) user.email = profile.emails[0].value;
+    var temp_jwt = common.signJwt({ exp: (Date.now() + config.auth.ttl)/1000, user })
+    logger.info("signed temporary jwt token for github signup:", temp_jwt);
+    res.redirect('/auth/#!/signup/'+temp_jwt);
+
+    /*
     db.User.create(u).then(function(user) {
         logger.info("registered new user", JSON.stringify(user));
         user.addMemberGroups(u.gids, function() {
@@ -102,10 +115,10 @@ function register_newuser(profile, res, next) {
                 if(err) return next(err);
                 logger.info("registration success", jwt);
                 res.redirect('/auth/#!/signup/'+jwt);
-                //res.redirect('/auth/#!/success/'+jwt);
             });
         });
     });
+    */
 }
 
 function issue_jwt(user, cb) {

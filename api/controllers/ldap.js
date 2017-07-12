@@ -16,8 +16,8 @@ var db = require('../models');
 
 function registerUser(ldapuser, cb) {
     var u = clone(config.auth.default);
-    u.ldap = ldapuser.cn; 
     u.username = ldapuser.cn;
+    u.ldap = ldapuser.cn; 
     u.iucas = ldapuser.cn; //TODO should I do this?
     u.email = ldapuser.mail;
     u.email_confirmed = true; //let's trust IU

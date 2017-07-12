@@ -3,7 +3,7 @@
         <h1 class="page-header">Email Confirmation</h1>
         <p>Please check your email inbox and follow the instruction found in the email.</p>
         <br>
-        <p ng-if="sub">
+        <p ng-if="sub" class="fade2">
             Or ...
             <button type="button" class="btn btn-sm" ng-click="resend()">Resend Confirmation Email</button>
         </p>
@@ -11,3 +11,15 @@
     <ng-include src="'t/footer.html'"></ng-include> <!--should this be part of view?-->
 </div>
 
+<style>
+/* The starting CSS styles for the enter animation */
+.fade2.ng-enter {
+    transition:2s linear all;
+    opacity:0;
+}
+
+/* The finishing CSS styles for the enter animation */
+.fade2.ng-enter.ng-enter-active {
+    opacity:1;
+}
+</style>

@@ -17,6 +17,7 @@
             </div>
             <div class="panel panel-default">
                 <div class="panel-body">
+                    <p class="help-block" ng-if="jwt">Please pick a new password to login in case you are not able to login with 3rd party identity provider</p>
                     <div class="form-group">
                         <label>Password</label>
                         <input type="password" class="form-control" ng-model="form.password" placeholder="Choose your password" required/>
@@ -31,7 +32,8 @@
                     </div>
                 </div>
             </div>
-            <input type="submit" class="btn" value="Submit"/>
+            <input type="button" class="btn" value="Cancel" ng-click="cancel()"/>
+            <input type="submit" class="btn btn-primary" value="Submit"/>
         </form>
     </div>
     <ng-include src="'t/footer.html'"></ng-include> <!--should this be part of view?-->
