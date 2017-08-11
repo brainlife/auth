@@ -33,8 +33,8 @@ const db = require('../models');
 router.post('/refresh', jwt({secret: config.auth.public_key}), function(req, res, next) {
     db.User.findOne({where: {id: req.user.sub}}).then(function(user) {
         if(!user) return next("Couldn't find any user with sub:"+req.user.sub);
-        var err = user.check();
-        if(err) return next(err);
+        //var err = user.check();
+        //if(err) return next(err);
 
         //intersect requested scopes
         if(req.body.scopes) user.scopes = common.intersect_scopes(user.scoppes, req.body.scopes);
@@ -47,7 +47,7 @@ router.post('/refresh', jwt({secret: config.auth.public_key}), function(req, res
     });
 });
 
-//TODO this API send any SCA user email with URL provided by an user - which is a major security risk
+//TODO this API send any user email with URL provided by an user - which is a major security risk
 //I should use configured URL for referer
 router.post('/send_email_confirmation', function(req, res, next) { 
     db.User.findOne({where: {id: req.body.sub}}).then(function(user) {
@@ -60,6 +60,7 @@ router.post('/send_email_confirmation', function(req, res, next) {
         });
     });
 });
+
 router.post('/confirm_email', function(req, res, next) {
     db.User.findOne({where: {email_confirmation_token: req.body.token}}).then(function(user) {
         if(!user) return next("Couldn't find any user with token:"+req.body.token);
@@ -85,37 +86,6 @@ router.get('/health', function(req, res) {
         headers: req.headers, 
     });
 });
-
-/*
-//server side config need to render ui (public)
-router.get('/config', function(req, res) {
-    var c = {
-        allow_signup: config.auth.allow_signup,
-    };
-    if(config.local) {
-        c.local = true;
-    }
-    if(config.ldap) {
-        c.ldap = true;
-    }
-    if(config.iucas) {
-        c.iucas = true;
-    }
-    if(config.github) {
-        c.github = true;
-    }
-    if(config.facebook) {
-        c.facebook = true;
-    }
-    if(config.x509) {
-        c.x509 = true;
-    }
-    if(config.google) {
-        c.google = true;
-    }
-    res.json(c); 
-});
-*/
 
 /**
  * @api {get} /me Get user details
@@ -169,28 +139,6 @@ router.get('/users', jwt({secret: config.auth.public_key}), function(req, res, n
             if(user.password_hash) user.password_hash = true;
         });
         
-        /*
-        //load gids for each users
-        if(req.query.gids) {
-            var _users = JSON.stringif(users);
-            async.forEach(users, function(user, next_user) {
-                user._gids = [];
-                user.getGroups({attributes: ['id']}).then(function(groups) {
-                    groups.forEach(function(group) {
-                        user._gids.push(group.id);
-                    });
-                    next_user();
-                });
-                console.dir(user._gids);
-            }, function(err) {
-                if(err) return next(err);
-                res.json(users);
-            });
-        } else {
-            //done then
-            res.json(users);
-        }
-        */
         res.json(users);
     });
 });
@@ -397,26 +345,6 @@ router.get('/profile', jwt({secret: config.auth.public_key}), function(req, res,
     }).then(function(profiles) {
         res.json({profiles: profiles.rows, count: profiles.count});
     });
-
-    /*
-    db.User.find(find)
-    .select(req.query.select || 'fullname')
-    .select([ 'id', 'fullname', 'email', 'active'])
-    .limit(req.query.limit || 100)
-    .skip(req.query.skip || 0)
-    .sort(req.query.sort || '_id')
-    //.populate('project_id', 'name desc')
-    //.populate('dataset_id', 'name desc')
-    //.populate('application_id', 'name desc config.type')
-    //.populate('application_id dataset_id')
-    .exec(function(err, recs) {
-        if(err) return next(err);
-        db.User.count(find).exec(function(err, count) {
-            if(err) return next(err);
-            res.json({profiles: recs, count: count});
-        });
-    });
-    */
 });
 
 //DEPRECATED BY GET:/profile

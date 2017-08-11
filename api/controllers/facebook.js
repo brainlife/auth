@@ -45,11 +45,15 @@ router.get('/callback', jwt({
             //association
             res.clearCookie('associate_jwt');
             if(user) {
-                //TODO - #/settings/account doesn't handle msg yet
-                return res.redirect('/auth/#!/settings/account?msg=The google account is already associated to a SCA account');
+                var messages = [{
+                    type: "error", 
+                    message: "Your facebook account is already associated to another account"
+                }];
+                res.cookie('messages', JSON.stringify(messages), {path: '/'});
+                return res.redirect('/auth/#!/settings/account');
             }
             db.User.findOne({where: {id: req.user.sub}}).then(function(user) {
-                if(!user) throw new Error("couldn't find user record with SCA sub:"+req.user.sub);
+                if(!user) throw new Error("couldn't find user record with sub:"+req.user.sub);
                 user.facebook = info.id;
                 user.save().then(function() {
                     console.log("saved");
@@ -60,7 +64,7 @@ router.get('/callback', jwt({
             });
         } else {
             if(!user) {
-                return res.redirect('/auth/#!/signin?msg='+"Your facebook account is not registered to SCA yet. Please login using your username/password first, then associate your facebook account inside account settings.");
+                return res.redirect('/auth/#!/signin?msg='+"Your facebook account is not registered yet. Please login using your username/password first, then associate your facebook account inside account settings.");
             }
             common.createClaim(user, function(err, claim) {
                 if(err) return next(err);

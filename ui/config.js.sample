@@ -43,7 +43,7 @@ angular.module('app.config', [])
         //ldap: true,
 
         x509: true,
-        google: false,
+        google: true,
         github: true,
         facebook: true,
 

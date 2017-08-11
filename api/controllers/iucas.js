@@ -24,7 +24,7 @@ function finduserByiucasid(id, cb) {
 function associate(jwt, uid, res, cb) {
     logger.info("associating user with iucas id:"+uid);
     db.User.findOne({where: {id: jwt.sub}}).then(function(user) {
-        if(!user) return cb("couldn't find user record with SCA sub:"+jwt.sub);
+        if(!user) return cb("couldn't find user record with sub:"+jwt.sub);
         user.iucas = uid;
         user.save().then(function() {
             var messages = [{type: "success", /*title: "IUCAS ID Associated",*/ message: "We have associated IU ID:"+uid+" to your account"}];
@@ -57,7 +57,6 @@ function register_newuser(uid, res, next) {
             //TODO I should refactor this part somehow..
             db.User.create(u).then(function(user) {
                 user.addMemberGroups(u.gids, function() {
-                    //done(user);    
                     issue_jwt(user, function(err, jwt) {
                         if(err) return next(err);
                         res.json({jwt:jwt, registered: true});
@@ -113,9 +112,6 @@ router.get('/verify', jwt({secret: config.auth.public_key, credentialsRequired: 
                             res.redirect('/auth/#!/signin?msg='+"Your IU account("+profile.sub+") is not yet registered. Please login using your username/password first, then associate your IU account inside the account settings.");
                         }
                     } else {
-                        var err = user.check();
-                        if(err) return next(err);
-                        
                         //all good. issue token
                         logger.debug("iucas authentication successful. iu id:"+uid);
                         issue_jwt(user, function(err, jwt) {

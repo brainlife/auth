@@ -54,8 +54,8 @@ router.get('/signin', /*jwt({secret: config.auth.public_key, credentialsRequired
     finduserByDN(dn, function(err, user) {
         if(err) return next(err); 
         if(!user) return next("Your DN("+dn+") is not yet registered. Please Signup/Signin with your username/password first, then associate your x509 certificate under your account settings.");
-        var err = user.check();
-        if(err) return next(err);
+        //var err = user.check();
+        //if(err) return next(err);
         
         //all good. issue token
         logger.debug("x509 authentication successful with "+dn);

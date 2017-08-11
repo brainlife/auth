@@ -35,7 +35,7 @@ passport.use(new passportldap(config.ldap,
         logger.info("handling ldap auth post processing");
         //look for ldap field, but also look for username (for now) so that users who registered with 
         //local username/pass can be authenticated
-        //TODO - this means IU user can *takeover* non-IU SCA user.. eventually I might allow both
+        //TODO - this means IU user can *takeover* non-IU user.. eventually I might allow both
         //local and ldap authentication, but it will be very confusing to the user.
         db.User.findOne({where: {$or: {"ldap": ldapuser.cn, "username": ldapuser.cn }}}).then(function(user) {
             if (!user) {
@@ -75,8 +75,6 @@ router.post('/auth', function(req, res, next) {
     passport.authenticate('ldapauth', {session: false}, function(err, user, info) {
         if (err) return next(err);
         if (!user) return res.status(404).json(info);
-        var err = user.check();
-        if(err) return next(err);
         common.createClaim(user, function(err, claim) {
             if(err) return next(err);
             var jwt = common.signJwt(claim);

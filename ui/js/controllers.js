@@ -152,10 +152,20 @@ function($scope, $route, toaster, $http, $routeParams, scaMessage, $location, $r
         $http.post($scope.appconf.api+'/signup', $scope.form, postconfig)
         .then(function(res, status, headers, config) {
 
-            //set the real jwt!
-            localStorage.setItem($scope.appconf.jwt_id, res.data.jwt);
-            $rootScope.$broadcast("jwt_update", res.data.jwt);
+            if(res.data.jwt) {
+                //set the real jwt!
+                localStorage.setItem($scope.appconf.jwt_id, res.data.jwt);
+                $rootScope.$broadcast("jwt_update", res.data.jwt);
+            }
 
+            if(res.data.message) scaMessage.success(res.data.message);
+            //else scaMessage.success("Successfully signed up!");
+            
+            //redirect to somewhere..
+            if(res.data.path) $location.path(res.data.path); //maybe .. email_confirmation
+            else handle_redirect($scope.appconf);
+
+            /*
             //let's post auth profile for the first time
             $http.put($scope.appconf.api+'/profile', {
                 fullname: $scope.form.fullname,
@@ -171,6 +181,7 @@ function($scope, $route, toaster, $http, $routeParams, scaMessage, $location, $r
                 if(res.data && res.data.message) toaster.error(res.data.message);
                 else toaster.error(res.statusText);
             });
+            */
         }, function(res) {
             if(res.data && res.data.message) toaster.error(res.data.message);
             else toaster.error(res.statusText);

@@ -58,13 +58,12 @@ passport.use(new GoogleStrategy({
 
 //normal signin
 router.get('/signin', passport.authenticate('google', {scope: ['profile']}));
+
 //callback that handles both normal and association(if cookies.associate_jwt is set and valid)
 router.get('/callback', jwt({
     secret: config.auth.public_key,
     credentialsRequired: false,
-    getToken: function(req) {
-        return req.cookies.associate_jwt;
-    },
+    getToken: req=>req.cookies.associate_jwt,
 }), function(req, res, next) {
     console.log("google signin /callback called ");
     passport.authenticate('google', function(err, user, info) {
@@ -74,13 +73,19 @@ router.get('/callback', jwt({
         }
         if(req.user) {
             //association
+            logger.debug("handling association");
             res.clearCookie('associate_jwt');
             if(user) {
                 //TODO - #/settings/account doesn't handle msg yet
-                return res.redirect('/auth/#!/settings/account?msg=The github account is already associated to a SCA account');
+                var messages = [{
+                    type: "error", 
+                    message: "Your Google account is already associated to another account.",
+                }];
+                res.cookie('messages', JSON.stringify(messages), {path: '/'});
+                return res.redirect('/auth/#!/settings/account');
             }
             db.User.findOne({where: {id: req.user.sub}}).then(function(user) {
-                if(!user) throw new Error("couldn't find user record with SCA sub:"+req.user.sub);
+                if(!user) throw new Error("couldn't find user record with sub:"+req.user.sub);
                 user.googleid = info.id;
                 user.save().then(function() {
                     //console.log("saved");
@@ -90,8 +95,9 @@ router.get('/callback', jwt({
             });
         } else {
             //normal sign in
+            logger.debug("handling normal signin");
             if(!user) {
-                return res.redirect('/auth/#!/signin?msg='+"Your google account is not registered to SCA yet. Please login using your username/password first, then associate your google account inside account settings.");
+                return res.redirect('/auth/#!/signin?msg='+"Your google account is not registered yet. Please login using your username/password first, then associate your google account inside account settings.");
             }
             common.createClaim(user, function(err, claim) {
                 if(err) return next(err);
@@ -120,29 +126,6 @@ function(req, res, next) {
     });
     passport.authenticate('google', { scope: ['profile'], /*callbackURL: callbackurl*/ })(req, res, next);
 });
-
-/*
-router.get('/callback/associate/:jwt', jwt({secret: config.auth.public_key, 
-getToken: function(req) {
-    return req.params.jwt; 
-}}), 
-function(req, res, next) {
-    passport.authenticate('google', function(err, user, info) {
-        //ignore error
-        if(!info) return next("failed to obtain your google account info");
-        //console.log("/callback/associate called. google id: "+info.id);
-        db.User.findOne({where: {id: req.user.sub}}).then(function(user) {
-            if(!user) throw new Error("couldn't find user record with SCA sub:"+req.user.sub);
-            user.googleid = info.id;
-            user.save().then(function() {
-                console.log("saved");
-                console.dir(user);
-                res.redirect('/auth/#!/settings/account');
-            });
-        });
-    })(req, res, next);
-});
-*/
 
 //should I refactor?
 router.put('/disconnect', jwt({secret: config.auth.public_key}), function(req, res, next) {

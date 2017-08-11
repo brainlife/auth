@@ -56,7 +56,7 @@ router.get('/callback', jwt({
                 res.redirect('/auth/#!/settings/account');
             } else {
                 db.User.findOne({where: {id: req.user.sub}}).then(function(user) {
-                    if(!user) throw new Error("couldn't find user record with SCA sub:"+req.user.sub);
+                    if(!user) throw new Error("couldn't find user record with sub:"+req.user.sub);
                     user.github = profile.username;
                     user.save().then(function() {
                         var messages = [{
@@ -106,19 +106,6 @@ function register_newuser(profile, res, next) {
     var temp_jwt = common.signJwt({ exp: (Date.now() + config.auth.ttl)/1000, user })
     logger.info("signed temporary jwt token for github signup:", temp_jwt);
     res.redirect('/auth/#!/signup/'+temp_jwt);
-
-    /*
-    db.User.create(u).then(function(user) {
-        logger.info("registered new user", JSON.stringify(user));
-        user.addMemberGroups(u.gids, function() {
-            issue_jwt(user, function(err, jwt) {
-                if(err) return next(err);
-                logger.info("registration success", jwt);
-                res.redirect('/auth/#!/signup/'+jwt);
-            });
-        });
-    });
-    */
 }
 
 function issue_jwt(user, cb) {

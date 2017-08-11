@@ -19,8 +19,8 @@ passport.use(new passport_localst(
             if (!user) {
                 return done(null, false, { message: 'Incorrect email or username' });
             } else {
-                var err = user.check();
-                if(err) return done(null, false, err);
+                //var err = user.check();
+                //if(err) return done(null, false, err);
                 if(!user.password_hash) {
                     return done(null, false, { message: 'Password login is not enabled for this account' });
                 }
@@ -40,11 +40,11 @@ passport.use(new passport_localst(
 /**
  * @api {post} /local/auth Perform authentication
  * @apiName LocalAuth
- * @apiDescription Perform authentication using username(or email) and SCA password get JWT token.
+ * @apiDescription Perform authentication using username(or email) and password get JWT token.
  * @apiGroup Local
  *
  * @apiParam {String} username Username or email address
- * @apiParam {String} password SCA local Password
+ * @apiParam {String} password Password!
  *
  * @apiSuccess {Object} jwt JWT token
  */
@@ -133,7 +133,6 @@ router.post('/resetpass', function(req, res, next) {
         var password = req.body.password;
         var cookie = req.cookies.password_reset;
         if(!token || !password) return next("missing parameters");
-        //TODO should I apply minimum password length?
         db.User.findOne({where: {password_reset_token: token, password_reset_cookie: cookie}}).then(function(user) {
             if(user) {
                 user.setPassword(password, function(err) {
@@ -149,8 +148,10 @@ router.post('/resetpass', function(req, res, next) {
     }
 });
 
+/*
 //reset password (with a valid reset token) ?token=123
 router.put('/resetpass', function(req, res, next) {
 });
+*/
 
 module.exports = router;

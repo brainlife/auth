@@ -1,15 +1,16 @@
 'use strict';
 
 //contrib
-var Sequelize = require('sequelize');
-var JsonField = require('sequelize-json');
-var bcrypt = require('bcryptjs');
-var winston = require('winston');
-var async = require('async');
+const Sequelize = require('sequelize');
+const JsonField = require('sequelize-json');
+const bcrypt = require('bcryptjs');
+const winston = require('winston');
+const async = require('async');
+const zxcvbn = require('zxcvbn');
 
 //mine
-var config = require('../config');
-var logger = new winston.Logger(config.logger.winston);
+const config = require('../config');
+const logger = new winston.Logger(config.logger.winston);
 
 module.exports = function(sequelize, DataTypes) {
     return sequelize.define('User', {
@@ -81,19 +82,28 @@ module.exports = function(sequelize, DataTypes) {
 
             setPassword: function (password, cb) {
                 var rec = this;
+
+                //check for password strength.. 
+                //intentionally left minimalistic (UI should impose stronger restriction)
+                var strength = zxcvbn(password);
+                //0 # too guessable: risky password. (guesses < 10^3)
+                //1 # very guessable: protection from throttled online attacks. (guesses < 10^6)
+                //2 # somewhat guessable: protection from unthrottled online attacks. (guesses < 10^8)
+                //3 # safely unguessable: moderate protection from offline slow-hash scenario. (guesses < 10^10)
+                //4 # very unguessable: strong protection from offline slow-hash scenario. (guesses >= 10^10)
+                if(strength.score == 0) {
+                    return cb({message: strength.feedback.warning+" - "+strength.feedback.suggestions.toString()});
+                }
+
                 /* cost of computation https://www.npmjs.com/package/bcrypt
                 * rounds=10: ~10 hashes/sec
                 * rounds=13: ~1 sec/hash
                 * rounds=25: ~1 hour/hash
                 * rounds=31: 2-3 days/hash
                 */
-                //logger.debug("generating sald");
                 bcrypt.genSalt(10, function(err, salt) {
-                    //logger.debug("encrypting pass");
                     bcrypt.hash(password, salt, function(err, hash) {
-                        //logger.debug("done "+err);
                         if(err) return cb(err);
-                        //console.log("hash: "+hash);
                         rec.password_hash = hash;
                         cb(null);
                     });
@@ -110,7 +120,7 @@ module.exports = function(sequelize, DataTypes) {
                 this.set('times', times); //not 100% if this is needed or not
             },
             check: function() {
-                if(!this.active) return {message: "Account is disabled.", code: "inactive"};
+                if(!this.active) return {message: "Account is disabled. Please contact the administrator.", code: "inactive"};
                 if(config.local && config.local.email_confirmation && this.email_confirmed !== true) {
                     return {message: "Email is not confirmed yet", path: "/confirm_email/"+this.id};
                 }
