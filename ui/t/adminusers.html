@@ -7,12 +7,13 @@
     <sca-menutab menu="settings_menu" active="'users'" user="menu.user"></sca-menutab>
 </div>
 <div class="container" style="margin-top: 130px;">
-    <p class="alert alert-warning">This is a prototype</p>
+    <!--<p class="alert alert-warning">This is a prototype</p>-->
     <ul class="list-group">
         <li class="list-group-item" ng-repeat="user in users">
             <div class="pull-right edit_button">
                 <button type="button" ng-click="edit(user.id)" class="btn btn-xs pull-right"><i class="fa fa-pencil-square-o"></i></button>
             </div>
+            <p class="alert alert-danger" ng-if="!user.active">Account disabled (user can not issue new jwt token)</p>
             <h4><small class="text-muted">{{user.id}}</small> {{user.username}} 
                 <span class="label label-danger" ng-if="user.active == false">Inactive</span>
             </h4>
