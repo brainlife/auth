@@ -47,7 +47,7 @@ angular.module('app.config', [])
         github: true,
         facebook: true,
 
-        iucas: false,
+        iucas: true,
         facebook: false,
         orcid: true, 
 

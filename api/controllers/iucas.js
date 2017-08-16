@@ -14,11 +14,6 @@ var logger = new winston.Logger(config.logger.winston);
 var common = require('../common');
 var db = require('../models');
 
-function finduserByiucasid(id, cb) {
-    db.User.findOne({where: {"iucas": id}}).then(function(user) {
-        cb(null, user);
-    });
-}
 
 //TODO - maybe I should refactor this?
 function associate(jwt, uid, res, cb) {
@@ -77,6 +72,7 @@ function issue_jwt(user, cb) {
     });
 }
 
+//XHR get only
 router.get('/verify', jwt({secret: config.auth.public_key, credentialsRequired: false}), function(req, res, next) {
     var ticket = req.query.casticket;
 
@@ -89,13 +85,14 @@ router.get('/verify', jwt({secret: config.auth.public_key, credentialsRequired: 
         timeout: 1000*5, //long enough?
     }, function (err, response, body) {
         if(err) return next(err);
+        logger.debug("verify responded", response.statusCode, body);
         if (response.statusCode == 200) {
             var reslines = body.split("\n");
             if(reslines[0].trim() == "yes") {
                 var uid = reslines[1].trim();
-                finduserByiucasid(uid, function(err, user) {
-                    if(err) return next(err);
+                db.User.findOne({where: {"iucas": uid}}).then(function(user) {
                     if(!user) {
+                        logger.debug("no user under iucas id", uid);
                         if(req.user) {
                             //If user is already logged in, but no iucas associated yet.. then auto-associate.
                             //If someone with only local account let someone else login via iucas on the same browser, while the first person is logged in,
@@ -109,13 +106,16 @@ router.get('/verify', jwt({secret: config.auth.public_key, credentialsRequired: 
                         } else if(config.iucas.auto_register) {
                             register_newuser(uid, res, next);
                         } else {
-                            res.redirect('/auth/#!/signin?msg='+"Your IU account("+profile.sub+") is not yet registered. Please login using your username/password first, then associate your IU account inside the account settings.");
+                            logger.debug("requesting redirect to signin");
+                            //res.redirect('/auth/#!/signin?msg='+"Your IU account("+uid+") is not yet registered. Please login using your username/password first, then associate your IU account inside the account settings.");
+                            res.json({redirect: '/auth/#!/signin', message: "Your IU account("+uid+") is not yet registered. Please login using your username/password first, then associate your IU account inside the account settings."});
                         }
                     } else {
                         //all good. issue token
                         logger.debug("iucas authentication successful. iu id:"+uid);
                         issue_jwt(user, function(err, jwt) {
                             if(err) return next(err);
+                            console.log("issuged token", jwt);
                             res.json({jwt:jwt});
                         });
                     }

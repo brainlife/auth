@@ -9,6 +9,7 @@ const config = require('./config');
 const logger = new winston.Logger(config.logger.winston);
 
 exports.createClaim = function(user, cb) {
+    if(!user.check) return cb("user object does not contain .check()");
     var err = user.check();
     if(err) return cb(err);
     

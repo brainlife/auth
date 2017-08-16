@@ -120,7 +120,6 @@ app.config(['$routeProvider', 'appconf', function($routeProvider, appconf) {
     })
     .when('/inactive', {
         templateUrl: 't/inactive.html',
-        //controller: 'AdminUserController',
     })
     .when('/confirm_email/:sub?/:token?', {
         templateUrl: 't/confirm_email.html',
@@ -131,7 +130,6 @@ app.config(['$routeProvider', 'appconf', function($routeProvider, appconf) {
     });
 }]).run(['$rootScope', '$location', 'toaster', 'jwtHelper', 'appconf', function($rootScope, $location, toaster, jwtHelper, appconf) {
     $rootScope.$on("$routeChangeStart", function(event, next, current) {
-        //console.log("route changed from "+current+" to :"+next);
         //redirect to /login if user hasn't authenticated yet
         if(next.requiresLogin) {
             var jwt = localStorage.getItem(appconf.jwt_id);
@@ -149,7 +147,6 @@ app.config(['$routeProvider', 'appconf', function($routeProvider, appconf) {
 app.config(function(appconf, $httpProvider, jwtInterceptorProvider) {
     jwtInterceptorProvider.tokenGetter = function(jwtHelper, $http) {
         //don't send jwt for template requests
-        //if (config.url.substr(config.url.length - 5) == '.html') return null;
         return localStorage.getItem(appconf.jwt_id);
     }
     $httpProvider.interceptors.push('jwtInterceptor');
@@ -157,10 +154,7 @@ app.config(function(appconf, $httpProvider, jwtInterceptorProvider) {
 
 app.factory('menu', function(appconf, $http, jwtHelper, $sce, toaster, $rootScope) {
     var menu = {
-        header: {
-            //label: appconf.title,
-        },
-        //top: scaMenu,
+        header: {},
         user: null, //to-be-loaded
         _profile: null, //to-be-loaded
     };
@@ -168,10 +162,11 @@ app.factory('menu', function(appconf, $http, jwtHelper, $sce, toaster, $rootScop
     if(appconf.home_url) menu.header.url = appconf.home_url
     
     var jwt = localStorage.getItem(appconf.jwt_id);
+    if(jwt == undefined) console.log("undefined is");
+    if(jwt != undefined) console.log("undefined is not");
     if(jwt) apply_jwt(jwt);
     function apply_jwt(jwt) {
-        console.log("applying jwt");
-        console.log(jwt);
+        console.log("applying jwt", jwt);
         try {
             var expdate = jwtHelper.getTokenExpirationDate(jwt);
         } catch (e) {
@@ -189,8 +184,6 @@ app.factory('menu', function(appconf, $http, jwtHelper, $sce, toaster, $rootScop
                 console.log("jwt expiring in an hour.. refreshing first");
                 $http({
                     url: appconf.auth_api+'/refresh',
-                    //skipAuthorization: true,  //prevent infinite recursion
-                    //headers: {'Authorization': 'Bearer '+jwt},
                     method: 'POST'
                 }).then(function(response) {
                     var jwt = response.data.jwt;
@@ -202,7 +195,10 @@ app.factory('menu', function(appconf, $http, jwtHelper, $sce, toaster, $rootScop
     }
 
     //when jwt is updated, I need to re-apply it to update the menu
-    $rootScope.$on('jwt_update', function(event, jwt) {apply_jwt(jwt); });
+    $rootScope.$on('jwt_update', function(event, jwt) { 
+        console.log("jwt update event", jwt);
+        apply_jwt(jwt); 
+    });
 
     return menu;
 });

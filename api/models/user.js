@@ -13,7 +13,7 @@ const config = require('../config');
 const logger = new winston.Logger(config.logger.winston);
 
 module.exports = function(sequelize, DataTypes) {
-    return sequelize.define('User', {
+    const User = sequelize.define('User', {
         
         ///////////////////////////////////////////////////////////////////////////////////////////
         //always filled (really?)
@@ -53,79 +53,78 @@ module.exports = function(sequelize, DataTypes) {
         
         //prevent user from loggin in (usually temporarily)
         active: { type: Sequelize.BOOLEAN, defaultValue: true } 
-    }, {
-        classMethods: {
-        },
-        instanceMethods: {
-            addMemberGroups: function(gids, cb) {
-                var rec = this;
-                async.forEach(gids, function(gid, next) {
-                    sequelize.models.Group.findById(gid).then(function(group) {
-                        if(!group) {
-                            //need to register group first
-                            var group = sequelize.models.Group.build({
-                                name: "tbd",
-                                desc: "",
-                                active: true,
-                            });
-                            group.save().then(function() {
-                                logger.info("adding new user to group "+gid);
-                                group.addMember(rec.id).then(next);
-                            });
-                        } else {
-                            logger.info("adding new user to group "+gid);
-                            group.addMember(rec.id).then(next);
-                        }
-                    });
-                }, cb);
-            },
-
-            setPassword: function (password, cb) {
-                var rec = this;
-
-                //check for password strength.. 
-                //intentionally left minimalistic (UI should impose stronger restriction)
-                var strength = zxcvbn(password);
-                //0 # too guessable: risky password. (guesses < 10^3)
-                //1 # very guessable: protection from throttled online attacks. (guesses < 10^6)
-                //2 # somewhat guessable: protection from unthrottled online attacks. (guesses < 10^8)
-                //3 # safely unguessable: moderate protection from offline slow-hash scenario. (guesses < 10^10)
-                //4 # very unguessable: strong protection from offline slow-hash scenario. (guesses >= 10^10)
-                if(strength.score == 0) {
-                    return cb({message: strength.feedback.warning+" - "+strength.feedback.suggestions.toString()});
-                }
-
-                /* cost of computation https://www.npmjs.com/package/bcrypt
-                * rounds=10: ~10 hashes/sec
-                * rounds=13: ~1 sec/hash
-                * rounds=25: ~1 hour/hash
-                * rounds=31: 2-3 days/hash
-                */
-                bcrypt.genSalt(10, function(err, salt) {
-                    bcrypt.hash(password, salt, function(err, hash) {
-                        if(err) return cb(err);
-                        rec.password_hash = hash;
-                        cb(null);
-                    });
-                });
-            },
-            isPassword: function(password) {
-                if(!this.password_hash) return false; //no password, no go
-                return bcrypt.compareSync(password, this.password_hash);
-            },
-            updateTime: function(key) {
-                var times = this.get('times');
-                if(!times) times = {};
-                times[key] = new Date();
-                this.set('times', times); //not 100% if this is needed or not
-            },
-            check: function() {
-                if(!this.active) return {message: "Account is disabled. Please contact the administrator.", code: "inactive"};
-                if(config.local && config.local.email_confirmation && this.email_confirmed !== true) {
-                    return {message: "Email is not confirmed yet", path: "/confirm_email/"+this.id};
-                }
-                return null;
-            }
-        }
     });
+
+    User.prototype.addMemberGroups = function(gids, cb) {
+        var rec = this;
+        async.forEach(gids, function(gid, next) {
+            sequelize.models.Group.findById(gid).then(function(group) {
+                if(!group) {
+                    //need to register group first
+                    var group = sequelize.models.Group.build({
+                        name: "tbd",
+                        desc: "",
+                        active: true,
+                    });
+                    group.save().then(function() {
+                        logger.info("adding new user to group "+gid);
+                        group.addMember(rec.id).then(next);
+                    });
+                } else {
+                    logger.info("adding new user to group "+gid);
+                    group.addMember(rec.id).then(next);
+                }
+            });
+        }, cb);
+    }
+
+    User.prototype.setPassword = function(password, cb) {
+        var rec = this;
+
+        //check for password strength.. 
+        //intentionally left minimalistic (UI should impose stronger restriction)
+        var strength = zxcvbn(password);
+        //0 # too guessable: risky password. (guesses < 10^3)
+        //1 # very guessable: protection from throttled online attacks. (guesses < 10^6)
+        //2 # somewhat guessable: protection from unthrottled online attacks. (guesses < 10^8)
+        //3 # safely unguessable: moderate protection from offline slow-hash scenario. (guesses < 10^10)
+        //4 # very unguessable: strong protection from offline slow-hash scenario. (guesses >= 10^10)
+        if(strength.score == 0) {
+            return cb({message: strength.feedback.warning+" - "+strength.feedback.suggestions.toString()});
+        }
+
+        /* cost of computation https://www.npmjs.com/package/bcrypt
+        * rounds=10: ~10 hashes/sec
+        * rounds=13: ~1 sec/hash
+        * rounds=25: ~1 hour/hash
+        * rounds=31: 2-3 days/hash
+        */
+        bcrypt.genSalt(10, function(err, salt) {
+            bcrypt.hash(password, salt, function(err, hash) {
+                if(err) return cb(err);
+                rec.password_hash = hash;
+                cb(null);
+            });
+        });
+    }
+
+    User.prototype.isPassword = function(password) {
+        if(!this.password_hash) return false; //no password, no go
+        return bcrypt.compareSync(password, this.password_hash);
+    }
+    User.prototype.updateTime = function(key) {
+        var times = this.get('times');
+        if(!times) times = {};
+        times[key] = new Date();
+        this.set('times', times); //not 100% if this is needed or not
+    }
+    User.prototype.check = function() {
+        if(!this.active) return {message: "Account is disabled. Please contact the administrator.", code: "inactive"};
+        if(config.local && config.local.email_confirmation && this.email_confirmed !== true) {
+            return {message: "Email is not confirmed yet", path: "/confirm_email/"+this.id};
+        }
+        return null;
+    }
+
+    return User;
 }

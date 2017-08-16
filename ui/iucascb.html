@@ -47,6 +47,11 @@
         var casticket = getParameterByName('casticket');
         $http.get(appconf.api+'/iucas/verify?casticket='+casticket)
         .then(function(res) {
+            if(res.data.redirect) {
+                scaMessage.warning(res.data.message);
+                window.location = res.data.redirect;
+                return;
+            }
             localStorage.setItem(appconf.jwt_id, res.data.jwt);
             var redirect = sessionStorage.getItem('auth_redirect');
             sessionStorage.removeItem('auth_redirect');
@@ -55,7 +60,7 @@
             if(redirect) window.location = redirect; 
             else window.location = appconf.default_redirect_url;
         }, function(res) {
-            console.dir(res);
+            console.error(res);
             if(res.data && res.data.path) {
                 window.location = "./#!"+res.data.path;
                 if(res.data.message) scaMessage.error(res.data.message);

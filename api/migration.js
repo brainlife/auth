@@ -2,7 +2,6 @@
 //contrib
 var winston = require('winston');
 var async = require('async');
-var Promise = require('promise');
 var Sequelize = require('sequelize');
 
 //mine

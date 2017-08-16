@@ -198,6 +198,7 @@ router.get('/jwt/:id', jwt({secret: config.auth.public_key}), function(req, res,
             'times', 'scopes', 'active'],
         */
     }).then(function(user) {
+        if(!user) return next("Couldn't find any user with sub:"+req.params.id);
 		common.createClaim(user, function(err, claim) {
 			if(err) return next(err);
 			res.json({jwt: common.signJwt(claim)});

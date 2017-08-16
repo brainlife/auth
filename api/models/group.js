@@ -13,10 +13,5 @@ module.exports = function(sequelize, DataTypes) {
         name: Sequelize.STRING,
         desc: Sequelize.TEXT,
         active: { type: Sequelize.BOOLEAN, defaultValue: true }
-    }, {
-        classMethods: {
-        },
-        instanceMethods: {
-        }
     });
 }
