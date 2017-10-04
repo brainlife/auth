@@ -14,7 +14,8 @@ exports.createClaim = function(user, cb) {
     if(err) return cb(err);
     
     //load groups (using sequelize generated code)
-    user.getGroups({attributes: ['id']}).then(function(groups) {
+    user.getMemberGroups({attributes: ['id']}).then(function(groups) {
+        console.dir(groups);
         var gids = [];
         groups.forEach(function(group) {
             gids.push(group.id);  

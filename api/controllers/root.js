@@ -33,12 +33,8 @@ const db = require('../models');
 router.post('/refresh', jwt({secret: config.auth.public_key}), function(req, res, next) {
     db.User.findOne({where: {id: req.user.sub}}).then(function(user) {
         if(!user) return next("Couldn't find any user with sub:"+req.user.sub);
-        //var err = user.check();
-        //if(err) return next(err);
-
         //intersect requested scopes
         if(req.body.scopes) user.scopes = common.intersect_scopes(user.scoppes, req.body.scopes);
-
         common.createClaim(user, function(err, claim) {
             if(err) return next(err);
             var jwt = common.signJwt(claim);
@@ -161,7 +157,7 @@ router.get('/user/groups/:id', jwt({secret: config.auth.public_key}), function(r
         where: {id: req.params.id},
     }).then(function(user) {
         if(!user) return res.status(404).end();
-        user.getGroups({attributes: ['id']}).then(function(groups) {
+        user.getMemberGroups({attributes: ['id']}).then(function(groups) {
             var gids = [];
             groups.forEach(function(group) {
                 gids.push(group.id);  

@@ -49,9 +49,9 @@ db.sequelize = sequelize;
 db.Sequelize = Sequelize;
 
 //relationships
-db.User.belongsToMany(db.Group, {through: 'GroupAdmins'});
+db.User.belongsToMany(db.Group, {as: 'AdminGroups', through: 'GroupAdmins'});
 db.Group.belongsToMany(db.User, {as: 'Admins', through: 'GroupAdmins'});
-db.User.belongsToMany(db.Group, {through: 'GroupMembers'});
+db.User.belongsToMany(db.Group, {as: 'MemberGroups', through: 'GroupMembers'});
 db.Group.belongsToMany(db.User, {as: 'Members', through: 'GroupMembers'});
 
 module.exports = db;
