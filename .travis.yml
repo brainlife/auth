@@ -26,4 +26,4 @@ script:
 after_script: "cat coverage/lcov.info | node_modules/coveralls/bin/coveralls.js"
 
 notifications:
-  slack: research-technologies:izdZdry8NEjrDmTjbHL5dCA8
+  slack: pestillilab:yFPhkT1sE0GeD0KfHDA4cCAH

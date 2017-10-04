@@ -82,7 +82,10 @@ function modscope() {
             sub.forEach(function(item) {
                 if(!~base.indexOf(item)) base.push(item);
             });
-        } else {
+        } else if(typeof sub == 'string') {
+            console.log("adding", sub);
+            if(!~base.indexOf(sub)) base.push(sub);
+        } else if(typeof sub == 'object') {
             for(var k in sub) {
                 if(base[k] === undefined) base[k] = sub[k];
                 else add(base[k], sub[k]);
@@ -122,6 +125,7 @@ function modscope() {
             user.scopes = del(_.clone(user.scopes), JSON.parse(argv.del));
         }
         user.save().then(function() {
+            logger.info(user.scopes);
             logger.info("successfully updated user scope. user must re-login for it to take effect)");
         }).catch(function(err) {
             logger.error(err);

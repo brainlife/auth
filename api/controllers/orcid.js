@@ -82,7 +82,7 @@ function(req, res, next) {
                 //TODO - should I let user *steal* the OIDC sub from another account?
                 var messages = [{
                     type: "error", 
-                    message: "There is another account with the same OIDC ID registered. Please contact support."
+                    message: "There is another account with the same ORCID registered. Please contact support."
                 }];
                 res.cookie('messages', JSON.stringify(messages), {path: '/'});
                 res.redirect('/auth/#!/settings/account');
