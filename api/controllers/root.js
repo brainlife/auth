@@ -13,6 +13,21 @@ const logger = new winston.Logger(config.logger.winston);
 const common = require('../common');
 const db = require('../models');
 
+function has_scope(req, role) {
+    if(!req.user) return false;
+    if(!req.user.scopes) return false;
+    if(!req.user.scopes.auth) return false;
+    if(!~req.user.scopes.auth.indexOf(role)) return false;
+    return true;
+}
+
+function scope(role) {
+    return function(req, res, next) {
+        if(has_scope(req, role)) next();
+        else res.status(401).send(role+" role required");
+    }
+}
+
 /**
  * @api {post} /refresh Refresh JWT Token.
  * @apiDescription 
@@ -114,11 +129,10 @@ router.get('/me', jwt({secret: config.auth.public_key}), function(req, res, next
     });
 });
 
-//return list of all users (minus password) admin only - used by user admin
-router.get('/users', jwt({secret: config.auth.public_key}), function(req, res, next) {
+//return list of all users (minus password)
+router.get('/users', jwt({secret: config.auth.public_key}), scope("admin"), function(req, res, next) {
     var where = {};
     if(req.query.where) where = JSON.parse(req.query.where);
-    if(!~req.user.scopes.sca.indexOf("admin")) return res.send(401);
     db.User.findAll({
         where: where, 
         //raw: true, //so that I can add _gids
@@ -151,8 +165,7 @@ router.get('/users', jwt({secret: config.auth.public_key}), function(req, res, n
  *     HTTP/1.1 200 OK
  *     [ 1,2,3 ] 
  */
-router.get('/user/groups/:id', jwt({secret: config.auth.public_key}), function(req, res, next) {
-    if(!~req.user.scopes.sca.indexOf("admin")) return res.send(401);
+router.get('/user/groups/:id', jwt({secret: config.auth.public_key}), scope("admin"), function(req, res, next) {
     db.User.findOne({
         where: {id: req.params.id},
     }).then(function(user) {
@@ -169,8 +182,7 @@ router.get('/user/groups/:id', jwt({secret: config.auth.public_key}), function(r
  
 //DEPRECATED - use /users
 //return detail from just one user - admin only (somewhat redundant from /users ??)
-router.get('/user/:id', jwt({secret: config.auth.public_key}), function(req, res) {
-    if(!~req.user.scopes.sca.indexOf("admin")) return res.send(401);
+router.get('/user/:id', jwt({secret: config.auth.public_key}), scope("admin"), function(req, res) {
     db.User.findOne({
         where: {id: req.params.id},
         attributes: [
@@ -183,8 +195,7 @@ router.get('/user/:id', jwt({secret: config.auth.public_key}), function(req, res
 });
 
 //issue user jwt (admin only)
-router.get('/jwt/:id', jwt({secret: config.auth.public_key}), function(req, res, next) {
-    if(!req.user.scopes.sca || !~req.user.scopes.sca.indexOf("admin")) return res.send(401);
+router.get('/jwt/:id', jwt({secret: config.auth.public_key}), scope("admin"), function(req, res, next) {
     db.User.findOne({
         where: {id: req.params.id},
         /*
@@ -203,8 +214,7 @@ router.get('/jwt/:id', jwt({secret: config.auth.public_key}), function(req, res,
 });
 
 //update user info (admin only)
-router.put('/user/:id', jwt({secret: config.auth.public_key}), function(req, res, next) {
-    if(!~req.user.scopes.sca.indexOf("admin")) return res.send(401);
+router.put('/user/:id', jwt({secret: config.auth.public_key}), scope("admin") ,function(req, res, next) {
     db.User.findOne({where: {id: req.params.id}}).then(function(user) {
         if (!user) return next("can't find user id:"+req.params.id);
         user.update(req.body).then(function(err) {
@@ -214,18 +224,18 @@ router.put('/user/:id', jwt({secret: config.auth.public_key}), function(req, res
 });
 
 //return list of all groups (open to all users)
+//TODO - maybe I should hide members of groups if user is not member of it?
 router.get('/groups', jwt({secret: config.auth.public_key}), function(req, res) {
-    //if(!~req.user.scopes.sca.indexOf("admin")) return res.send(401);
     db.Group.findAll({
         include: [
             {model: db.User, as: 'Admins', attributes: ['id', 'email', 'fullname']},
             {model: db.User, as: 'Members', attributes: ['id', 'email', 'fullname']},
         ],
-        //raw: true,
     }).then(function(_groups) {
         var groups = JSON.parse(JSON.stringify(_groups));
         groups.forEach(function(group) {
-            group.canedit = ~req.user.scopes.sca.indexOf("admin");
+            group.canedit = false;
+            if(has_scope(req, "admin")) group.canedit = true;
             group.Admins.forEach(function(admin) {
                 if(admin.id == req.user.sub) {
                     group.canedit = true;
@@ -236,7 +246,7 @@ router.get('/groups', jwt({secret: config.auth.public_key}), function(req, res) 
     });
 });
 
-//update group (sca adimn, or admin of the group can update)
+//update group (admin, or admin of the group can update)
 router.put('/group/:id', jwt({secret: config.auth.public_key}), function(req, res, next) {
     //console.dir(req.body);
     db.Group.findOne({where: {id: req.params.id}}).then(function(group) {
@@ -247,9 +257,8 @@ router.put('/group/:id', jwt({secret: config.auth.public_key}), function(req, re
             admins.forEach(function(admin) {
                 admin_ids.push(admin.id); //toString so that I can compare with indexOf
             });
-            if(!~req.user.scopes.sca.indexOf("admin") && !~admin_ids.indexOf(req.user.sub)) return res.send(401);
-            //then update everything
-            group.update(req.body.group).then(function(err) {
+            if(!~admin_ids.indexOf(req.user.sub) && !has_scope("admin")) return res.status(401).send("you can't update this group");
+            group.update(req.body).then(function(err) {
                 group.setAdmins(req.body.admins).then(function() {
                     group.setMembers(req.body.members).then(function() {
                         res.json({message: "Group updated successfully"});
@@ -264,8 +273,7 @@ router.put('/group/:id', jwt({secret: config.auth.public_key}), function(req, re
 
 //create new group (any user can create group?)
 router.post('/group', jwt({secret: config.auth.public_key}), function(req, res, next) {
-    //if(!~req.user.scopes.sca.indexOf("admin")) return res.send(401);
-    var group = db.Group.build(req.body.group);
+    var group = db.Group.build(req.body);
     group.save().then(function() {
         group.setAdmins(req.body.admins).then(function() {
             group.setMembers(req.body.members).then(function() {
@@ -280,7 +288,6 @@ router.post('/group', jwt({secret: config.auth.public_key}), function(req, res, 
 //return detail from just one group (open to all users)
 //redundant with /groups. I should probabaly depcreate this and implement query capability for /groups
 router.get('/group/:id', jwt({secret: config.auth.public_key}), function(req, res) {
-    //if(!~req.user.scopes.sca.indexOf("admin")) return res.send(401);
     db.Group.findOne({
         where: {id: req.params.id},
         include: [
@@ -341,29 +348,6 @@ router.get('/profile', jwt({secret: config.auth.public_key}), function(req, res,
         attributes: [ 'id', 'fullname', 'email', 'active' ]
     }).then(function(profiles) {
         res.json({profiles: profiles.rows, count: profiles.count});
-    });
-});
-
-//DEPRECATED BY GET:/profile
-//making this public for now (onere profile page)
-//router.get('/profile/:id', jwt({secret: config.auth.public_key}), function(req, res, next) {
-router.get('/profile/:id', function(req, res, next) {
-    db.User.findOne({
-        where: {id: req.params.id},
-        attributes: [ 'id', 'fullname', 'email', 'active']
-    }).then(function(user) {
-        res.json(user);
-    });
-});
-
-//DEPRECATED BY GET:/profile
-//return all profiles (open to all users)
-//(used by sca-wf-onere/project and others)
-router.get('/profiles', jwt({secret: config.auth.public_key}), function(req, res) {
-    db.User.findAll({
-        attributes: [ 'id', 'fullname', 'email', 'active']
-    }).then(function(profiles) {
-        res.json(profiles);
     });
 });
 

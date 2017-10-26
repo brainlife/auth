@@ -29,31 +29,31 @@ passport.use(new GoogleStrategy({
 }));
 
 /* profile sample
-1|sca-auth |   _json: 
-1|sca-auth |    { kind: 'plus#person',
-1|sca-auth |      etag: '"xw0en60W6-NurXn4VBU-CMjSPEw/dXLp7lxIORcKBZb8-ywaX36Ffh8"',
-1|sca-auth |      nickname: 'JoeyNuts',
-1|sca-auth |      occupation: 'Software Engineer',
-1|sca-auth |      skills: 'Programming, Bicycling, Guitar, Blender-3D Editing',
-1|sca-auth |      gender: 'male',
-1|sca-auth |      urls: [ [Object], [Object], [Object], [Object], [Object], [Object] ],
-1|sca-auth |      objectType: 'person',
-1|sca-auth |      id: '112741998841961652162',
-1|sca-auth |      displayName: 'Soichi Hayashi',
-1|sca-auth |      name: { familyName: 'Hayashi', givenName: 'Soichi' },
-1|sca-auth |      tagline: 'Software Engineer who loves Software Engineering',
-1|sca-auth |      braggingRights: 'Founder for dsBudget,Father of 2',
-1|sca-auth |      aboutMe: 'Work at Indiana University for Open Science Grid Operations team.',
-1|sca-auth |      url: 'https://plus.google.com/+SoichiHayashi2014',
-1|sca-auth |      image: 
-1|sca-auth |       { url: 'https://lh6.googleusercontent.com/-zBuz_fiQ2Iw/AAAAAAAAAAI/AAAAAAAA7_k/EsAaFZtWSgM/photo.jpg?sz=50',
-1|sca-auth |         isDefault: false },
-1|sca-auth |      organizations: [ [Object], [Object] ],
-1|sca-auth |      placesLived: [ [Object], [Object] ],
-1|sca-auth |      isPlusUser: true,
-1|sca-auth |      language: 'en',
-1|sca-auth |      verified: false,
-1|sca-auth |      cover: { layout: 'banner', coverPhoto: [Object], coverInfo: [Object] } } }
+_json: 
+ { kind: 'plus#person',
+   etag: '"xw0en60W6-NurXn4VBU-CMjSPEw/dXLp7lxIORcKBZb8-ywaX36Ffh8"',
+   nickname: 'JoeyNuts',
+   occupation: 'Software Engineer',
+   skills: 'Programming, Bicycling, Guitar, Blender-3D Editing',
+   gender: 'male',
+   urls: [ [Object], [Object], [Object], [Object], [Object], [Object] ],
+   objectType: 'person',
+   id: '112741998841961652162',
+   displayName: 'Soichi Hayashi',
+   name: { familyName: 'Hayashi', givenName: 'Soichi' },
+   tagline: 'Software Engineer who loves Software Engineering',
+   braggingRights: 'Founder for dsBudget,Father of 2',
+   aboutMe: 'Work at Indiana University for Open Science Grid Operations team.',
+   url: 'https://plus.google.com/+SoichiHayashi2014',
+   image: 
+    { url: 'https://lh6.googleusercontent.com/-zBuz_fiQ2Iw/AAAAAAAAAAI/AAAAAAAA7_k/EsAaFZtWSgM/photo.jpg?sz=50',
+      isDefault: false },
+   organizations: [ [Object], [Object] ],
+   placesLived: [ [Object], [Object] ],
+   isPlusUser: true,
+   language: 'en',
+   verified: false,
+   cover: { layout: 'banner', coverPhoto: [Object], coverInfo: [Object] } } }
 */
 
 //normal signin

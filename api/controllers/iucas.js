@@ -43,7 +43,7 @@ function register_newuser(uid, res, next) {
                  "but we couldn't register this account since the username '"+uid+"' is already registered in our system. "+
                  "If you have already registered with username / password, please login with username / password first, ");
         } else {
-            //brand new user - go ahead and create a new account using IU id as sca user id
+            //brand new user - go ahead and create a new account using IU id as user id
             var u = clone(config.auth.default);
             u.username = uid; //let's use IU id as local username
             u.email = uid+"@iu.edu";

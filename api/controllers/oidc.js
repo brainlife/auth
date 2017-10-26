@@ -19,12 +19,12 @@ const db = require('../models');
 
 //cache idp list
 /*
-1|sca-auth | [ { '$': { entityID: 'https://login.aaiedu.hr/edugain/saml2/idp/metadata.php' },
-1|sca-auth |     Organization_Name: [ 'AAI@EduHr - Croatian Research and Education Federation' ],
-1|sca-auth |     Home_Page: [ 'http://www.aaiedu.hr' ],
-1|sca-auth |     Technical_Name: [ 'Dubravko Voncina' ],
-1|sca-auth |     Technical_Address: [ 'dubravko.voncina@srce.hr' ],
-1|sca-auth |     Whitelisted: [ '1' ] },
+ [ { '$': { entityID: 'https://login.aaiedu.hr/edugain/saml2/idp/metadata.php' },
+     Organization_Name: [ 'AAI@EduHr - Croatian Research and Education Federation' ],
+     Home_Page: [ 'http://www.aaiedu.hr' ],
+     Technical_Name: [ 'Dubravko Voncina' ],
+     Technical_Address: [ 'dubravko.voncina@srce.hr' ],
+     Whitelisted: [ '1' ] },
 */
 
 var cache_idps = null;

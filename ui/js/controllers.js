@@ -436,7 +436,6 @@ app.controller('GroupController', function($scope, $route, toaster, $http, jwtHe
         $http.get($scope.appconf.api+'/group/'+id)
         .then(function(res) { 
             $scope.group = res.data; 
-
             $scope.admins = [];
             $scope.group.Admins.forEach(function(admin) {
                 $scope.users.forEach(function(user) {
@@ -466,7 +465,9 @@ app.controller('GroupController', function($scope, $route, toaster, $http, jwtHe
             members.push(member.id);
         });
         var body = {
-            group: $scope.group,
+            name: $scope.group.name,
+            desc: $scope.group.desc,
+            active: $scope.group.active,
             admins: admins,
             members: members,
         }
