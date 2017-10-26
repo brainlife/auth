@@ -165,7 +165,7 @@ router.get('/users', jwt({secret: config.auth.public_key}), scope("admin"), func
  *     HTTP/1.1 200 OK
  *     [ 1,2,3 ] 
  */
-router.get('/user/groups/:id', jwt({secret: config.auth.public_key}), scope("admin"), function(req, res, next) {
+router.get('/user/groups/:id', jwt({secret: config.auth.public_key}), function(req, res, next) {
     db.User.findOne({
         where: {id: req.params.id},
     }).then(function(user) {
