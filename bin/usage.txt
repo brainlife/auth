@@ -7,9 +7,10 @@ Usage:
 ./auth.js useradd --username hayashis --fullname "Soichi Hayashi" --email "hayashis@iu.edu" [--password "password4it"]
 
 * Issue new JWT token
-./auth.js issue --scopes '{"sca": ["user"] }' --sub 'test_service' [--out test.jwt] [--key test.key]
+./auth.js issue --scopes '{"sca": ["user"] }' --sub 'test_service' [--out test.jwt] [--key test.key] --exp 1514764800
 
-./auth.js issue --scopes '{"sca": ["user","admin"]}' --profile '{"fullname": "Soichi Hayashi (forever)", "email": "hayashis@iu.edu"}' --sub '1' --exp 1514764800
+* Issue token that doesn't expire
+./auth.js issue --scopes '{"warehouse": ["user", "admin"], "amaretti": ["user","admin"], "auth": ["user", "admin"]}' --profile '{"fullname": "Soichi Hayashi (forever)", "email": "hayashis@iu.edu"}' --sub '1' --gids '[1,2,3]'
 
 * Reset password
 ./auth.js setpass --username hayashis [or --id 123] --password "password#123"

@@ -120,8 +120,6 @@ router.get('/health', function(req, res) {
 router.get('/me', jwt({secret: config.auth.public_key}), function(req, res, next) {
     db.User.findOne({
         where: {id: req.user.sub},
-        //password_hash is replace by true/false right below
-        //attributes: ['username', 'fullname', 'email', 'email_confirmed', 'iucas', 'googleid', 'github', 'x509dns', 'times', 'password_hash'],
     }).then(function(user) {
         if(!user) return res.status(404).end();
         if(user.password_hash) user.password_hash = true;
@@ -133,6 +131,7 @@ router.get('/me', jwt({secret: config.auth.public_key}), function(req, res, next
 router.get('/users', jwt({secret: config.auth.public_key}), scope("admin"), function(req, res, next) {
     var where = {};
     if(req.query.where) where = JSON.parse(req.query.where);
+    //logger.debug(req.query.where);
     db.User.findAll({
         where: where, 
         //raw: true, //so that I can add _gids
@@ -181,7 +180,7 @@ router.get('/user/groups/:id', jwt({secret: config.auth.public_key}), function(r
 });
  
 //DEPRECATED - use /users
-//return detail from just one user - admin only (somewhat redundant from /users ??)
+//return detail from just one user - admin only (used by event service to query for user's email)
 router.get('/user/:id', jwt({secret: config.auth.public_key}), scope("admin"), function(req, res) {
     db.User.findOne({
         where: {id: req.params.id},
@@ -198,12 +197,6 @@ router.get('/user/:id', jwt({secret: config.auth.public_key}), scope("admin"), f
 router.get('/jwt/:id', jwt({secret: config.auth.public_key}), scope("admin"), function(req, res, next) {
     db.User.findOne({
         where: {id: req.params.id},
-        /*
-        attributes: [
-            'id', 'username', 'fullname',
-            'email', 'email_confirmed', 'iucas', 'googleid', 'github', 'x509dns', 
-            'times', 'scopes', 'active'],
-        */
     }).then(function(user) {
         if(!user) return next("Couldn't find any user with sub:"+req.params.id);
 		common.createClaim(user, function(err, claim) {
@@ -248,7 +241,7 @@ router.get('/groups', jwt({secret: config.auth.public_key}), function(req, res) 
 
 //update group (admin, or admin of the group can update)
 router.put('/group/:id', jwt({secret: config.auth.public_key}), function(req, res, next) {
-    //console.dir(req.body);
+    logger.debug("updadting group", req.params.id);
     db.Group.findOne({where: {id: req.params.id}}).then(function(group) {
         if (!group) return next("can't find group id:"+req.params.id);
         //first I need to get current admins..
@@ -257,7 +250,11 @@ router.put('/group/:id', jwt({secret: config.auth.public_key}), function(req, re
             admins.forEach(function(admin) {
                 admin_ids.push(admin.id); //toString so that I can compare with indexOf
             });
-            if(!~admin_ids.indexOf(req.user.sub) && !has_scope("admin")) return res.status(401).send("you can't update this group");
+
+            //logger.debug("requested by", JSON.stringify(req.user, null, 4));
+            //logger.debug("admin ids", admin_ids);
+
+            if(!~admin_ids.indexOf(req.user.sub) && !has_scope(req, "admin")) return res.status(401).send("you can't update this group");
             group.update(req.body).then(function(err) {
                 group.setAdmins(req.body.admins).then(function() {
                     group.setMembers(req.body.members).then(function() {
@@ -320,6 +317,8 @@ router.put('/profile', jwt({secret: config.auth.public_key}), function(req, res,
     });
 });
 
+//I feel very iffy about this API.. I should only expose user's auth email.
+//maybe I should make this admin only and let other services proxy subsets?
 /**
  * @apiGroup Profile
  * @api {get} /profile          Query auth profiles
