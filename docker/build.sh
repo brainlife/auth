@@ -3,5 +3,5 @@ if [ ! $? -eq 0 ]; then
     echo "failed to build"
     exit
 fi
-docker tag soichih/sca-auth soichih/sca-auth:1.1
+docker tag soichih/sca-auth soichih/sca-auth:1.2
 docker push soichih/sca-auth

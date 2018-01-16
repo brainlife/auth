@@ -38,7 +38,7 @@ exports.createClaim = function(user, cb) {
             //can't use user.username which might not be set
             sub: user.id,  //TODO - toString() this!?
 
-            gids: gids,
+            gids, //TODO - toString() this also?
             profile: { 
                 username: user.username,
                 email: user.email,
