@@ -239,12 +239,12 @@ router.get('/groups', jwt({secret: config.auth.public_key}), function(req, res) 
     });
 });
 
-//update group (admin, or admin of the group can update)
+//update group (super admin, or admin of the group can update)
 router.put('/group/:id', jwt({secret: config.auth.public_key}), function(req, res, next) {
     logger.debug("updadting group", req.params.id);
     db.Group.findOne({where: {id: req.params.id}}).then(function(group) {
         if (!group) return next("can't find group id:"+req.params.id);
-        //first I need to get current admins..
+        logger.debug("loading current admin");
         group.getAdmins().then(function(admins) {
             var admin_ids = [];
             admins.forEach(function(admin) {
@@ -255,9 +255,14 @@ router.put('/group/:id', jwt({secret: config.auth.public_key}), function(req, re
             //logger.debug("admin ids", admin_ids);
 
             if(!~admin_ids.indexOf(req.user.sub) && !has_scope(req, "admin")) return res.status(401).send("you can't update this group");
+
+            logger.debug("user can update this group.. updating");
             group.update(req.body).then(function(err) {
+                logger.debug("updating admins");
                 group.setAdmins(req.body.admins).then(function() {
+                    logger.debug("setting members");
                     group.setMembers(req.body.members).then(function() {
+                        logger.debug("all done");
                         res.json({message: "Group updated successfully"});
                     });
                 });
@@ -338,6 +343,8 @@ router.get('/profile', jwt({secret: config.auth.public_key}), function(req, res,
     if(req.query.where) where = JSON.parse(req.query.where);
     var order = [['fullname', 'DESC']];
     if(req.query.order) order = JSON.parse(req.query.order);
+
+    logger.debug("profile....................", req.query.limit);
 
     db.User.findAndCountAll({
         where: where,
