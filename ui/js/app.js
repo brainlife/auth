@@ -49,7 +49,7 @@ app.directive('validjson', function () {
 });
 
 app.factory('profiles', function(appconf, $http, jwtHelper, toaster) {
-    return $http.get(appconf.api+'/profile')
+    return $http.get(appconf.api+'/profile', {params: {limit: 3000}})
     .then(function(res) {
         return res.data.profiles;
     }, function(res) {

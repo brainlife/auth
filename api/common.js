@@ -15,7 +15,7 @@ exports.createClaim = function(user, cb) {
     
     //load active groups (using sequelize generated code)
     user.getMemberGroups({attributes: ['id', 'active']}).then(function(groups) {
-        var gids = [];
+        var gids = []; 
         groups.forEach(function(group) {
             if(group.active) gids.push(group.id);  
         });
