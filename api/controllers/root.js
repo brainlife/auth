@@ -134,15 +134,12 @@ router.get('/users', jwt({secret: config.auth.public_key}), scope("admin"), func
     //logger.debug(req.query.where);
     db.User.findAll({
         where: where, 
-        //raw: true, //so that I can add _gids
-        
         //password_hash is replaced by true/false right below
         attributes: [
             'id', 'username', 'fullname', 'password_hash', 
             'email', 'email_confirmed', 'iucas', 'googleid', 'github', 'x509dns', 
             'times', 'scopes', 'active'],
     }).then(function(users) {
-
         //mask password!
         users.forEach(function(user) {
             if(user.password_hash) user.password_hash = true;
@@ -193,14 +190,18 @@ router.get('/user/:id', jwt({secret: config.auth.public_key}), scope("admin"), f
     });
 });
 
-//issue user jwt (admin only)
+//issue user jwt (admin only) - with optional claim overrider
 router.get('/jwt/:id', jwt({secret: config.auth.public_key}), scope("admin"), function(req, res, next) {
+    var override = {};
+    if(req.params.claim) override = JSON.parse(req.params.claim);
+
     db.User.findOne({
         where: {id: req.params.id},
     }).then(function(user) {
         if(!user) return next("Couldn't find any user with sub:"+req.params.id);
 		common.createClaim(user, function(err, claim) {
 			if(err) return next(err);
+            claim = Object.assign(claim, override);
 			res.json({jwt: common.signJwt(claim)});
 		});
     }).catch(next);
@@ -351,7 +352,7 @@ router.get('/profile', jwt({secret: config.auth.public_key}), function(req, res,
         order: order,
         limit: req.query.limit||100,
         offset: req.query.offset||0,
-        attributes: [ 'id', 'fullname', 'email', 'active' ]
+        attributes: [ 'id', 'fullname', 'email', 'active', 'username' ]
     }).then(function(profiles) {
         res.json({profiles: profiles.rows, count: profiles.count});
     });
