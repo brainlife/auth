@@ -5,7 +5,7 @@
   "scripts": {
     "start": "node api/auth.js",
     "test": "mocha --reporter spec",
-    "apidoc": "apidoc -i api/ -o ui/apidoc/",
+    "apidoc": "apidoc -i api/ -o docs/apidoc/",
     "cover": "node_modules/istanbul/lib/cli.js cover node_modules/mocha/bin/_mocha -- -R spec test/*.js"
   },
   "dependencies": {

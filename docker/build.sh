@@ -1,9 +1,10 @@
-tag=1.3.4
+#tag=1.3.5
+tag=1.4.0
 
-docker build -t soichih/sca-auth ..
+docker build -t soichih/auth ..
 if [ ! $? -eq 0 ]; then
     echo "failed to build"
     exit
 fi
-docker tag soichih/sca-auth soichih/sca-auth:$tag
-docker push soichih/sca-auth:$tag
+docker tag soichih/auth soichih/auth:$tag
+docker push soichih/auth:$tag
