@@ -1,5 +1,5 @@
 {
-  "name": "sca-auth",
+  "name": "auth",
   "version": "1.0.1",
   "main": "api/auth.js",
   "scripts": {
