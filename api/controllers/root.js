@@ -131,7 +131,6 @@ router.get('/me', jwt({secret: config.auth.public_key}), function(req, res, next
 router.get('/users', jwt({secret: config.auth.public_key}), scope("admin"), function(req, res, next) {
     var where = {};
     if(req.query.where) where = JSON.parse(req.query.where);
-    //logger.debug(req.query.where);
     db.User.findAll({
         where: where, 
         //password_hash is replaced by true/false right below
@@ -194,7 +193,6 @@ router.get('/user/:id', jwt({secret: config.auth.public_key}), scope("admin"), f
 router.get('/jwt/:id', jwt({secret: config.auth.public_key}), scope("admin"), function(req, res, next) {
     var override = {};
     if(req.params.claim) override = JSON.parse(req.params.claim);
-
     db.User.findOne({
         where: {id: req.params.id},
     }).then(function(user) {
@@ -251,12 +249,7 @@ router.put('/group/:id', jwt({secret: config.auth.public_key}), function(req, re
             admins.forEach(function(admin) {
                 admin_ids.push(admin.id); //toString so that I can compare with indexOf
             });
-
-            //logger.debug("requested by", JSON.stringify(req.user, null, 4));
-            //logger.debug("admin ids", admin_ids);
-
             if(!~admin_ids.indexOf(req.user.sub) && !has_scope(req, "admin")) return res.status(401).send("you can't update this group");
-
             logger.debug("user can update this group.. updating");
             group.update(req.body).then(function(err) {
                 logger.debug("updating admins");
@@ -340,12 +333,11 @@ router.put('/profile', jwt({secret: config.auth.public_key}), function(req, res,
  *                              A valid JWT token "Bearer: xxxxx"
  */
 router.get('/profile', jwt({secret: config.auth.public_key}), function(req, res, next) {
+    logger.debug("profile query request received");
     var where = {};
     if(req.query.where) where = JSON.parse(req.query.where);
     var order = [['fullname', 'DESC']];
     if(req.query.order) order = JSON.parse(req.query.order);
-
-    logger.debug("profile....................", req.query.limit);
 
     db.User.findAndCountAll({
         where: where,
@@ -355,6 +347,8 @@ router.get('/profile', jwt({secret: config.auth.public_key}), function(req, res,
         attributes: [ 'id', 'fullname', 'email', 'active', 'username' ]
     }).then(function(profiles) {
         res.json({profiles: profiles.rows, count: profiles.count});
+    }).catch(err=>{
+        res.status(500).json(err);
     });
 });
 

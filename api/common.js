@@ -1,4 +1,3 @@
-
 const fs = require('fs');
 const jwt = require('jsonwebtoken');
 const nodemailer = require('nodemailer');
@@ -8,43 +7,47 @@ const winston = require('winston');
 const config = require('./config');
 const logger = new winston.Logger(config.logger.winston);
 
-exports.createClaim = function(user, cb) {
+exports.createClaim = async function(user, cb) {
     if(!user.check) return cb("user object does not contain .check()");
     var err = user.check();
     if(err) return cb(err);
     
     //load active groups (using sequelize generated code)
-    user.getMemberGroups({attributes: ['id', 'active']}).then(function(groups) {
-        var gids = []; 
-        groups.forEach(function(group) {
-            if(group.active) gids.push(group.id);  
-        });
-        /* http://websec.io/2014/08/04/Securing-Requests-with-JWT.html
-        iss: The issuer of the token
-        aud: The audience that the JWT is intended for
-        iat: The timestamp when the JWT was created
-        nbf: A "not process before" timestamp defining an allowed start time for processing
-        exp: A timestamp defining an expiration time (end time) for the token
-        jti: Some kind of unique ID for the token
-        typ: A "type" of token. In this case it's URL but it could be a media type like these
-        */
+    var gids = []; 
+    let groups = await user.getAdminGroups({attributes: ['id', 'active']});
+    groups.forEach(group=>{
+        if(group.active && !~gids.indexOf(group.id)) gids.push(group.id);  
+    });
+    groups = await user.getMemberGroups({attributes: ['id', 'active']});
+    groups.forEach(group=>{
+        if(group.active && !~gids.indexOf(group.id)) gids.push(group.id);  
+    });
 
-        cb(null, {
-            iss: config.auth.iss,
-            exp: (Date.now() + config.auth.ttl)/1000,
-            //"iat": (Date.now())/1000, //this gets set automatically
-            scopes: user.scopes,
-            
-            //can't use user.username which might not be set
-            sub: user.id,  //TODO - toString() this!?
+    /* http://websec.io/2014/08/04/Securing-Requests-with-JWT.html
+    iss: The issuer of the token
+    aud: The audience that the JWT is intended for
+    iat: The timestamp when the JWT was created
+    nbf: A "not process before" timestamp defining an allowed start time for processing
+    exp: A timestamp defining an expiration time (end time) for the token
+    jti: Some kind of unique ID for the token
+    typ: A "type" of token. In this case it's URL but it could be a media type like these
+    */
 
-            gids, //TODO - toString() this also?
-            profile: { 
-                username: user.username,
-                email: user.email,
-                fullname: user.fullname 
-            },
-        });
+    cb(null, {
+        iss: config.auth.iss,
+        exp: (Date.now() + config.auth.ttl)/1000,
+        //"iat": (Date.now())/1000, //this gets set automatically
+        scopes: user.scopes,
+        
+        //can't use user.username which might not be set
+        sub: user.id,  //TODO - toString() this!?
+
+        gids, //TODO - toString() this also?
+        profile: { 
+            username: user.username,
+            email: user.email,
+            fullname: user.fullname 
+        },
     });
 }
 

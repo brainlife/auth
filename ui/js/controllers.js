@@ -100,7 +100,7 @@ function handle_redirect(appconf) {
 app.controller('SuccessController', 
 function($scope, $route, $http, $routeParams, $location, scaMessage, $sce, $rootScope) {
     console.log("successcontroller called");
-    scaMessage.success("Welcome back!");
+    //scaMessage.success("Welcome back!");
     localStorage.setItem($scope.appconf.jwt_id, $routeParams.jwt);
     $rootScope.$broadcast("jwt_update", $routeParams.jwt);
     handle_redirect($scope.appconf);
@@ -108,7 +108,7 @@ function($scope, $route, $http, $routeParams, $location, scaMessage, $sce, $root
 
 app.controller('SignoutController', 
 function($scope, $route, $http, $routeParams, menu, $location, scaMessage) {
-    scaMessage.success("Good Bye!");
+    //scaMessage.success("Good Bye!");
     localStorage.removeItem($scope.appconf.jwt_id);
     menu.user = null; //scaMenubar watches for this and re-init
     $location.path("/signin");
@@ -159,24 +159,6 @@ function($scope, $route, toaster, $http, $routeParams, scaMessage, $location, $r
             //redirect to somewhere..
             if(res.data.path) $location.path(res.data.path); //maybe .. email_confirmation
             else handle_redirect($scope.appconf);
-
-            /*
-            //let's post auth profile for the first time
-            $http.put($scope.appconf.api+'/profile', {
-                fullname: $scope.form.fullname,
-            })
-            .then(function(_res) {
-                if(res.data.message) scaMessage.success(res.data.message);
-                else scaMessage.success("Successfully signed up!");
-
-                //redirect to somewhere..
-                if(res.data.path) $location.path(res.data.path); //maybe .. email_confirmation
-                else handle_redirect($scope.appconf);
-            }, function(res) {
-                if(res.data && res.data.message) toaster.error(res.data.message);
-                else toaster.error(res.statusText);
-            });
-            */
         }, function(res) {
             if(res.data && res.data.message) toaster.error(res.data.message);
             else toaster.error(res.statusText);
@@ -256,16 +238,6 @@ function($scope, $route, toaster, $http, jwtHelper, scaMessage) {
     }
     $scope.x509_connect = function() {
         window.location = $scope.appconf.x509api+'/x509/associate/'+jwt;
-        /*
-        $http.get($scope.appconf.x509api+'/x509/connect') //, {headers: null})
-        .then(function(res, status, headers, config) {
-            toaster.success(res.data.message);
-            $scope.user = res.data.user;
-        }, function(res, status, headers, config) {
-            if(res.data && res.data.message) toaster.error(res.data.message);
-            else toaster.error(res.statusText);
-        }); 
-        */
     }
 });
 
