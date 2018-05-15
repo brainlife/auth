@@ -143,7 +143,7 @@ router.post('/resetpass', function(req, res, next) {
                         res.json({status: "ok", message: "Password reset successfully."});
                     });
                 });
-            } else return next("couldn't find the token provided");
+            } else return next("Couldn't find the token provided.");
         });
     }
 });

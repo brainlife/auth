@@ -271,7 +271,7 @@ app.controller('ForgotpassController', function($scope, $route, toaster, $http, 
         }, function(res) {
             //if(res.data && res.data.message) toaster.error(res.data.message);
             //else toaster.error(res.statusText);
-            scaMessage.error("Failed to reset password");
+            scaMessage.error("Failed to reset password. Please make sure you are using the same browser you have used to request the password reset.");
             $location.path("/forgotpass");
         });
     }
