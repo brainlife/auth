@@ -54,7 +54,7 @@ router.post('/auth', function(req, res, next) {
         if (!user) return next(info);
         common.createClaim(user, function(err, claim) {
             if(err) return next(err);
-            var jwt = common.signJwt(claim);
+            var jwt = common.signJwt(claim, req.body.ttl);
             user.updateTime('local_login');
             user.save().then(function() {
                 res.json({message: "Login Success!", jwt: jwt});
