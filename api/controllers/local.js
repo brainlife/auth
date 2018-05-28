@@ -45,6 +45,7 @@ passport.use(new passport_localst(
  *
  * @apiParam {String} username Username or email address
  * @apiParam {String} password Password!
+ * @apiParam {String} [ttl]    time-to-live in milliseconds (if not set, it will be defaulted to server default)
  *
  * @apiSuccess {Object} jwt JWT token
  */
@@ -54,6 +55,7 @@ router.post('/auth', function(req, res, next) {
         if (!user) return next(info);
         common.createClaim(user, function(err, claim) {
             if(err) return next(err);
+            if(req.body.ttl) claim.exp = (Date.now() + req.body.ttl)/1000;
             var jwt = common.signJwt(claim);
             user.updateTime('local_login');
             user.save().then(function() {
