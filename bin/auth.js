@@ -6,17 +6,16 @@
 // Update specified user's scope 
 //
 
-//contrib
-var argv = require('optimist').argv;
-var winston = require('winston');
-var jwt = require('jsonwebtoken');
-var fs = require('fs');
-var _ = require('underscore');
+let argv = require('optimist').argv;
+let winston = require('winston');
+let jwt = require('jsonwebtoken');
+let fs = require('fs');
+let _ = require('underscore');
 
-//mine
-var config = require('../api/config');
-var logger = new winston.Logger(config.logger.winston);
-var db = require('../api/models');
+let config = require('../api/config');
+let logger = new winston.Logger(config.logger.winston);
+let db = require('../api/models');
+let common = require('../api/common');
 
 switch(argv._[0]) {
 case "modscope": modscope(); break;
@@ -37,38 +36,62 @@ function listuser() {
 }
 
 function issue() {
-    if(!argv.scopes || argv.sub === undefined) {
+    if((!argv.scopes || argv.sub === undefined) && !argv.username) {
+        logger.error("./auth.js issue --username <userrname>");
         logger.error("./auth.js issue --scopes '{common: [\"user\"]}' --sub 'my_service' [--exp 1514764800]  [--out token.jwt] [--key test.key]");
         process.exit(1);
     }
 
-    var claim = {
-        "iss": config.auth.iss,
-        "iat": (Date.now())/1000,
-        "sub": argv.sub,
-    };
-    if(argv.scopes) {
-        claim.scopes = JSON.parse(argv.scopes);
-    }
-    if(argv.profile) {
-        claim.profile = JSON.parse(argv.profile);
-    }
-    if(argv.gids) {
-        claim.gids = JSON.parse(argv.gids);
-    }
-    if(argv.exp) {
-        claim.exp = argv.exp;
-    }
-    if(argv.key) {
-        console.log("using specified private key");
-        config.auth.private_key = fs.readFileSync(argv.key);
-    }
-    var token = jwt.sign(claim, config.auth.private_key, config.auth.sign_opt);
-    if(argv.out) {
-        fs.writeFileSync(argv.out, token);
+    if(argv.username) {
+        //load claim from user table
+        db.User.findOne({where: { 
+            $or: [
+                {username: argv.username}, 
+                {id: argv.id}, 
+            ]} 
+        }).then(user=>{
+            common.createClaim(user, (err, claim)=>{ 
+                if(err) throw err;
+                issue(claim);
+            });
+        });
     } else {
-        console.log(token);
+        //let admin construct the claim
+        issue({
+            "iss": config.auth.iss,
+            "iat": (Date.now())/1000,
+            "sub": argv.sub,
+        });
     }
+
+    function issue(claim) {
+        if(argv.scopes) {
+            claim.scopes = JSON.parse(argv.scopes);
+        }
+        if(argv.profile) {
+            claim.profile = JSON.parse(argv.profile);
+        }
+        if(argv.gids) {
+            claim.gids = JSON.parse(argv.gids);
+        }
+        if(argv.exp) {
+            claim.exp = argv.exp;
+        }
+        if(argv.ttl) { //in milliseconds
+            let d = (new Date()).getTime();
+            claim.exp = (d+argv.ttl)/1000;
+        }
+        if(argv.key) {
+            console.log("using specified private key");
+            config.auth.private_key = fs.readFileSync(argv.key);
+        }
+        var token = jwt.sign(claim, config.auth.private_key, config.auth.sign_opt);
+        if(argv.out) {
+            fs.writeFileSync(argv.out, token);
+        } else {
+            console.log(token);
+        }
+    } 
 }
 
 function modscope() {
