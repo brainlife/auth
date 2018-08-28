@@ -160,11 +160,9 @@ app.factory('menu', function(appconf, $http, jwtHelper, $sce, toaster, $rootScop
     };
     if(appconf.icon_url) menu.header.icon = $sce.trustAsHtml("<img src=\""+appconf.icon_url+"\">");
     if(appconf.home_url) menu.header.url = appconf.home_url
-    
     var jwt = localStorage.getItem(appconf.jwt_id);
-    if(jwt == undefined) console.log("undefined is");
-    if(jwt != undefined) console.log("undefined is not");
     if(jwt) apply_jwt(jwt);
+    else console.log("jwt not set..");
     function apply_jwt(jwt) {
         console.log("applying jwt", jwt);
         try {
@@ -179,6 +177,7 @@ app.factory('menu', function(appconf, $http, jwtHelper, $sce, toaster, $rootScop
             localStorage.removeItem(appconf.jwt_id);
         } else {
             menu.user = jwtHelper.decodeToken(jwt);
+            /*
             if(ttl < 3600*1000) {
                 //jwt expring in less than an hour! refresh!
                 console.log("jwt expiring in an hour.. refreshing first");
@@ -191,6 +190,7 @@ app.factory('menu', function(appconf, $http, jwtHelper, $sce, toaster, $rootScop
                     menu.user = jwtHelper.decodeToken(jwt);
                 });
             }
+            */
         }
     }
 

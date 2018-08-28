@@ -50,6 +50,7 @@ router.post('/refresh', jwt({secret: config.auth.public_key}), function(req, res
         if(!user) return next("Couldn't find any user with sub:"+req.user.sub);
         //intersect requested scopes
         if(req.body.scopes) user.scopes = common.intersect_scopes(user.scoppes, req.body.scopes);
+        //logger.debug("creating claim", user);
         common.createClaim(user, function(err, claim) {
             if(err) return next(err);
             var jwt = common.signJwt(claim);

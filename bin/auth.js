@@ -77,9 +77,9 @@ function issue() {
         if(argv.exp) {
             claim.exp = argv.exp;
         }
-        if(argv.ttl) { //in milliseconds
+        if(argv.ttl) { //in days
             let d = (new Date()).getTime();
-            claim.exp = (d+argv.ttl)/1000;
+            claim.exp = (d+argv.ttl*3600*24)/1000;
         }
         if(argv.key) {
             console.log("using specified private key");

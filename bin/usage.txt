@@ -9,6 +9,9 @@ Usage:
 * Issue new JWT token
 ./auth.js issue --scopes '{"sca": ["user"] }' --sub 'test_service' [--out test.jwt] [--key test.key] --exp 1514764800
 
+* Issue neww JWT token from user profile (valid for 3 days)
+./auth.js issue --username hayashis --ttl 3
+
 * Issue token that doesn't expire
 ./auth.js issue --scopes '{"warehouse": ["user", "admin"], "amaretti": ["user","admin"], "auth": ["user", "admin"]}' --profile '{"fullname": "Soichi Hayashi (forever)", "email": "hayashis@iu.edu"}' --sub '1' --gids '[2, 85, 95, 110, 111, 112, 113, 114, 115, 116, 117, 118, 120, 121, 122, 123, 124, 125, 126, 127, 131, 133, 134]'
 

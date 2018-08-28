@@ -9,7 +9,9 @@ const Sequelize = require('sequelize');
 const passport = require('passport');
 const winston = require('winston');
 const expressWinston = require('express-winston');
+//const compression = require('compression');
 const cors = require('cors');
+const nocache = require('nocache');
 
 const config = require('./config');
 const logger = new winston.Logger(config.logger.winston);
@@ -21,15 +23,17 @@ if(config.auth.default_scopes) {
     throw new Error("default_scopes is replaced by default object in config.");
 }
 
-//init express
-var app = express();
+const app = express();
+app.use(cors());
+//app.use(compression());
+app.use(nocache());
+
 app.use(bodyParser.json()); //parse application/json
 app.use(bodyParser.urlencoded({extended: false})); //parse application/x-www-form-urlencoded //TODO - do we need this?
 app.use(expressWinston.logger(config.logger.winston)); 
 app.use(cookieParser());
 app.use(passport.initialize());//needed for express-based application
 
-app.use(cors());
 app.use('/', require('./controllers'));
 
 //error handling
