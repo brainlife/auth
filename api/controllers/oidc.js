@@ -17,16 +17,6 @@ const logger = new winston.Logger(config.logger.winston);
 const common = require('../common');
 const db = require('../models');
 
-//cache idp list
-/*
- [ { '$': { entityID: 'https://login.aaiedu.hr/edugain/saml2/idp/metadata.php' },
-     Organization_Name: [ 'AAI@EduHr - Croatian Research and Education Federation' ],
-     Home_Page: [ 'http://www.aaiedu.hr' ],
-     Technical_Name: [ 'Dubravko Voncina' ],
-     Technical_Address: [ 'dubravko.voncina@srce.hr' ],
-     Whitelisted: [ '1' ] },
-*/
-
 var cache_idps = null;
 request.get({url: config.oidc.idplist}, (err, res, xml)=>{
     if(err) throw err;
@@ -49,7 +39,7 @@ const oidc_strat = new OAuth2Strategy({
     logger.debug("oidc loading userinfo ..", accessToken, profile);
     request.get({url: config.oidc.userinfo_url, qs: {access_token: accessToken}, json: true},  function(err, _res, profile) {
         if(err) return cb(err); 
-        db.User.findOne({where: {"oidc_subs": {$like: "%\""+profile.sub+"\"%"}}}).then(function(user) {
+        db.User.findOne({where: {"oidc_subs": {$like: "%\""+profile.sub+"\"%"}, active: true}}).then(function(user) {
             cb(null, user, profile);
         });
     });

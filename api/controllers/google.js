@@ -21,9 +21,7 @@ passport.use(new GoogleStrategy({
     clientSecret: config.google.client_secret,
     callbackURL: config.google.callback_url,
 }, function(accessToken, refreshToken, profile, cb) {
-    //console.log("authenticated with google");
-    //console.dir(profile);
-    db.User.findOne({where: {"googleid": profile.id }}).then(function(user) {
+    db.User.findOne({where: {googleid: profile.id, active: true}}).then(function(user) {
         cb(null, user, profile);
     });
 }));

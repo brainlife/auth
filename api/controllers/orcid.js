@@ -26,20 +26,9 @@ const orcid_strat = new OAuth2Strategy({
     scope: "/authenticate",
 }, function(accessToken, refreshToken, profile, _needed, cb) {
     logger.debug("orcid loading userinfo ..", accessToken, refreshToken, profile);
-    db.User.findOne({where: {"orcid": profile.orcid}}).then(function(user) {
+    db.User.findOne({where: {orcid: profile.orcid, active: true}}).then(function(user) {
         cb(null, user, profile);
     });
-
-    /* In ORCID, email address is private by default.. user need to explicitly release it so we can get it
-     * which makes ORCID/email unreliable.. so let's forget it and ask user during signup stage
-    //get public record
-    //http://members.orcid.org/api/tutorial/read-orcid-records
-    request.get({url: "https://pub.orcid.org/v2.0/"+profile.orcid+"/record", headers: {
-        Authorization: "Bearer "+ accessToken,
-    }, json: true},  function(err, _res, body) {
-        console.log("body---------------------", body);
-    });
-    */
 });
 orcid_strat.name = "oauth2-orcid";
 passport.use(orcid_strat);

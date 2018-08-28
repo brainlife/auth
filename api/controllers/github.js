@@ -21,7 +21,7 @@ passport.use(new GitHubStrategy({
     clientSecret: config.github.client_secret,
     callbackURL: config.github.callback_url,
 }, function(accessToken, refreshToken, profile, cb) {
-    db.User.findOne({where: {"github": profile.username }}).then(function(user) {
+    db.User.findOne({where: {github: profile.username, active: true}}).then(function(user) {
         cb(null, user, profile);
     });
 }));
@@ -102,7 +102,8 @@ function register_newuser(profile, res, next) {
         github: profile.username,
         fullname: profile.displayName,
     }
-    if(profile.emails && profile.emails.length > 0) user.email = profile.emails[0].value;
+	console.dir(profile);
+    if(profile.email && profile.emails.length > 0) user.email = profile.emails[0].value;
     var temp_jwt = common.signJwt({ exp: (Date.now() + config.auth.ttl)/1000, user })
     logger.info("signed temporary jwt token for github signup:", temp_jwt);
     res.redirect('/auth/#!/signup/'+temp_jwt);

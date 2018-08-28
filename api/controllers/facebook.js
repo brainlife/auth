@@ -21,7 +21,7 @@ passport.use(new GitHubStrategy({
     clientSecret: config.facebook.app_secret,
     callbackURL: config.facebook.callback_url,
 }, function(accessToken, refreshToken, profile, cb) {
-    db.User.findOne({where: {"facebook": profile.id}}).then(function(user) {
+    db.User.findOne({where: {facebook: profile.id, active: true}}).then(function(user) {
         cb(null, user, profile);
     });
 }));

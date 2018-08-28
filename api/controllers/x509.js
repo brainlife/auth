@@ -14,7 +14,7 @@ var common = require('../common');
 var db = require('../models');
 
 function finduserByDN(dn, done) {
-    db.User.findOne({where: {x509dns: {$like: "%\""+dn+"\"%"}}}).then(function(user) {
+    db.User.findOne({where: {x509dns: {$like: "%\""+dn+"\"%"}, active: true}}).then(function(user) {
         done(null, user);
     });
 }
