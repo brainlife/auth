@@ -102,7 +102,6 @@ function register_newuser(profile, res, next) {
         github: profile.username,
         fullname: profile.displayName,
     }
-	console.dir(profile);
     if(profile.email && profile.emails.length > 0) user.email = profile.emails[0].value;
     var temp_jwt = common.signJwt({ exp: (Date.now() + config.auth.ttl)/1000, user })
     logger.info("signed temporary jwt token for github signup:", temp_jwt);

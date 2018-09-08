@@ -46,7 +46,7 @@ function scope(role) {
  * @apiSuccess {Object} jwt New JWT token
  */
 router.post('/refresh', jwt({secret: config.auth.public_key}), function(req, res, next) {
-    db.User.findOne({where: {id: req.user.sub}}).then(function(user) {
+    db.User.findOne({where: {id: req.user.sub, active: true}}).then(function(user) {
         if(!user) return next("Couldn't find any user with sub:"+req.user.sub);
         //intersect requested scopes
         if(req.body.scopes) user.scopes = common.intersect_scopes(user.scoppes, req.body.scopes);
@@ -102,7 +102,7 @@ router.get('/health', function(req, res) {
 /**
  * @api {get} /me Get user details
  * @apiName SendEmailNotification
- * @apiDescription Rreturns things that user might want to know about himself.
+ * @apiDescription Returns things that user might want to know about himself.
  * password_hash will be set to true if the password is set, otherwise null
  *
  * @apiGroup User
@@ -119,9 +119,7 @@ router.get('/health', function(req, res) {
  *     }
  */
 router.get('/me', jwt({secret: config.auth.public_key}), function(req, res, next) {
-    db.User.findOne({
-        where: {id: req.user.sub},
-    }).then(function(user) {
+    db.User.findOne({where: {id: req.user.sub}}).then(function(user) {
         if(!user) return res.status(404).end();
         if(user.password_hash) user.password_hash = true;
         res.json(user);
@@ -162,9 +160,7 @@ router.get('/users', jwt({secret: config.auth.public_key}), scope("admin"), func
  *     [ 1,2,3 ] 
  */
 router.get('/user/groups/:id', jwt({secret: config.auth.public_key}), function(req, res, next) {
-    db.User.findOne({
-        where: {id: req.params.id},
-    }).then(function(user) {
+    db.User.findOne({where: {id: req.params.id, active: true}}).then(function(user) {
         if(!user) return res.status(404).end();
         user.getMemberGroups({attributes: ['id']}).then(function(groups) {
             var gids = [];
@@ -194,9 +190,7 @@ router.get('/user/:id', jwt({secret: config.auth.public_key}), scope("admin"), f
 router.get('/jwt/:id', jwt({secret: config.auth.public_key}), scope("admin"), function(req, res, next) {
     var override = {};
     if(req.params.claim) override = JSON.parse(req.params.claim);
-    db.User.findOne({
-        where: {id: req.params.id},
-    }).then(function(user) {
+    db.User.findOne({where: {id: req.params.id, active: true}}).then(function(user) {
         if(!user) return next("Couldn't find any user with sub:"+req.params.id);
 		common.createClaim(user, function(err, claim) {
 			if(err) return next(err);
@@ -308,7 +302,8 @@ router.get('/group/:id', jwt({secret: config.auth.public_key}), function(req, re
  * @apiSuccess {Object} updated user object
  */
 router.put('/profile', jwt({secret: config.auth.public_key}), function(req, res, next) {
-    db.User.findOne({where: {id: req.user.sub}}).then(function(user) {
+    db.User.findOne({where: {id: req.user.sub, active: true}}).then(function(user) {
+        if(!user) return next("no such active user");
         user.fullname = req.body.fullname;
         user.save().then(function() {
             //res.json({status: "ok", message: "Account profile updated successfully."});
