@@ -50,6 +50,7 @@ function issue() {
                 {id: argv.id}, 
             ]} 
         }).then(user=>{
+            console.log(argv.username);
             common.createClaim(user, (err, claim)=>{ 
                 if(err) throw err;
                 issue(claim);

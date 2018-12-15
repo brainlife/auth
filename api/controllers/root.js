@@ -150,7 +150,7 @@ router.get('/users', jwt({secret: config.auth.public_key}), scope("admin"), func
 /**
  * @api {get} /user/groups/:id Get list of group IDS that user is member of
  * @apiName UserGroups
- * @apiDescription Only for admin
+ * @apiDescription admin only
  *
  * @apiGroup User
  * 
@@ -159,7 +159,7 @@ router.get('/users', jwt({secret: config.auth.public_key}), scope("admin"), func
  *     HTTP/1.1 200 OK
  *     [ 1,2,3 ] 
  */
-router.get('/user/groups/:id', jwt({secret: config.auth.public_key}), function(req, res, next) {
+router.get('/user/groups/:id', jwt({secret: config.auth.public_key}), scope("admin"), function(req, res, next) {
     db.User.findOne({where: {id: req.params.id, active: true}}).then(function(user) {
         if(!user) return res.status(404).end();
         user.getMemberGroups({attributes: ['id']}).then(function(groups) {
@@ -186,15 +186,33 @@ router.get('/user/:id', jwt({secret: config.auth.public_key}), scope("admin"), f
     });
 });
 
-//issue user jwt (admin only) - with optional claim overrider
+/**
+ * @apiName UserGroups
+ * @api {get} /jwt/:id  issue user jwt
+ * @apiDescription      (admin only)
+ * @apiGroup User
+ *
+ * @apiParam {String[]} [gids] gids to append
+ * 
+ * @apiHeader {String} authorization A valid JWT token "Bearer: xxxxx"
+ *
+ * @apiSuccessExample {json} Success-Response:
+ *     HTTP/1.1 200 OK
+ *     [ 1,2,3 ] 
+ */
 router.get('/jwt/:id', jwt({secret: config.auth.public_key}), scope("admin"), function(req, res, next) {
-    var override = {};
-    if(req.params.claim) override = JSON.parse(req.params.claim);
     db.User.findOne({where: {id: req.params.id, active: true}}).then(function(user) {
         if(!user) return next("Couldn't find any user with sub:"+req.params.id);
 		common.createClaim(user, function(err, claim) {
 			if(err) return next(err);
-            claim = Object.assign(claim, override);
+
+            if(req.query.claim) {
+                let override = JSON.parse(req.query.claim);
+                logger.debug('claim override requested');
+                logger.debug(override);
+                Object.assign(claim, override);
+            }
+
 			res.json({jwt: common.signJwt(claim)});
 		});
     }).catch(next);
