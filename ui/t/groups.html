@@ -20,31 +20,14 @@
                 <span class="label label-danger" ng-if="group.active == false">Inactive</span>
                 <p class="help-block">{{group.desc}}</p>
             </h4>
-            <!--
-            <p>
-                <span> {{group.email}} <span class="label label-success" ng-if="user.email_confirmed">Confirmed</span> | </span>
-                <span ng-if="user.x509dns"> X509DNs: {{user.x509dns}} | </span>
-                <span ng-if="user.iucas">IUCAS: {{user.iucas}} | </span>
-                <span ng-if="user.googleid">Google ID: {{user.googleid}} | </span>
-                <span ng-if="user.gitid">Git ID: {{user.gitid}} | </span>
-                <span ng-if="user.password_hash" class="label label-warning">password set</span>
-            </p>
-            -->
-            
             <div class="row">
                 <div class="col-md-4">
                     <h5>Admins</h5>
                     <userlist users="group.Admins"></userlist>
-                    <!--
-                    <small><pre>{{group.Admins|json}}</pre></small>
-                    -->
                 </div>
                 <div class="col-md-8">
                     <h5>Members</h5>
                     <userlist users="group.Members"></userlist>
-                    <!--
-                    <small><pre>{{group.Members|json}}</pre></small>
-                    -->
                 </div>
             </div><!--row-->
         </li>
