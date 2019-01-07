@@ -148,7 +148,7 @@ router.get('/users', jwt({secret: config.auth.public_key}), scope("admin"), func
 });
 
 /**
- * @api {get} /user/groups/:id Get list of group IDS that user is member of
+ * @api {get} /user/groups/:id Get list of group IDS that user is member/admin of
  * @apiName UserGroups
  * @apiDescription admin only
  *
@@ -160,15 +160,25 @@ router.get('/users', jwt({secret: config.auth.public_key}), scope("admin"), func
  *     [ 1,2,3 ] 
  */
 router.get('/user/groups/:id', jwt({secret: config.auth.public_key}), scope("admin"), function(req, res, next) {
-    db.User.findOne({where: {id: req.params.id, active: true}}).then(function(user) {
+    db.User.findOne({where: {id: req.params.id, active: true}}).then(async user=>{
         if(!user) return res.status(404).end();
-        user.getMemberGroups({attributes: ['id']}).then(function(groups) {
+        try {
             var gids = [];
+
+            let groups = await user.getAdminGroups({attributes: ['id']});
             groups.forEach(function(group) {
-                gids.push(group.id);  
+                if(!gids.includes(group.id)) gids.push(group.id);  
             });
+
+            groups = await user.getMemberGroups({attributes: ['id']});
+            groups.forEach(function(group) {
+                if(!gids.includes(group.id)) gids.push(group.id);  
+            });
+
             res.json(gids);
-        });
+        } catch(err) {
+            next(err);
+        }
     });
 });
  
