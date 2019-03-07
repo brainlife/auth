@@ -9,7 +9,7 @@ var winston = require('winston');
 
 //mine
 var config = require('../config');
-var logger = new winston.Logger(config.logger.winston);
+var logger = winston.createLogger(config.logger.winston);
 
 //for field types
 //http://docs.sequelizejs.com/en/latest/api/datatypes/

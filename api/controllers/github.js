@@ -11,7 +11,7 @@ const GitHubStrategy = require('passport-github').Strategy;
 
 //mine
 const config = require('../config');
-const logger = new winston.Logger(config.logger.winston);
+const logger = winston.createLogger(config.logger.winston);
 
 const common = require('../common');
 const db = require('../models');

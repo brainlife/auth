@@ -267,7 +267,8 @@ app.controller('ForgotpassController', function($scope, $route, toaster, $http, 
         $http.post($scope.appconf.api+'/local/resetpass', {token: $routeParams.token, password: $scope.form.password})
         .then(function(res) { 
             scaMessage.success(res.data.message);
-            $location.path("/");
+            //$location.path("/");
+            handle_redirect($scope.appconf);
         }, function(res) {
             //if(res.data && res.data.message) toaster.error(res.data.message);
             //else toaster.error(res.statusText);
@@ -510,7 +511,8 @@ app.controller('ConfirmEmailController', function($scope, $route, toaster, $http
         .then(function(res) { 
             console.log("email confirmation successfull");
             scaMessage.success(res.data.message);
-            $location.path("/"); 
+            //$location.path("/"); 
+            handle_redirect($scope.appconf);
         }, function(res) {
             if(res.data && res.data.message) toaster.error(res.data.message);
             else toaster.error(res.statusText);

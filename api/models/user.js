@@ -10,7 +10,7 @@ const zxcvbn = require('zxcvbn');
 
 //mine
 const config = require('../config');
-const logger = new winston.Logger(config.logger.winston);
+const logger = winston.createLogger(config.logger.winston);
 
 module.exports = function(sequelize, DataTypes) {
     const User = sequelize.define('User', {

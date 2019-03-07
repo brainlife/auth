@@ -11,7 +11,7 @@ var GoogleStrategy = require('passport-google-oauth20').Strategy;
 
 //mine
 var config = require('../config');
-var logger = new winston.Logger(config.logger.winston);
+var logger = winston.createLogger(config.logger.winston);
 
 var common = require('../common');
 var db = require('../models');

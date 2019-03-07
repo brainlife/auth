@@ -9,7 +9,7 @@ var clone = require('clone');
 
 //mine
 var config = require('../config');
-var logger = new winston.Logger(config.logger.winston);
+var logger = winston.createLogger(config.logger.winston);
 
 var common = require('../common');
 var db = require('../models');

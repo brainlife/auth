@@ -9,7 +9,7 @@ const async = require('async');
 
 //mine
 const config = require('../config');
-const logger = new winston.Logger(config.logger.winston);
+const logger = winston.createLogger(config.logger.winston);
 const common = require('../common');
 const db = require('../models');
 
@@ -50,7 +50,6 @@ router.post('/refresh', jwt({secret: config.auth.public_key}), function(req, res
         if(!user) return next("Couldn't find any user with sub:"+req.user.sub);
         //intersect requested scopes
         if(req.body.scopes) user.scopes = common.intersect_scopes(user.scoppes, req.body.scopes);
-        //logger.debug("creating claim", user);
         common.createClaim(user, function(err, claim) {
             if(err) return next(err);
             var jwt = common.signJwt(claim);
@@ -79,6 +78,7 @@ router.post('/confirm_email', function(req, res, next) {
         if(user.email_confirmed) return next("Email already confirmed.");
         user.email_confirmed = true;
         user.save().then(function() {
+            common.publish("user.create."+user.sub, user);
             res.json({message: "Email address confirmed! Please re-login."});
         });
     });
@@ -233,6 +233,7 @@ router.put('/user/:id', jwt({secret: config.auth.public_key}), scope("admin") ,f
     db.User.findOne({where: {id: req.params.id}}).then(function(user) {
         if (!user) return next("can't find user id:"+req.params.id);
         user.update(req.body).then(function(err) {
+            common.publish("user.update."+user.sub, req.body);
             res.json({message: "User updated successfully"});
         });
     }).catch(next);
@@ -279,6 +280,7 @@ router.put('/group/:id', jwt({secret: config.auth.public_key}), function(req, re
                 group.setAdmins(req.body.admins).then(function() {
                     logger.debug("setting members");
                     group.setMembers(req.body.members).then(function() {
+                        common.publish("group.update."+group.id, req.body);
                         logger.debug("all done");
                         res.json({message: "Group updated successfully"});
                     });
@@ -296,6 +298,7 @@ router.post('/group', jwt({secret: config.auth.public_key}), function(req, res, 
     group.save().then(function() {
         group.setAdmins(req.body.admins).then(function() {
             group.setMembers(req.body.members).then(function() {
+                common.publish("group.create."+group.id, req.body);
                 res.json({message: "Group created", group: group});
             });
         });
@@ -334,6 +337,7 @@ router.put('/profile', jwt({secret: config.auth.public_key}), function(req, res,
         if(!user) return next("no such active user");
         user.fullname = req.body.fullname;
         user.save().then(function() {
+            common.publish("user.update."+user.sub, req.body);
             //res.json({status: "ok", message: "Account profile updated successfully."});
             res.json(user);
         });

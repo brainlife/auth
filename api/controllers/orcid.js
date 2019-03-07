@@ -12,7 +12,7 @@ const xml2js = require('xml2js');
 
 //mine
 const config = require('../config');
-const logger = new winston.Logger(config.logger.winston);
+const logger = winston.createLogger(config.logger.winston);
 
 const common = require('../common');
 const db = require('../models');

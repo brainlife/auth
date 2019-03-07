@@ -9,12 +9,11 @@ const Sequelize = require('sequelize');
 const passport = require('passport');
 const winston = require('winston');
 const expressWinston = require('express-winston');
-//const compression = require('compression');
 const cors = require('cors');
 const nocache = require('nocache');
 
 const config = require('./config');
-const logger = new winston.Logger(config.logger.winston);
+const logger = winston.createLogger(config.logger.winston);
 const db = require('./models');
 const migration = require('./migration');
 

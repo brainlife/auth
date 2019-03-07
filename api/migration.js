@@ -6,34 +6,10 @@ var Sequelize = require('sequelize');
 
 //mine
 var config = require('./config');
-var logger = new winston.Logger(config.logger.winston);
+var logger = winston.createLogger(config.logger.winston);
 var db = require('./models');
 
 var migrations = [
-    /*
-    function(qi, next) {
-        //skipped
-    },
-    */
-    /*
-    function(qi, next) {
-        logger.info("adding x509dn field for user table");
-        qi.addColumn('Users', 'x509dn', Sequelize.STRING).then(function() {
-            next();
-        });
-    },
-    */
-    /*
-    function(qi, next) {
-        next();
-    },
-    function(qi, next) {
-        logger.info("removing column");
-        qi.removeColumn('Users', 'x509dns').then(function() {
-            next();
-        });
-    },
-    */
     function(qi, next) {
         logger.info("adding x509dn field for user table");
         qi.addColumn('Users', 'x509dns', {type: Sequelize.TEXT, defaultValue: '[]'}).then(function() {

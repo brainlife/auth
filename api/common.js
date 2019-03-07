@@ -1,11 +1,42 @@
+
 const fs = require('fs');
 const jwt = require('jsonwebtoken');
 const nodemailer = require('nodemailer');
 const uuid = require('node-uuid');
 const winston = require('winston');
+const amqp = require('amqp');
 
 const config = require('./config');
-const logger = new winston.Logger(config.logger.winston);
+const logger = winston.createLogger(config.logger.winston);
+
+let amqp_conn;
+function get_amqp_connection(cb) {
+    if(amqp_conn) return cb(null, amqp_conn); //already connected
+    logger.debug("connecting to amqp");
+    amqp_conn = amqp.createConnection(config.event.amqp, {reconnectBackoffTime: 1000*10});
+    amqp_conn.once("ready", ()=>{
+        logger.debug("connected to amqp");
+        cb(null, amqp_conn);
+    });
+    amqp_conn.on("error", err=>{
+        logger.error(err);
+    });
+}
+
+let auth_ex;
+get_amqp_connection((err, conn)=>{
+    if(err) throw err;
+    logger.debug("creating auth amqp exchange");
+    conn.exchange("auth", {autoDelete: false, durable: true, type: 'topic', confirm: true}, (ex)=>{
+        auth_ex = ex;
+    });
+});
+
+exports.publish = (key, message, cb)=>{
+    console.log("publishing");
+    console.dir(message);
+    auth_ex.publish(key, message, {}, cb);
+}
 
 exports.createClaim = async function(user, cb) {
     if(!user.check) return cb("user object does not contain .check()");
