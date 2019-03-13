@@ -13,7 +13,7 @@ let fs = require('fs');
 let _ = require('underscore');
 
 let config = require('../api/config');
-let logger = new winston.Logger(config.logger.winston);
+let logger = winston.createLogger(config.logger.winston);
 let db = require('../api/models');
 let common = require('../api/common');
 
