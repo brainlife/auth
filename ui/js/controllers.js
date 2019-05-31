@@ -14,32 +14,39 @@ function($scope, $route, toaster, $http, $routeParams, $location, scaMessage, $s
     scaMessage.show(toaster);
     if($routeParams.msg) toaster.error($routeParams.msg);
 
-    function handle_success(res) {
-        console.log("handling success", res.data);
-        localStorage.setItem($scope.appconf.jwt_id, res.data.jwt);
-        $rootScope.$broadcast("jwt_update", res.data.jwt)
-        handle_redirect($scope.appconf);
-    }
-
-    function handle_error(res) {
-        if(res.data && res.data.path) {
-            //console.log("path requested "+res.data.path);
-            $location.path(res.data.path);
-            if(res.data.message) scaMessage.error(res.data.message);
-        } else {
-            console.dir(res);
-            if(res.data && res.data.message) toaster.error(res.data.message);
-            else toaster.error(res.statusText || "Oops.. unknown authentication error");
-        }
-    }
-
     $scope.userpass = {};
-    $scope.submit = function() {
+    $scope.submit = async function() {
         var url = "";
         //ldap auth takes precedence
         if($scope.appconf.show.local) url = $scope.appconf.api+"/local/auth";
         if($scope.appconf.show.ldap) url = $scope.appconf.api+"/ldap/auth";
-        $http.post(url, $scope.userpass).then(handle_success, handle_error);
+        try {
+            let res = await $http.post(url, $scope.userpass);
+            localStorage.setItem($scope.appconf.jwt_id, res.data.jwt);
+            $rootScope.$broadcast("jwt_update", res.data.jwt)
+
+            if($scope.appconf.profile) {
+                console.dir(res);
+                let profile = JSON.parse(localStorage.getItem("public.profile"));
+                await $http.put($scope.appconf.profile.api+'/public/'+res.data.sub, profile, {
+                    Authorization: 'Bearer '+res.data.jwt, //use newly issued temp jwt.. 
+                })
+                localStorage.removeItem("public.profile");
+                console.log("published public profile");
+            }
+            handle_redirect($scope.appconf);
+        } catch(res) {
+            console.log("failed to login");
+            if(res.data && res.data.path) {
+                //console.log("path requested "+res.data.path);
+                $location.path(res.data.path);
+                if(res.data.message) scaMessage.error(res.data.message);
+            } else {
+                //console.dir(res);
+                if(res.data && res.data.message) toaster.error(res.data.message);
+                else toaster.error(res.statusText || "Oops.. unknown authentication error");
+            }
+        }
     }
 
     $scope.begin_iucas = function() {
@@ -122,11 +129,10 @@ function($scope, $route, toaster, $http, $routeParams, scaMessage, $location, $r
 
     var postconfig = {};
 
-    //register_new sometimes forwards temp jwt to finish registration (like setting up email)
+    //register_new sometimes forwards temp jwt to finish registration (like setting up email - for 3rd part registration?)
     if($routeParams.jwt) {
         $scope.jwt = $routeParams.jwt; //to let UI now that we are *completing* signup
         var user = jwtHelper.decodeToken($routeParams.jwt);
-        console.dir(user);
         $scope.form.username = user.user.username;
         $scope.form.email = user.user.email;
         $scope.form.fullname = user.user.fullname;
@@ -141,28 +147,33 @@ function($scope, $route, toaster, $http, $routeParams, scaMessage, $location, $r
         window.location = "#"; //back to login form
     }
 
-    $scope.submit = function() {
+    $scope.submit = async function() {
         //new registration (or do registration complete with temp jwt)
-        var config = {};
-        $http.post($scope.appconf.api+'/signup', $scope.form, postconfig)
-        .then(function(res, status, headers, config) {
-
+        try {
+            let res = await $http.post($scope.appconf.api+'/signup', $scope.form, postconfig)
             if(res.data.jwt) {
-                //set the real jwt!
+                //set the real jwt! (in case email confirmation is disabled)
                 localStorage.setItem($scope.appconf.jwt_id, res.data.jwt);
                 $rootScope.$broadcast("jwt_update", res.data.jwt);
             }
-
             if(res.data.message) scaMessage.success(res.data.message);
-            //else scaMessage.success("Successfully signed up!");
-            
+            //console.dir(res.data);
+
+            //store public profile (to be posted to profile service when email is confirmed)
+            if($scope.form.profile) {
+                localStorage.setItem("public.profile", JSON.stringify($scope.form.profile));
+            } else {
+                localStorage.removeItem("public.profile"); //just in case..
+            }
+        
             //redirect to somewhere..
             if(res.data.path) $location.path(res.data.path); //maybe .. email_confirmation
             else handle_redirect($scope.appconf);
-        }, function(res) {
-            if(res.data && res.data.message) toaster.error(res.data.message);
-            else toaster.error(res.statusText);
-        });         
+        } catch(err) {
+            console.dir(err);
+            if(err.data) toaster.error(err.data.message || err.data);
+            else toaster.error(err);
+        }
     }
 });
 
@@ -505,14 +516,12 @@ app.controller('ConfirmEmailController', function($scope, $route, toaster, $http
         });
     }
 
-    //this page also handles the actual confirmation request back from the email
     if($routeParams.token) {
         $http.post($scope.appconf.api+'/confirm_email', {token: $routeParams.token})
         .then(function(res) { 
-            console.log("email confirmation successfull");
+            //console.log("email confirmation successfull");
             scaMessage.success(res.data.message);
-            //$location.path("/"); 
-            handle_redirect($scope.appconf);
+            $location.path("/"); //I need to redirect user to login after email confirmation
         }, function(res) {
             if(res.data && res.data.message) toaster.error(res.data.message);
             else toaster.error(res.statusText);

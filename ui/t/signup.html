@@ -1,6 +1,6 @@
 <div class="container">
     <div id="page-wrapper">
-        <h1 class="page-header">Signup</h1>
+        <h1 class="page-header">SIGNUP</h1>
         <form ng-submit="submit();">
             <p class="help-block" ng-if="jwt">This is your first time you've accessed this application. Please complete your registration.</p>
             <div class="form-group">
@@ -38,9 +38,20 @@
                     </div>
                 </div>
             </div>
+            <!--<img class="logo" ng-src="{{appconf.logo_400_url}}"/>-->
+            <div ng-if="appconf.profile">
+                <h5>Public Profile</h5>
+                <div ng-repeat="field in appconf.profile.fields" class="form-group">
+                    <label>{{field.name}}</label>
+                    <p class="help-block">{{field.desc}}</p>
+                    <textarea class="form-control" ng-model="form.profile[field.id]" name="{{field.id}}" rows="{{field.rows}}"/>
+                </div>
+            </div>
+
             <input type="button" class="btn" value="Cancel" ng-click="cancel()"/>
             <input type="submit" class="btn btn-primary" value="Submit"/>
         </form>
     </div>
     <ng-include src="'t/footer.html'"></ng-include> <!--should this be part of view?-->
 </div>
+

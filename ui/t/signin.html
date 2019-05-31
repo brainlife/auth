@@ -1,40 +1,42 @@
 <style>
 body {
     /*TODO Let background image customizable? */
-    background-color: #ddd;
+    background-color: #aaa;
 }
 </style>
 <div class="container">
     <div class="center-block">
-        <img class="logo" ng-src="{{appconf.logo_400_url}}"/>
+        <!--<img class="logo" ng-src="{{appconf.logo_400_url}}"/>-->
+        <div class="login-header">LOGIN <i style="opacity: 0.8; font-weight: normal">with ...</i></div>
+
         <div class="form-group" ng-if="appconf.show.x509">
             <button type="button" class="btn btn-warning btn-block" ng-click="begin_x509()">
-                <i class="fa fa-certificate" style="font-size: 150%"></i> Login with X509 Certificate
+                <i class="fa fa-certificate" style="font-size: 150%"></i> X509 Certificate
             </button>
         </div>
         <div class="form-group" ng-if="appconf.show.google">
             <button type="button" class="btn btn-success btn-block" ng-click="begin('google')">
-                <i class="fa fa-google" style="font-size: 150%"></i> Login with Google
+                <i class="fa fa-google" style="font-size: 150%"></i> Google
             </button>
         </div>
         <div class="form-group" ng-if="appconf.show.orcid">
             <button type="button" class="btn btn-success btn-block" ng-click="begin('orcid')">
-                <img src="images/orcid.ico"/> Login with ORCID
+                <img src="images/orcid.ico"/> ORCID
             </button>
         </div>
         <div class="form-group" ng-if="appconf.show.github">
             <button type="button" class="btn btn-info btn-block" ng-click="begin('github')">
-                <i class="fa fa-github" style="font-size: 150%"></i> Login with Github
+                <i class="fa fa-github" style="font-size: 150%"></i> Github
             </button>
         </div>
         <div class="form-group" ng-if="appconf.show.facebook">
             <button type="button" class="btn btn-primary btn-block" ng-click="begin('facebook')">
-                <i class="fa fa-facebook" style="font-size: 150%"></i> Login with Facebook
+                <i class="fa fa-facebook" style="font-size: 150%"></i> Facebook
             </button>
         </div>
         <div class="form-group" ng-if="appconf.show.iucas">
             <button type="button" class="btn btn-danger btn-block" ng-click="begin_iucas()">
-                <img src="images/trident.png"/>&nbsp;&nbsp;&nbsp;Login with IU Account
+                <img src="images/trident.png"/>&nbsp;&nbsp;&nbsp;IU Account
             </button>
         </div>
 
@@ -42,7 +44,7 @@ body {
             <!--no selector-->
             <div class="form-group" ng-if="!appconf.show.oidc_selector">
                 <button type="button" class="btn btn-default btn-block" ng-click="begin('oidc')">
-                    <img ng-src="{{appconf.oidc_logo}}" width="20px"/>&nbsp;&nbsp;&nbsp;Login with 
+                    <img ng-src="{{appconf.oidc_logo}}" width="20px"/>&nbsp;&nbsp;&nbsp;
                     {{appconf.oidc_label||'Your Institution'}}
                 </button>
             </div>
@@ -60,11 +62,11 @@ body {
             </div>
         </div>
         <div ng-if="appconf.show.local || appconf.show.ldap">
-            <div class="form-group" 
-                ng-if="appconf.show.x509 || appconf.show.git || appconf.show.iucas || appconf.show.facebook || appconf.show.google || appconf.show.oidc || appconf.show.orcid">
-                <center>or</center>
-            </div>
-            <form ng-submit="submit()">
+            <form ng-submit="submit()" style="margin-top: 20px; padding: 10px; border-radius: 3px; box-shadow: 2px 2px 4px rgba(0,0,0,0.3); background-color: #f0f0f0;">
+                <div class="form-group" 
+                    ng-if="appconf.show.x509 || appconf.show.git || appconf.show.iucas || appconf.show.facebook || appconf.show.google || appconf.show.oidc || appconf.show.orcid">
+                    <center style="opacity: 0.8">or <b>LOGIN</b> with email/username</center>
+                </div>
                 <div class="form-group">
                     <div class="input-group" ng-if="appconf.show.local && !appconf.show.ldap">
                         <span class="input-group-addon"><i class="fa fa-envelope" style="width: 30px;"></i></span>
@@ -87,20 +89,18 @@ body {
                 <div class="form-group">
                     <input class="btn btn-block" type="submit" value="Login"/>
                 </div>
+                <center class="text-muted">
+                    <a href="#!/forgotpass">Forgot Password?</a>
+                </center>
             </form>
-            <hr>
-            <div ng-if="appconf.show.signup !== false">
-                <center>First time here? &nbsp;&nbsp;<a href="#!/signup"><b>Sign Up</b></a></center>
-                <br>
+            <br>
+            <div>
+                <div ng-if="appconf.show.signup !== false">
+                    <center>First time here? &nbsp;&nbsp;<a href="#!/signup"><b>Sign Up</b></a></center>
+                    <br>
+                </div>
             </div>
-            <center class="text-muted">
-                <a href="#!/forgotpass">Forgot Password?</a>
-            </center>
         </div>
-        <!--
-        <pre ng-show="jwt_dump">{{jwt_dump}}</pre>
-        <p ng-show="!jwt_dump" class="muted">You are not logged in.</p>
-        -->
     </div>
 </div>
 

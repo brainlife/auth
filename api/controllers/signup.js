@@ -34,6 +34,7 @@ function registerUser(req, done) {
     user.setPassword(req.body.password, function(err) {
         if(err) return done(err);
         logger.debug("password set");
+        user.updateTime('register');
         user.save().then(function() {
             //add to default groups
             user.addMemberGroups(u.gids, function() {
@@ -59,41 +60,6 @@ router.post('/', jwt({secret: config.auth.public_key, credentialsRequired: false
     var username = req.body.username;
     var email = req.body.email;
 
-    function post_process(err, user) {
-        if(err) return next(err);
-        /*
-        common.createClaim(user, function(err, claim) {
-            if(err) return next(err);
-            var jwt = common.signJwt(claim);
-        */
-
-        if(config.local.email_confirmation/* && !user.email_confirmed*/) {
-            common.send_email_confirmation(req.headers.referer||config.local.url, user, function(err) {
-                if(err) {
-                    if(!req.user) {
-                        //if we fail to send email, we should unregister the user we just created
-                        user.destroy({force: true}).then(function() {
-                            logger.error("removed newly registred record - email failurer");
-                            res.status(500).json({message: "Failed to send confirmation email. Please make sure your email address is valid."});
-                        });
-                    } else {
-                        res.status(500).json({message: "Failed to send confirmation email. Please make sure your email address is valid"});
-                    }
-                } else {
-                    //res.json({path:'/confirm_email/'+user.id, message: "Confirmation Email has been sent. Please check your email inbox.", jwt: jwt});
-                    res.json({path:'/confirm_email/'+user.id, message: "Confirmation email has been sent. Please follow the instruction once you receive it."});
-                }
-            });
-        } else {
-            //no need for email confrmation.. issue jwt!
-            common.createClaim(user, function(err, claim) {
-                if(err) return next(err);
-                var jwt = common.signJwt(claim);
-                res.json({jwt: jwt, sub: user.id});
-            });
-        }
-    }
-
     //check for username already taken
     db.User.findOne({where: {username: username} }).then(function(user) {
         if(user) {
@@ -111,6 +77,35 @@ router.post('/', jwt({secret: config.auth.public_key, credentialsRequired: false
             });
         }
     });
+
+    function post_process(err, user) {
+        if(err) return next(err);
+        if(config.local.email_confirmation) {
+            common.send_email_confirmation(req.headers.referer||config.local.url, user, function(err) {
+                if(err) {
+                    if(!req.user) {
+                        //if we fail to send email, we should unregister the user we just created
+                        user.destroy({force: true}).then(function() {
+                            logger.error("removed newly registred record - email failurer");
+                            res.status(500).json({message: "Failed to send confirmation email. Please make sure your email address is valid."});
+                        });
+                    } else {
+                        res.status(500).json({message: "Failed to send confirmation email. Please make sure your email address is valid"});
+                    }
+                } else {
+                    res.json({path:'/confirm_email/'+user.id, message: "Confirmation email has been sent. Please follow the instruction once you receive it."});
+                }
+            });
+        } else {
+            
+            //no need for email confrmation.. issue jwt!
+            common.createClaim(user, function(err, claim) {
+                if(err) return next(err);
+                var jwt = common.signJwt(claim);
+                res.json({jwt: jwt, sub: user.id});
+            });
+        }
+    }
 })
 
 module.exports = router;

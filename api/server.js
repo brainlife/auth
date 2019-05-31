@@ -24,7 +24,6 @@ if(config.auth.default_scopes) {
 
 const app = express();
 app.use(cors());
-//app.use(compression());
 app.use(nocache());
 
 app.use(bodyParser.json()); //parse application/json

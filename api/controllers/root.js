@@ -77,8 +77,12 @@ router.post('/confirm_email', function(req, res, next) {
         if(!user) return next("Couldn't find any user with token:"+req.body.token);
         if(user.email_confirmed) return next("Email already confirmed.");
         user.email_confirmed = true;
+        user.updateTime('confirm_email');
         user.save().then(function() {
             common.publish("user.create."+user.sub, user);
+
+            //TODO - why don't I go ahead and issue jwt?
+            //if user accidentally use mailing list address, anyone in that list can login without entering user/pass..
             res.json({message: "Email address confirmed! Please re-login."});
         });
     });

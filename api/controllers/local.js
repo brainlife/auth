@@ -59,7 +59,7 @@ router.post('/auth', function(req, res, next) {
             var jwt = common.signJwt(claim);
             user.updateTime('local_login');
             user.save().then(function() {
-                res.json({message: "Login Success!", jwt: jwt});
+                res.json({message: "Login Success", jwt, sub: user.id});
             });
         });
     })(req, res, next);

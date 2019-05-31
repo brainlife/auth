@@ -56,6 +56,35 @@ angular.module('app.config', [])
 
         signup: true,
     },
+
+    //optional config to add any profile information
+    profile: {
+        api: '../api/profile',
+        fields: [
+            {
+                id: "institution", //id used to store the profile in session storage
+                name: "Institution",
+                desc: "Name of your institution/lab that you'd like to share publicly.",
+                rows: 1, //textarea row size
+            },
+
+            {
+                id: "bio", 
+                name: "Biograph",
+                desc: "Please provide a brief introduction about you that you'd like to share with brainlife community.",
+                rows: 3, //textarea row size
+            },
+
+            /*
+            {
+                id: "profile.purpose", 
+                name: "Project Goals",
+                desc: "Please describe your project goals and how you think Brainlife might be able to assist with them.",
+                rows: 3, //textarea row size
+            },
+            */
+        ],
+    },
 });
 
 
