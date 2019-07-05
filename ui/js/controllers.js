@@ -1,11 +1,22 @@
 'use strict';
 
 app.controller('HeaderController', 
-function($scope, appconf, $route, toaster, $http, menu, scaSettingsMenu) {
+function($scope, appconf, $route, $location, toaster, $http, menu, scaSettingsMenu) {
     $scope.title = appconf.title;
     $scope.menu = menu;
     $scope.appconf = appconf;
     $scope.settings_menu = scaSettingsMenu;
+
+    //console.dir(appconf);
+    //console.log("params");
+    let app = $location.search().app;
+    switch(app) {
+    case "localhost":
+        console.log("reconfiguring for local development");
+        sessionStorage.setItem('auth_redirect', 'http://localhost:8080');
+        sessionStorage.setItem('jwt_on_url', true);
+        break;
+    }
 });
 
 app.controller('SigninController', 
@@ -26,7 +37,6 @@ function($scope, $route, toaster, $http, $routeParams, $location, scaMessage, $s
             $rootScope.$broadcast("jwt_update", res.data.jwt)
 
             if($scope.appconf.profile) {
-                console.dir(res);
                 let profile = JSON.parse(localStorage.getItem("public.profile"));
                 await $http.put($scope.appconf.profile.api+'/public/'+res.data.sub, profile, {
                     Authorization: 'Bearer '+res.data.jwt, //use newly issued temp jwt.. 
@@ -100,7 +110,15 @@ function($scope, $route, toaster, $http, $routeParams, $location, scaMessage, $s
 function handle_redirect(appconf) {
     var redirect = sessionStorage.getItem('auth_redirect');
     sessionStorage.removeItem('auth_redirect');
-    window.location = redirect||appconf.default_redirect_url||'/';
+    let path = redirect||appconf.default_redirect_url||'/';
+
+    //pass jwt via url for cross domain authentication
+    if(sessionStorage.getItem('jwt_on_url')) {
+        path += "?jwt="+localStorage.getItem(appconf.jwt_id);
+        sessionStorage.removeItem('jwt_on_url');
+    }
+
+    window.location = path;
 }
 
 //used by oauth2 callbacks (github, etc..) to set the jwt and redirect
