@@ -19,15 +19,6 @@ function finduserByDN(dn, done) {
     });
 }
 
-function issue_jwt(user, dn, cb) {
-    common.createClaim(user, function(err, claim) {
-        if(err) return cb(err);
-        user.updateTime('x509_login:'+dn);
-        user.save().then(function() {
-            cb(null, common.signJwt(claim));
-        });
-    });
-}
 
 /*
 var allowCrossDomain = function(req, res, next) {
@@ -54,15 +45,17 @@ router.get('/signin', /*jwt({secret: config.auth.public_key, credentialsRequired
     finduserByDN(dn, function(err, user) {
         if(err) return next(err); 
         if(!user) return next("Your DN("+dn+") is not yet registered. Please Signup/Signin with your username/password first, then associate your x509 certificate under your account settings.");
-        //var err = user.check();
-        //if(err) return next(err);
         
         //all good. issue token
         logger.debug("x509 authentication successful with "+dn);
-        issue_jwt(user, dn, function(err, jwt) {
+        common.createClaim(user, function(err, claim) {
             if(err) return next(err);
-            //res.json({jwt:jwt});
-            res.redirect(req.headers.referer+"#!/success/"+jwt);
+            user.updateTime('x509_login:'+dn);
+            user.save().then(function() {
+                common.publish("user.login."+user.id, {type: "x509", username: user.username, exp: claim.exp, headers: req.headers});
+                let jwt = common.signJwt(claim);
+                res.redirect(req.headers.referer+"#!/success/"+jwt);
+            });
         });
     });
 });

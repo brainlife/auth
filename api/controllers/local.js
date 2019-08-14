@@ -1,5 +1,4 @@
 
-//contrib
 const express = require('express');
 const router = express.Router();
 const passport = require('passport');
@@ -7,7 +6,6 @@ const passport_localst = require('passport-local').Strategy;
 const winston = require('winston');
 const jwt = require('express-jwt');
 
-//mine
 const config = require('../config');
 const logger = winston.createLogger(config.logger.winston);
 const common = require('../common');
@@ -52,13 +50,17 @@ passport.use(new passport_localst(
 router.post('/auth', function(req, res, next) {
     passport.authenticate('local', function(err, user, info) {
         if (err) return next(err);
-        if (!user) return next(info);
+        if (!user) {
+            common.publish("user.login_fail", {type: "userpass", headers: req.headers, message: info.message, username: req.body.username});
+            return next(info);
+        }
         common.createClaim(user, function(err, claim) {
             if(err) return next(err);
             if(req.body.ttl) claim.exp = (Date.now() + req.body.ttl)/1000;
             var jwt = common.signJwt(claim);
             user.updateTime('local_login');
             user.save().then(function() {
+                common.publish("user.login."+user.id, {type: "userpass", username: user.username, exp: claim.exp, headers: req.headers});
                 res.json({message: "Login Success", jwt, sub: user.id});
             });
         });
@@ -72,6 +74,7 @@ router.put('/setpass', jwt({secret: config.auth.public_key}), function(req, res,
         if(user) {
             if(user.password_hash) {
                 if(!user.isPassword(req.body.password_old)) {
+                    common.publish("user.setpass_fail."+user.id, {username: user.username, message: "wrong current pass"});
                     return setTimeout(function() {
                         next("Wrong current password");
                     }, 2000);
@@ -81,6 +84,7 @@ router.put('/setpass', jwt({secret: config.auth.public_key}), function(req, res,
                 if(err) return next(err);
                 user.updateTime('password_reset');
                 user.save().then(function() {
+                    common.publish("user.setpass."+user.id, {username: user.username});
                     res.json({status: "ok", message: "Password reset successfully."});
                 });
             });

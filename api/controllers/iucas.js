@@ -67,6 +67,7 @@ function issue_jwt(user, cb) {
         if(err) return cb(err);
         user.updateTime('iucas_login');
         user.save().then(function() {
+            common.publish("user.login."+user.id, {type: "iucas", username: user.username, exp: claim.exp});
             cb(null, common.signJwt(claim));
         });
     });

@@ -80,6 +80,7 @@ router.post('/auth', function(req, res, next) {
             var jwt = common.signJwt(claim);
             user.updateTime('ldap_login');
             user.save().then(function() {
+                common.publish("user.login."+user.id, {type: "ldap", username: user.username, exp: claim.exp, headers: req.headers});
                 res.json({message: "Login Success!", jwt: jwt});
             });
         });

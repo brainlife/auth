@@ -140,7 +140,7 @@ function($scope, $route, $http, $routeParams, menu, $location, scaMessage) {
 });
 
 app.controller('SignupController', 
-function($scope, $route, toaster, $http, $routeParams, scaMessage, $location, $rootScope, jwtHelper) {
+function($scope, $route, toaster, $http, $routeParams, scaMessage, $location, $rootScope, jwtHelper, $sce) {
     $scope.$parent.active_menu = 'signup';
     scaMessage.show(toaster);
     $scope.form = {};
@@ -164,6 +164,9 @@ function($scope, $route, toaster, $http, $routeParams, scaMessage, $location, $r
     $scope.cancel = function() {
         window.location = "#"; //back to login form
     }
+
+    //$scope.aup = $sce.trustAsResourceUrl($scope.appconf.aup);
+    $scope.aup = "##hello";
 
     $scope.submit = async function() {
         //new registration (or do registration complete with temp jwt)

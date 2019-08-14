@@ -98,9 +98,14 @@ function(req, res, next) {
                     res.redirect('/auth/#!/signin?msg='+"Your InCommon account("+profile.sub+") is not yet registered. Please login using your username/password first, then associate your InCommon account inside the account settings.");
                 }
             } else {
-                issue_jwt(user, profile, function(err, jwt) {
+                common.createClaim(user, function(err, claim) {
                     if(err) return next(err);
-                    res.redirect('/auth/#!/success/'+jwt);
+                    var jwt = common.signJwt(claim);
+                    user.updateTime('orcid_login');
+                    user.save().then(function() {
+                        common.publish("user.login."+user.id, {type: "orcid", username: user.username, exp: claim.exp, headers: req.headers});
+                        res.redirect('/auth/#!/success/'+jwt);
+                    });
                 });
             }            
         }
@@ -134,16 +139,6 @@ function register_newuser(profile, res, next) {
 
 }
 
-function issue_jwt(user, profile, cb) {
-    common.createClaim(user, function(err, claim) {
-        if(err) return cb(err);
-        var jwt = common.signJwt(claim);
-        user.updateTime('orcid_login');
-        user.save().then(function() {
-            cb(null, jwt);
-        });
-    });
-}
 
 //start orcid account association
 router.get('/associate/:jwt', jwt({secret: config.auth.public_key, getToken: req=>req.params.jwt}), 

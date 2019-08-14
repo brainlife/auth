@@ -34,6 +34,14 @@ app.use(passport.initialize());//needed for express-based application
 
 app.use('/', require('./controllers'));
 
+/*
+app.use((req, res, next)=>{
+    console.log("audit log............");
+    console.dir(req.user);
+    next();
+});
+*/
+
 //error handling
 app.use(expressWinston.errorLogger(config.logger.winston));
 app.use(function(err, req, res, next) {

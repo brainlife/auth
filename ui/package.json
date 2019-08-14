@@ -16,6 +16,7 @@
     "angular-gravatar": "^0.4.2",
     "angular-jwt": "^0.1.11",
     "angular-loading-bar": "^0.9.0",
+    "angular-markdown-directive": "^0.3.1",
     "angular-route": "^1.7.8",
     "angular-sanitize": "^1.7.8",
     "angular-ui-select": "^0.12.100",
@@ -25,6 +26,7 @@
     "font-awesome": "^4.7.0",
     "jquery": "^3.4.1",
     "sca-shared": "0.0.11",
+    "showdown": "^1.9.0",
     "ui-select": "^0.19.6",
     "zxcvbn": "^4.4.2"
   }

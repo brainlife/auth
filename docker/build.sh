@@ -1,4 +1,4 @@
-tag=1.4.11
+tag=1.4.12
 
 docker build -t soichih/auth ..
 if [ ! $? -eq 0 ]; then

@@ -74,17 +74,10 @@ angular.module('app.config', [])
                 desc: "Please provide a brief introduction about you that you'd like to share with brainlife community.",
                 rows: 3, //textarea row size
             },
-
-            /*
-            {
-                id: "profile.purpose", 
-                name: "Project Goals",
-                desc: "Please describe your project goals and how you think Brainlife might be able to assist with them.",
-                rows: 3, //textarea row size
-            },
-            */
         ],
     },
+
+    aup: "https://brainlife.io/docs/privacy/",
 });
 
 

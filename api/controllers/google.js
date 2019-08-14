@@ -102,8 +102,7 @@ router.get('/callback', jwt({
                 var jwt = common.signJwt(claim);
                 user.updateTime('google_login');
                 user.save().then(function() {
-                    //res.json({message: "Login Success!", jwt: jwt});
-                    //res.set('jwt', jwt);
+                    common.publish("user.login."+user.id, {type: "google", username: user.username, exp: claim.exp, headers: req.headers});
                     res.redirect('/auth/#!/success/'+jwt);
                 });
             });

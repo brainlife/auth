@@ -52,6 +52,7 @@ router.post('/refresh', jwt({secret: config.auth.public_key}), function(req, res
         if(req.body.scopes) user.scopes = common.intersect_scopes(user.scoppes, req.body.scopes);
         common.createClaim(user, function(err, claim) {
             if(err) return next(err);
+            common.publish("user.refresh."+user.id, {username: user.username, exp: claim.exp});
             var jwt = common.signJwt(claim);
             return res.json({jwt: jwt});
         });

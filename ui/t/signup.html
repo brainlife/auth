@@ -48,6 +48,15 @@
                 </div>
             </div>
 
+            <div ng-if="appconf.aup">
+                <h5>Usage Policy</h5>
+                <btf-markdown>##hello</btf-markdown>
+                <p>
+                    <input type="checkbox" required/> Agree to the use policy.
+                </p>
+                <br>
+            </div>
+
             <input type="button" class="btn" value="Cancel" ng-click="cancel()"/>
             <input type="submit" class="btn btn-primary" value="Submit"/>
         </form>

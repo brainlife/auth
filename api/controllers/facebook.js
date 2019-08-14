@@ -71,8 +71,7 @@ router.get('/callback', jwt({
                 var jwt = common.signJwt(claim);
                 user.updateTime('facebook_login');
                 user.save().then(function() {
-                    //res.json({message: "Login Success!", jwt: jwt});
-                    //res.set('jwt', jwt);
+                    common.publish("user.login."+user.id, {type: "facebook", username: user.username, exp: claim.exp, headers: req.headers});
                     res.redirect('/auth/#!/success/'+jwt);
                 });
             });

@@ -116,9 +116,14 @@ function(req, res, next) {
                     res.redirect('/auth/#!/signin?msg='+"Your InCommon account("+profile.sub+") is not yet registered. Please login using your username/password first, then associate your InCommon account inside the account settings.");
                 }
             } else {
-                issue_jwt(user, profile, function(err, jwt) {
+                common.createClaim(user, function(err, claim) {
                     if(err) return next(err);
-                    res.redirect('/auth/#!/success/'+jwt);
+                    var jwt = common.signJwt(claim);
+                    user.updateTime('oidc_login:'+profile.sub);
+                    user.save().then(function() {
+                        common.publish("user.login."+user.id, {type: "oidc", username: user.username, exp: claim.exp, headers: req.headers});
+                        res.redirect('/auth/#!/success/'+jwt);
+                    });
                 });
             }            
         }
@@ -141,31 +146,8 @@ function register_newuser(profile, res, next) {
     var temp_jwt = common.signJwt({ exp: (Date.now() + config.auth.ttl)/1000, user })
     logger.info("signed temporary jwt token for oidc signup:", temp_jwt);
     res.redirect('/auth/#!/signup/'+temp_jwt);
-
-    /*
-    db.User.create(u).then(function(user) {
-        logger.info("registered new user", JSON.stringify(user));
-        user.addMemberGroups(u.gids, function() {
-            issue_jwt(user, profile, function(err, jwt) {
-                if(err) return next(err);
-                logger.info("registration success", jwt);
-                res.redirect('/auth/#!/signup/'+jwt);
-            });
-        });
-    });
-    */
 }
 
-function issue_jwt(user, profile, cb) {
-    common.createClaim(user, function(err, claim) {
-        if(err) return cb(err);
-        var jwt = common.signJwt(claim);
-        user.updateTime('oidc_login:'+profile.sub);
-        user.save().then(function() {
-            cb(null, jwt);
-        });
-    });
-}
 
 //start oidc account association
 router.get('/associate/:jwt', jwt({secret: config.auth.public_key, getToken: req=>req.params.jwt}), 

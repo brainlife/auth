@@ -5,6 +5,7 @@ const nodemailer = require('nodemailer');
 const uuid = require('node-uuid');
 const winston = require('winston');
 const amqp = require('amqp');
+const os = require('os');
 
 const config = require('./config');
 const logger = winston.createLogger(config.logger.winston);
@@ -33,8 +34,9 @@ get_amqp_connection((err, conn)=>{
 });
 
 exports.publish = (key, message, cb)=>{
-    console.log("publishing");
-    console.dir(message);
+    //console.log("publishing");
+    message.timestamp = (new Date().getTime())/1000; //it's crazy that amqp doesn't set this?
+    //console.dir(message);
     auth_ex.publish(key, message, {}, cb);
 }
 
@@ -153,4 +155,12 @@ exports.intersect_scopes = function(o1, o2) {
     }
     return intersect;
 }
+
+/*
+//send auditlog to central audit log server
+exports.auditlog = function(username, event, detail) {
+    let log = { app: "auth", time: new Date().getTime(), hostname: os.hostname(), event, detail };
+    if(username) log.username = username; 
+}
+*/
 
