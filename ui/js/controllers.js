@@ -178,9 +178,8 @@ function($scope, $route, toaster, $http, $routeParams, scaMessage, $location, $r
                 $rootScope.$broadcast("jwt_update", res.data.jwt);
             }
             if(res.data.message) scaMessage.success(res.data.message);
-            //console.dir(res.data);
 
-            //store public profile (to be posted to profile service when email is confirmed)
+            //store public profile (to be posted to profile service when user login for the first time)
             if($scope.form.profile) {
                 localStorage.setItem("public.profile", JSON.stringify($scope.form.profile));
             } else {

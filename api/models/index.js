@@ -11,24 +11,15 @@ var Sequelize = require('sequelize');
 var config    = require('../config');
 
 var basename  = path.basename(module.filename);
-
 if(typeof config.db === 'string') {
-    var sequelize = new Sequelize(config.db, {
-        /*
-        logging: function(str) {
-            //ignore for now..
-        }
-        */
-        logging: false
-    });
+    var sequelize = new Sequelize(config.db, { logging: false });
 } else {
     //assume object
     var sequelize = new Sequelize(config.db.database, config.db.username, config.db.password, config.db);
 }
 var db = {};
 
-fs
-  .readdirSync(__dirname)
+fs.readdirSync(__dirname)
   .filter(function(file) {
     return (file.indexOf('.') !== 0) && (file !== basename);
   })
@@ -55,3 +46,5 @@ db.User.belongsToMany(db.Group, {as: 'MemberGroups', through: 'GroupMembers'});
 db.Group.belongsToMany(db.User, {as: 'Members', through: 'GroupMembers'});
 
 module.exports = db;
+
+

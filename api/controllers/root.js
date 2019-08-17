@@ -61,25 +61,25 @@ router.post('/refresh', jwt({secret: config.auth.public_key}), function(req, res
 
 //TODO this API send any user email with URL provided by an user - which is a major security risk
 //I should use configured URL for referer
-router.post('/send_email_confirmation', function(req, res, next) { 
-    db.User.findOne({where: {id: req.body.sub}}).then(function(user) {
+router.post('/send_email_confirmation', (req, res, next)=>{ 
+    db.User.findOne({where: {id: req.body.sub}}).then(user=>{
         if(!user) return next("Couldn't find any user with sub:"+req.body.sub);
         if(user.email_confirmed) return next("Email already confirmed.");
         if(!req.headers.referer) return next("referer not set.. can't send confirmation");
-        common.send_email_confirmation(req.headers.referer, user, function(err) {
+        common.send_email_confirmation(req.headers.referer, user, err=>{
             if(err) return next(err);
             res.json({message: 'Sent confirmation email with subject: '+config.local.email_confirmation.subject});
         });
     });
 });
 
-router.post('/confirm_email', function(req, res, next) {
-    db.User.findOne({where: {email_confirmation_token: req.body.token}}).then(function(user) {
+router.post('/confirm_email', (req, res, next)=>{
+    db.User.findOne({where: {email_confirmation_token: req.body.token}}).then(user=>{
         if(!user) return next("Couldn't find any user with token:"+req.body.token);
         if(user.email_confirmed) return next("Email already confirmed.");
         user.email_confirmed = true;
         user.updateTime('confirm_email');
-        user.save().then(function() {
+        user.save().then(()=>{
             common.publish("user.create."+user.sub, user);
 
             //TODO - why don't I go ahead and issue jwt?
@@ -131,10 +131,23 @@ router.get('/me', jwt({secret: config.auth.public_key}), function(req, res, next
     });
 });
 
-//return list of all users (minus password)
+/**
+ * @api {get} /users
+ * @apiName UserGroups
+ * @apiDescription Query list of users
+ *
+ * @apiGroup User
+ *
+ * @apiParam {Object} find      Optional sequelize where query - defaults to {}
+ * 
+ * @apiHeader {String} authorization A valid JWT token "Bearer: xxxxx"
+ * @apiSuccessExample {json} Success-Response:
+ *     HTTP/1.1 200 OK
+ *     [ 1,2,3 ] 
+ */
 router.get('/users', jwt({secret: config.auth.public_key}), scope("admin"), function(req, res, next) {
     var where = {};
-    if(req.query.where) where = JSON.parse(req.query.where);
+    if(req.query.where) where = JSON.parse(req.query.find||req.query.where);
     db.User.findAll({
         where: where, 
         //password_hash is replaced by true/false right below
@@ -187,6 +200,7 @@ router.get('/user/groups/:id', jwt({secret: config.auth.public_key}), scope("adm
     });
 });
  
+/*
 //DEPRECATED - use /users
 //return detail from just one user - admin only (used by event service to query for user's email)
 router.get('/user/:id', jwt({secret: config.auth.public_key}), scope("admin"), function(req, res) {
@@ -200,6 +214,7 @@ router.get('/user/:id', jwt({secret: config.auth.public_key}), scope("admin"), f
         res.json(user);
     });
 });
+*/
 
 /**
  * @apiName UserGroups

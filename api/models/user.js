@@ -31,7 +31,6 @@ module.exports = function(sequelize, DataTypes) {
         password_hash: Sequelize.STRING,
         password_reset_token: Sequelize.STRING, //used to reset password (via email?)
         password_reset_cookie: Sequelize.STRING, //cookie token allowed to do reset
-        //password_reset_exp: Sequelize.DATE,
         
         ///////////////////////////////////////////////////////////////////////////////////////////
         //for 3rd party login (TODO - should I store all this in JSON fields?)

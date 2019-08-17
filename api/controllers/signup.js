@@ -57,8 +57,9 @@ function registerUser(req, done) {
  */
 
 router.post('/', jwt({secret: config.auth.public_key, credentialsRequired: false}), function(req, res, next) {
-    var username = req.body.username;
-    var email = req.body.email;
+    let username = req.body.username;
+    let email = req.body.email;
+    //let profile = req.body.profile;
 
     //check for username already taken
     db.User.findOne({where: {username: username} }).then(function(user) {
@@ -101,6 +102,8 @@ router.post('/', jwt({secret: config.auth.public_key, credentialsRequired: false
             //no need for email confrmation.. issue jwt!
             common.createClaim(user, function(err, claim) {
                 if(err) return next(err);
+                common.publish("user.create."+user.sub, user);
+
                 var jwt = common.signJwt(claim);
                 res.json({jwt: jwt, sub: user.id});
             });
