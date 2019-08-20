@@ -26,6 +26,26 @@ request.get({url: config.oidc.idplist}, (err, res, xml)=>{
     });
 });
 
+//openid object example
+// IU
+// '[{"sub":"http://cilogon.org/serverA/users/7051","idp_name":"Indiana University","idp":"urn:mace:incommon:iu.edu","eppn":"hayashis@iu.edu","cert_subject_dn":"/DC=org/DC=cilogon/C=US/O=Indiana University/CN=Soichi Hayashi A35421 email=hayashis@iu.edu","eptid":"urn:mace:incommon:iu.edu!https://cilogon.org/shibboleth!t+5InYEarg/v8gSO9Ri9afLlecI=","name":"Hayashi, Soichi","given_name":"Soichi","family_name":"Hayashi","email":"hayashis@iu.edu"}]',
+// Google
+// { sub: 'http://cilogon.org/serverB/users/30632',
+// aud:
+//  'myproxy:oa4mp,2012:/client_id/234dba466fc3dd2dd30e3414087e3c1b',
+// acr:
+//  'urn:oasis:names:tc:SAML:2.0:ac:classes:PasswordProtectedTransport',
+// idp_name: 'Google',
+// idp: 'http://google.com/accounts/o8/id',
+// openid:
+//  'https://www.google.com/accounts/o8/id?id=AItOawmiWib-6c2SfC3XHwSr4z87LBSa5mSJPeQ',
+// cert_subject_dn: '/DC=org/DC=cilogon/C=US/O=Google/CN=Soichi Hayashi B30632',
+// iss: 'https://cilogon.org',
+// given_name: 'Soichi',
+// family_name: 'Hayashi',
+// oidc: '112741998841961652162',
+// email: 'soichih@gmail.com' }
+
 const oidc_strat = new OAuth2Strategy({
     authorizationURL: config.oidc.authorization_url,
     tokenURL: config.oidc.token_url,
@@ -39,7 +59,7 @@ const oidc_strat = new OAuth2Strategy({
     logger.debug("oidc loading userinfo ..", accessToken, profile);
     request.get({url: config.oidc.userinfo_url, qs: {access_token: accessToken}, json: true},  function(err, _res, profile) {
         if(err) return cb(err); 
-        db.User.findOne({where: {"oidc_subs": {$like: "%\""+profile.sub+"\"%"}, active: true}}).then(function(user) {
+        db.mongo.User.findOne({"ext.openids": {$regex: '^'+profile.cert_subject_dn}, active: true}).then(function(user) {
             cb(null, user, profile);
         });
     });
@@ -62,7 +82,7 @@ router.get('/signin', function(req, res, next) {
 function find_profile(profiles, sub) {
     var idx = -1;
     profiles.forEach(function(profile, x) {
-        if(profile.sub == sub) idx = x;
+        if(profile.cert_subject_dn == sub) idx = x;
     });
     return idx;
 }
@@ -91,12 +111,11 @@ function(req, res, next) {
                 res.cookie('messages', JSON.stringify(messages), {path: '/'});
                 res.redirect('/auth/#!/settings/account');
             } else {
-                db.User.findOne({where: {id: req.user.sub}}).then(function(user) {
+                db.mongo.User.findOne({sub: req.user.sub, active: true}).then(user=>{
                     if(!user) throw new Error("couldn't find user record with sub:"+req.user.sub);
-                    var subs = user.get('oidc_subs');
-                    if(!subs) subs = [];
-                    if(!~find_profile(subs, profile.sub)) subs.push(profile);
-                    user.set('oidc_subs', subs);
+                    var openids = user.ext.openids||[];
+                    if(!~openids.indexOf(profile.cert_subject_dn)) openids.push(profile.cert_subject_dn);
+                    user.ext.openids = openids;
                     user.save().then(function() {
                         var messages = [{
                             type: "success", 
@@ -113,15 +132,15 @@ function(req, res, next) {
                 if(config.oidc.auto_register) {
                     register_newuser(profile, res, next);
                 } else {
-                    res.redirect('/auth/#!/signin?msg='+"Your InCommon account("+profile.sub+") is not yet registered. Please login using your username/password first, then associate your InCommon account inside the account settings.");
+                    res.redirect('/auth/#!/signin?msg='+"Your InCommon account("+profile.cert_subject_dn+") is not yet registered. Please login using your username/password first, then associate your InCommon account inside the account settings.");
                 }
             } else {
                 common.createClaim(user, function(err, claim) {
                     if(err) return next(err);
                     var jwt = common.signJwt(claim);
-                    user.updateTime('oidc_login:'+profile.sub);
+                    //user.times.oidc_login = profile.sub; //TODO
                     user.save().then(function() {
-                        common.publish("user.login."+user.id, {type: "oidc", username: user.username, exp: claim.exp, headers: req.headers});
+                        common.publish("user.login."+user.sub, {type: "oidc", username: user.username, exp: claim.exp, headers: req.headers});
                         res.redirect('/auth/#!/success/'+jwt);
                     });
                 });
@@ -138,16 +157,23 @@ function register_newuser(profile, res, next) {
     //u.email = profile.email;
     //u.email_confirmed = true; //let's trust InCommon
     
-    var user = {
-        oidc_subs: [profile],
+    let ext = {
+        openids: [profile.cert_subject_dn],
+    }
+    var _default = {
         fullname: profile.given_name+" "+profile.family_name,
         email: profile.email, //not sure if this exists
+        institution: profile.idp_name,
     }
-    var temp_jwt = common.signJwt({ exp: (Date.now() + config.auth.ttl)/1000, user })
+    //guest user id from email
+    if(_default.email) {
+        _default.username = _default.email.split("@")[0];
+    }
+
+    var temp_jwt = common.signJwt({ exp: (Date.now() + config.auth.ttl)/1000, ext, _default })
     logger.info("signed temporary jwt token for oidc signup:", temp_jwt);
     res.redirect('/auth/#!/signup/'+temp_jwt);
 }
-
 
 //start oidc account association
 router.get('/associate/:jwt', jwt({secret: config.auth.public_key, getToken: req=>req.params.jwt}), 
@@ -163,15 +189,13 @@ function(req, res, next) {
 
 //should I refactor?
 router.put('/disconnect', jwt({secret: config.auth.public_key}), function(req, res, next) {
-    var sub = req.body.sub;
-    db.User.findOne({
-        where: {id: req.user.sub}
-    }).then(function(user) {
+    var dn = req.body.dn;
+    db.mongo.User.findOne({sub: req.user.sub}).then(user=>{
         if(!user) res.status(401).end();
-        var subs = user.get('oidc_subs');
-        var pos = find_profile(subs, sub);
-        if(~pos) subs.splice(pos, 1);
-        user.set('oidc_subs', subs);
+        var openids = user.ext.openids;
+        var pos = user.ext.openids.indexOf(dn);
+        if(~pos) openids.splice(pos, 1);
+        user.ext.openids = openids;
         user.save().then(function() {
             logger.debug(user.toString());
             res.json({message: "Successfully disconnected an OIDC account", user: user});
@@ -179,6 +203,7 @@ router.put('/disconnect', jwt({secret: config.auth.public_key}), function(req, r
     });
 });
 
+/* used to be used to list all idps that cilogin supports
 //query idp
 router.get('/idp', function(req, res, next) {
     if(!cache_idps) return next("idp list not yet loaded");
@@ -201,5 +226,6 @@ router.get('/idp', function(req, res, next) {
     });
     res.json(idps);
 });
+*/
 
 module.exports = router;

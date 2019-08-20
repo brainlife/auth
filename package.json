@@ -1,6 +1,6 @@
 {
   "name": "auth",
-  "version": "1.0.1",
+  "version": "2.0.0",
   "main": "api/auth.js",
   "scripts": {
     "start": "node api/auth.js",
@@ -10,7 +10,7 @@
   },
   "dependencies": {
     "amqp": "^0.2.7",
-    "async": "^2.6.2",
+    "async": "^2.6.3",
     "bcryptjs": "^2.4.3",
     "body-parser": "^1.19.0",
     "clone": "^2.1.2",
@@ -18,8 +18,9 @@
     "cors": "^2.8.5",
     "express": "^4.17.1",
     "express-jwt": "^5.3.0",
-    "express-winston": "^3.1.0",
+    "express-winston": "^3.3.0",
     "jsonwebtoken": "^8.5.1",
+    "mongoose": "^5.6.9",
     "nocache": "^2.1.0",
     "node-uuid": "^1.4.8",
     "nodemailer": "^4.7.0",
@@ -32,9 +33,10 @@
     "passport-local": "~1.0.0",
     "passport-oauth2": "^1.5.0",
     "request": "^2.88.0",
-    "sequelize": "^4.44.0",
+    "request-promise": "^4.2.4",
+    "sequelize": "^4.44.2",
     "sequelize-json": "^2.1.2",
-    "sqlite3": "^4.0.8",
+    "sqlite3": "^4.1.0",
     "underscore": "^1.9.1",
     "winston": "^3.2.1",
     "xml2js": "^0.4.19",
@@ -42,7 +44,7 @@
   },
   "devDependencies": {
     "chai": "^4.2.0",
-    "coveralls": "^3.0.3",
+    "coveralls": "^3.0.6",
     "istanbul": "^0.4.3",
     "mocha": "^6.0.2",
     "supertest": "^3.4.2"

@@ -21,7 +21,7 @@ passport.use(new GitHubStrategy({
     clientSecret: config.facebook.app_secret,
     callbackURL: config.facebook.callback_url,
 }, function(accessToken, refreshToken, profile, cb) {
-    db.User.findOne({where: {facebook: profile.id, active: true}}).then(function(user) {
+    db.mongo.User.findOne({facebook: profile.id, active: true}).then(function(user) {
         cb(null, user, profile);
     });
 }));
@@ -52,9 +52,9 @@ router.get('/callback', jwt({
                 res.cookie('messages', JSON.stringify(messages), {path: '/'});
                 return res.redirect('/auth/#!/settings/account');
             }
-            db.User.findOne({where: {id: req.user.sub}}).then(function(user) {
+            db.User.findOne({sub: req.user.sub, active: true}).then(function(user) {
                 if(!user) throw new Error("couldn't find user record with sub:"+req.user.sub);
-                user.facebook = info.id;
+                user.ext.facebook = info.id;
                 user.save().then(function() {
                     console.log("saved");
                     console.dir(user);
@@ -69,9 +69,9 @@ router.get('/callback', jwt({
             common.createClaim(user, function(err, claim) {
                 if(err) return next(err);
                 var jwt = common.signJwt(claim);
-                user.updateTime('facebook_login');
+                user.times.facebook_login = new Date();
                 user.save().then(function() {
-                    common.publish("user.login."+user.id, {type: "facebook", username: user.username, exp: claim.exp, headers: req.headers});
+                    common.publish("user.login."+user.sub, {type: "facebook", username: user.username, exp: claim.exp, headers: req.headers});
                     res.redirect('/auth/#!/success/'+jwt);
                 });
             });
@@ -94,13 +94,11 @@ function(req, res, next) {
 
 //should I refactor?
 router.put('/disconnect', jwt({secret: config.auth.public_key}), function(req, res, next) {
-    db.User.findOne({
-        where: {id: req.user.sub}
-    }).then(function(user) {
+    db.mongo.User.findOne({sub: req.user.sub}).then(function(user) {
         if(!user) res.status(401).end();
-        user.facebook = null;
+        user.ext.facebook = null;
         user.save().then(function() {
-            res.json({message: "Successfully disconnected facebook account.", user: user});
+            res.json({message: "Successfully disconnected facebook account.", user});
         });    
     });
 });

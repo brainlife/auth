@@ -21,7 +21,8 @@ passport.use(new GoogleStrategy({
     clientSecret: config.google.client_secret,
     callbackURL: config.google.callback_url,
 }, function(accessToken, refreshToken, profile, cb) {
-    db.User.findOne({where: {googleid: profile.id, active: true}}).then(function(user) {
+    console.dir(profile);
+    db.mongo.User.findOne({'ext.googleid': profile.id, active: true}).then(function(user) {
         cb(null, user, profile);
     });
 }));
@@ -64,30 +65,27 @@ router.get('/callback', jwt({
     getToken: req=>req.cookies.associate_jwt,
 }), function(req, res, next) {
     console.log("google signin /callback called ");
-    passport.authenticate('google', function(err, user, info) {
+    passport.authenticate('google', function(err, user, profile) {
         if(err) {
             console.error(err);
             return res.redirect('/auth/#!/signin?msg='+"Failed to authenticate");
         }
         if(req.user) {
             //association
-            logger.debug("handling association");
             res.clearCookie('associate_jwt');
             if(user) {
                 //TODO - #/settings/account doesn't handle msg yet
                 var messages = [{
                     type: "error", 
-                    message: "Your Google account is already associated to another account.",
+                    message: "Your Google account is already associated to another account. Please signoff / login with your google account.",
                 }];
                 res.cookie('messages', JSON.stringify(messages), {path: '/'});
                 return res.redirect('/auth/#!/settings/account');
             }
-            db.User.findOne({where: {id: req.user.sub}}).then(function(user) {
+            db.mongo.User.findOne({sub: req.user.sub, active: true}).then(function(user) {
                 if(!user) throw new Error("couldn't find user record with sub:"+req.user.sub);
-                user.googleid = info.id;
+                user.ext.googleid = profile.id;
                 user.save().then(function() {
-                    //console.log("saved");
-                    //console.dir(user);
                     res.redirect('/auth/#!/settings/account');
                 });
             });
@@ -95,20 +93,49 @@ router.get('/callback', jwt({
             //normal sign in
             logger.debug("handling normal signin");
             if(!user) {
-                return res.redirect('/auth/#!/signin?msg='+"Your google account is not registered yet. Please login using your username/password first, then associate your google account inside account settings.");
-            }
-            common.createClaim(user, function(err, claim) {
-                if(err) return next(err);
-                var jwt = common.signJwt(claim);
-                user.updateTime('google_login');
-                user.save().then(function() {
-                    common.publish("user.login."+user.id, {type: "google", username: user.username, exp: claim.exp, headers: req.headers});
-                    res.redirect('/auth/#!/success/'+jwt);
+                if(config.google.auto_register) {
+                    register_newuser(profile, res, next);
+                } else {
+                    res.redirect('/auth/#!/signin?msg='+"Your google account is not registered yet. Please login using your username/password first, then associate your google account inside account settings.");
+                }
+            } else {
+                common.createClaim(user, function(err, claim) {
+                    if(err) return next(err);
+                    user.times.google_login = new Date();
+                    user.save().then(function() {
+                        common.publish("user.login."+user.sub, {type: "google", username: user.username, exp: claim.exp, headers: req.headers});
+                        var jwt = common.signJwt(claim);
+                        res.redirect('/auth/#!/success/'+jwt);
+                    });
                 });
-            });
+            }
         }
     })(req, res, next);
 });
+/*
+1|auth     | { id: '112741998841961652162',
+1|auth     |   displayName: 'Soichi Hayashi',
+1|auth     |   name: { familyName: 'Hayashi', givenName: 'Soichi' },
+1|auth     |   photos:
+1|auth     |    [ { value:
+1|auth     |         'https://lh6.googleusercontent.com/-zBuz_fiQ2Iw/AAAAAAAAAAI/AAAAAAAA7_k/EsAaFZtWSgM/s50/photo.jpg' } ],
+
+ */
+
+function register_newuser(profile, res, next) {
+    //issue temporary token to complete the signup process
+    let ext = {
+        googleid: profile.id,
+    }
+
+    let _default = {
+        fullname: profile.displayName,
+    }
+
+    var temp_jwt = common.signJwt({ exp: (Date.now() + config.auth.ttl)/1000, ext, _default})
+    logger.info("signed temporary jwt token for google signup:"+temp_jwt);
+    res.redirect('/auth/#!/signup/'+temp_jwt);
+}
 
 //start account association
 router.get('/associate/:jwt', jwt({secret: config.auth.public_key, 
@@ -126,11 +153,9 @@ function(req, res, next) {
 
 //should I refactor?
 router.put('/disconnect', jwt({secret: config.auth.public_key}), function(req, res, next) {
-    db.User.findOne({
-        where: {id: req.user.sub}
-    }).then(function(user) {
+    db.mongo.User.findOne({sub: req.user.sub}).then(function(user) {
         if(!user) res.status(401).end();
-        user.googleid = null;
+        user.ext.googleid = null;
         user.save().then(function() {
             res.json({message: "Successfully disconnected google account.", user: user});
         });    

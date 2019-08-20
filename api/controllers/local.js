@@ -12,20 +12,21 @@ const common = require('../common');
 const db = require('../models');
 
 passport.use(new passport_localst(
-    function(username, password, done) {
-        db.User.findOne({where: {$or: {"username": username, "email": username }}}).then(function(user) {
+    function(username_or_email, password, done) {
+        db.mongo.User.findOne({$or: [{"username": username_or_email}, {"email": username_or_email}]}).then(user=>{
             if (!user) {
-                return done(null, false, { message: 'Incorrect email or username' });
+                setTimeout(function() {
+                    done(null, false, { message: 'Incorrect email or username' });
+                }, 2000);
+                return;
             } else {
-                //var err = user.check();
-                //if(err) return done(null, false, err);
                 if(!user.password_hash) {
-                    return done(null, false, { message: 'Password login is not enabled for this account' });
+                    return done(null, false, { message: 'Password login is not enabled for this account (please try 3rd party authentication)' });
                 }
-                if(!user.isPassword(password)) {
+                if(!common.check_password(user, password)) {
                     //delay returning to defend against password sweeping attack
                     setTimeout(function() {
-                        done(null, false, { message: 'Incorrect password' });
+                        done(null, false, { message: 'Incorrect user/password' });
                     }, 2000);
                     return;
                 }
@@ -58,10 +59,11 @@ router.post('/auth', function(req, res, next) {
             if(err) return next(err);
             if(req.body.ttl) claim.exp = (Date.now() + req.body.ttl)/1000;
             var jwt = common.signJwt(claim);
-            user.updateTime('local_login');
+            user.times.local_login = new Date();
             user.save().then(function() {
-                common.publish("user.login."+user.id, {type: "userpass", username: user.username, exp: claim.exp, headers: req.headers});
-                res.json({message: "Login Success", jwt, sub: user.id});
+                common.publish("user.login."+user.sub, {type: "userpass", username: user.username, exp: claim.exp, headers: req.headers});
+                console.dir(user.toString());
+                res.json({message: "Login Success", jwt, sub: user.sub});
             });
         });
     })(req, res, next);
@@ -69,22 +71,23 @@ router.post('/auth', function(req, res, next) {
 
 //used to setpassword if password_hash is empty or update exiting password (with a valid current password)
 router.put('/setpass', jwt({secret: config.auth.public_key}), function(req, res, next) {
-    db.User.findOne({where: {id: req.user.sub}}).then(function(user) {
+    db.mongo.User.findOne({sub: req.user.sub}).then(user=>{
         logger.debug("setting password for sub:"+req.user.sub);
         if(user) {
             if(user.password_hash) {
-                if(!user.isPassword(req.body.password_old)) {
-                    common.publish("user.setpass_fail."+user.id, {username: user.username, message: "wrong current pass"});
+                if(!common.check_password(user, req.body.password_old)) {
+                    common.publish("user.setpass_fail."+user.sub, {username: user.username, message: "wrong current pass"});
                     return setTimeout(function() {
                         next("Wrong current password");
                     }, 2000);
                 }
             }
-            user.setPassword(req.body.password, function(err) {
+            common.hash_password(req.body.password, (err, hash)=>{
                 if(err) return next(err);
-                user.updateTime('password_reset');
-                user.save().then(function() {
-                    common.publish("user.setpass."+user.id, {username: user.username});
+                user.password_hash = hash;
+                user.times.password_reset = new Date();
+                user.save().then(()=>{
+                    common.publish("user.setpass."+user.sub, {username: user.username});
                     res.json({status: "ok", message: "Password reset successfully."});
                 });
             });
@@ -119,7 +122,7 @@ router.post('/resetpass', function(req, res, next) {
     if(req.body.email)  {
         //initiate password reset
         var email = req.body.email;
-        db.User.findOne({where: {email: email}}).then(function(user) {
+        db.mongo.User.findOne({email}).then(user=>{
             if(!user) return res.status(404).json({message: "No such email registered"});
             //we need 2 tokens - 1 to confirm user, and 1 to match the browser (cookie)
             user.password_reset_token = Math.random().toString(36).substr(2);
@@ -139,12 +142,14 @@ router.post('/resetpass', function(req, res, next) {
         var password = req.body.password;
         var cookie = req.cookies.password_reset;
         if(!token || !password) return next("missing parameters");
-        db.User.findOne({where: {password_reset_token: token, password_reset_cookie: cookie}}).then(function(user) {
+        db.mongo.User.findOne({password_reset_token: token, password_reset_cookie: cookie}).then(user=>{
             if(user) {
-                user.setPassword(password, function(err) {
+                common.hash_password(password, (err, hash)=>{
                     if(err) return next(err);
+                    user.password_hash = hash;
                     user.password_reset_token = null;
                     user.password_reset_cookie = null;
+                    user.times.password_reset = new Date();
                     user.save().then(function() {
                         res.json({status: "ok", message: "Password reset successfully."});
                     });

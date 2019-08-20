@@ -2,7 +2,7 @@
 //contrib
 const express = require('express');
 const router = express.Router();
-const request = require('request');
+const request = require('request-promise');
 const winston = require('winston');
 const jwt = require('express-jwt');
 const clone = require('clone');
@@ -26,7 +26,7 @@ const orcid_strat = new OAuth2Strategy({
     scope: "/authenticate",
 }, function(accessToken, refreshToken, profile, _needed, cb) {
     logger.debug("orcid loading userinfo ..", accessToken, refreshToken, profile);
-    db.User.findOne({where: {orcid: profile.orcid, active: true}}).then(function(user) {
+    db.mongo.User.findOne({'ext.orcid': profile.orcid, active: true}).then(function(user) {
         cb(null, user, profile);
     });
 });
@@ -76,9 +76,9 @@ function(req, res, next) {
                 res.cookie('messages', JSON.stringify(messages), {path: '/'});
                 res.redirect('/auth/#!/settings/account');
             } else {
-                db.User.findOne({where: {id: req.user.sub}}).then(function(user) {
+                db.mongo.User.findOne({sub: req.user.sub, active: true}).then(function(user) {
                     if(!user) throw new Error("couldn't find user record with sub:"+req.user.sub);
-                    user.orcid = profile.orcid;
+                    user.ext.orcid = profile.orcid;
                     user.save().then(function() {
                         var messages = [{
                             type: "success", 
@@ -101,9 +101,9 @@ function(req, res, next) {
                 common.createClaim(user, function(err, claim) {
                     if(err) return next(err);
                     var jwt = common.signJwt(claim);
-                    user.updateTime('orcid_login');
+                    user.times.orcid_login = new Date();
                     user.save().then(function() {
-                        common.publish("user.login."+user.id, {type: "orcid", username: user.username, exp: claim.exp, headers: req.headers});
+                        common.publish("user.login."+user.sub, {type: "orcid", username: user.username, exp: claim.exp, headers: req.headers});
                         res.redirect('/auth/#!/success/'+jwt);
                     });
                 });
@@ -112,33 +112,35 @@ function(req, res, next) {
     })(req, res, next);
 });
 
-function register_newuser(profile, res, next) {
-    /*
-    var u = clone(config.auth.default);
-    u.orcid = profile.orcid;
-    u.fullname = profile.name;
-    db.User.create(u).then(function(user) {
-        logger.info("registered new user", JSON.stringify(user));
-        user.addMemberGroups(u.gids, function() {
-            issue_jwt(user, profile, function(err, jwt) {
-                if(err) return next(err);
-                logger.info("registration success", jwt);
-                res.redirect('/auth/#!/signup/'+jwt);
-            });
-        });
-    });
-    */
-    var user = {
+async function register_newuser(profile, res, next) {
+    let detail = await request.get({url: "https://pub.orcid.org/v2.1/"+profile.orcid+"/record", json: true});
+    //console.log(JSON.stringify(detail.person, null, 4));
+
+    let ext = {
         orcid: profile.orcid,
-        fullname: profile.name,
-        email: profile.email, //not sure if this is the right kkey
     }
-    var temp_jwt = common.signJwt({ exp: (Date.now() + config.auth.ttl)/1000, user })
-    logger.info("signed temporary jwt token for orcid signup:", temp_jwt, profile);
+    let _default = {};
+    if(detail.person) {
+        if(detail.person.name) {
+            _default.fullname = detail.person.name["given-names"].value + " "+detail.person.name["family-name"].value
+        }
+        if(detail.person.emails) {
+            detail.person.emails.email.forEach(email=>{
+                if(email.primary) _default.email = email.email;
+            });
+        }
+    }
+
+    //guest user id from email
+    if(_default.email) {
+        _default.username = _default.email.split("@")[0];
+    }
+
+    var temp_jwt = common.signJwt({ exp: (Date.now() + config.auth.ttl)/1000, ext, _default })
+    logger.info("signed temporary jwt token for orcid signup:"+temp_jwt)
+    logger.debug(JSON.stringify(profile, null, 4));
     res.redirect('/auth/#!/signup/'+temp_jwt);
-
 }
-
 
 //start orcid account association
 router.get('/associate/:jwt', jwt({secret: config.auth.public_key, getToken: req=>req.params.jwt}), 
@@ -155,11 +157,9 @@ function(req, res, next) {
 //should I refactor?
 router.put('/disconnect', jwt({secret: config.auth.public_key}), function(req, res, next) {
     var sub = req.body.sub;
-    db.User.findOne({
-        where: {id: req.user.sub}
-    }).then(function(user) {
+    db.mongo.User.findOne({sub: req.user.sub}).then(user=>{
         if(!user) res.status(401).end();
-        user.orcid = null;
+        user.ext.orcid = null;
         user.save().then(function() {
             res.json({message: "Successfully disconnected an ORCID account", user: user});
         });    

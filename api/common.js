@@ -6,9 +6,12 @@ const uuid = require('node-uuid');
 const winston = require('winston');
 const amqp = require('amqp');
 const os = require('os');
+const bcrypt = require('bcryptjs');
+const zxcvbn = require('zxcvbn');
 
 const config = require('./config');
 const logger = winston.createLogger(config.logger.winston);
+const db = require('./models');
 
 let amqp_conn;
 function get_amqp_connection(cb) {
@@ -41,11 +44,11 @@ exports.publish = (key, message, cb)=>{
 }
 
 exports.createClaim = async function(user, cb) {
-    if(!user.check) return cb("user object does not contain .check()");
-    var err = user.check();
+    var err = exports.check_user(user);
     if(err) return cb(err);
     
     //load active groups (using sequelize generated code)
+    /*
     var gids = []; 
     let groups = await user.getAdminGroups({attributes: ['id', 'active']});
     groups.forEach(group=>{
@@ -55,6 +58,9 @@ exports.createClaim = async function(user, cb) {
     groups.forEach(group=>{
         if(group.active && !~gids.indexOf(group.id)) gids.push(group.id);  
     });
+    */
+    let groups = await db.mongo.Group.find({active: true, $or: [{members: user._id}, {admins: user._id}]});
+    let gids = groups.map(group=>group.id);
 
     /* http://websec.io/2014/08/04/Securing-Requests-with-JWT.html
     iss: The issuer of the token
@@ -73,7 +79,7 @@ exports.createClaim = async function(user, cb) {
         scopes: user.scopes,
         
         //can't use user.username which might not be set
-        sub: user.id,  //TODO - toString() this!?
+        sub: user.sub, 
 
         gids, //TODO - toString() this also?
         profile: { 
@@ -156,11 +162,51 @@ exports.intersect_scopes = function(o1, o2) {
     return intersect;
 }
 
-/*
-//send auditlog to central audit log server
-exports.auditlog = function(username, event, detail) {
-    let log = { app: "auth", time: new Date().getTime(), hostname: os.hostname(), event, detail };
-    if(username) log.username = username; 
+exports.hash_password = function(password, cb) {
+    //check for password strength.. 
+    //intentionally left minimalistic (UI should impose stronger restriction)
+    var strength = zxcvbn(password);
+    //0 # too guessable: risky password. (guesses < 10^3)
+    //1 # very guessable: protection from throttled online attacks. (guesses < 10^6)
+    //2 # somewhat guessable: protection from unthrottled online attacks. (guesses < 10^8)
+    //3 # safely unguessable: moderate protection from offline slow-hash scenario. (guesses < 10^10)
+    //4 # very unguessable: strong protection from offline slow-hash scenario. (guesses >= 10^10)
+    if(strength.score == 0) {
+        return cb({message: strength.feedback.warning+" - "+strength.feedback.suggestions.toString()});
+    }
+
+    /* cost of computation https://www.npmjs.com/package/bcrypt
+    * rounds=10: ~10 hashes/sec
+    * rounds=13: ~1 sec/hash
+    * rounds=25: ~1 hour/hash
+    * rounds=31: 2-3 days/hash
+    */
+    bcrypt.genSalt(10, function(err, salt) {
+        bcrypt.hash(password, salt, function(err, hash) {
+            if(err) return cb(err);
+            cb(null, hash);
+        });
+    });
 }
-*/
+
+exports.check_password = function(user, password) {
+    if(!user.password_hash) return false; //no password, no go
+    return bcrypt.compareSync(password, user.password_hash);
+}
+
+//inline it?
+exports.check_user = function(user) {
+    if(!user.active) return {message: "Account is disabled. Please contact the administrator.", code: "inactive"};
+    if(config.local && config.local.email_confirmation && user.email_confirmed !== true) {
+        return {message: "Email is not confirmed yet", path: "/confirm_email/"+user.id};
+    }
+    return null;
+}
+
+exports.get_nextsub = async function() {
+    let last_user = await db.mongo.User.findOne({}).sort('-_id'); //to find the next sub (TODO not concurrency safe..)
+    if(!last_user) return 1; //very first user!?
+    return last_user.sub+1;
+}
+
 

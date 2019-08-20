@@ -66,13 +66,8 @@ process.on('uncaughtException', function (err) {
 
 exports.app = app;
 exports.start = function(cb) {
-    db.sequelize
-    .sync(/*{force: true}*/)
-    .then(migration.run)
-    .then(function() {
-
-        db.sequelize.query("PRAGMA synchronous = 0"); //to speed things up with sqlite
-
+    db.mongo.connection.then(()=>{
+        logger.debug("db connected");
         var port = process.env.PORT || config.express.port || '8080';
         var host = process.env.HOST || config.express.host || 'localhost';
         app.listen(port, host, function(err) {

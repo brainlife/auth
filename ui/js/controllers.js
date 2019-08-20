@@ -36,6 +36,7 @@ function($scope, $route, toaster, $http, $routeParams, $location, scaMessage, $s
             localStorage.setItem($scope.appconf.jwt_id, res.data.jwt);
             $rootScope.$broadcast("jwt_update", res.data.jwt)
 
+            /*
             if($scope.appconf.profile) {
                 let profile = JSON.parse(localStorage.getItem("public.profile"));
                 await $http.put($scope.appconf.profile.api+'/public/'+res.data.sub, profile, {
@@ -44,6 +45,8 @@ function($scope, $route, toaster, $http, $routeParams, $location, scaMessage, $s
                 localStorage.removeItem("public.profile");
                 console.log("published public profile");
             }
+            */
+
             handle_redirect($scope.appconf);
         } catch(res) {
             console.log("failed to login");
@@ -151,9 +154,15 @@ function($scope, $route, toaster, $http, $routeParams, scaMessage, $location, $r
     if($routeParams.jwt) {
         $scope.jwt = $routeParams.jwt; //to let UI now that we are *completing* signup
         var user = jwtHelper.decodeToken($routeParams.jwt);
-        $scope.form.username = user.user.username;
-        $scope.form.email = user.user.email;
-        $scope.form.fullname = user.user.fullname;
+
+        //pull defaults
+        if(user._default.username) $scope.form.username = user._default.username;
+        if(user._default.email) $scope.form.email = user._default.email;
+        if(user._default.fullname) $scope.form.fullname = user._default.fullname;
+        if(user._default.institution) {
+            $scope.form.profile = {};
+            $scope.form.profile['institution'] = user._default.institution;
+        }
         
         //localStorage.setItem($scope.appconf.jwt_id, $routeParams.jwt);
         postconfig.headers =  {
@@ -179,12 +188,14 @@ function($scope, $route, toaster, $http, $routeParams, scaMessage, $location, $r
             }
             if(res.data.message) scaMessage.success(res.data.message);
 
+            /*
             //store public profile (to be posted to profile service when user login for the first time)
             if($scope.form.profile) {
                 localStorage.setItem("public.profile", JSON.stringify($scope.form.profile));
             } else {
                 localStorage.removeItem("public.profile"); //just in case..
             }
+            */
         
             //redirect to somewhere..
             if(res.data.path) $location.path(res.data.path); //maybe .. email_confirmation

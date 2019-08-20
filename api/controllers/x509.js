@@ -1,3 +1,4 @@
+//NOT TESTED SINCE sequelize to mongo update
 
 //contrib
 var express = require('express');
@@ -14,22 +15,10 @@ var common = require('../common');
 var db = require('../models');
 
 function finduserByDN(dn, done) {
-    db.User.findOne({where: {x509dns: {$like: "%\""+dn+"\"%"}, active: true}}).then(function(user) {
+    db.mongo.User.findOne({'ext.x509dns': dn, active: true}).then(function(user) {
         done(null, user);
     });
 }
-
-
-/*
-var allowCrossDomain = function(req, res, next) {
-    console.log("setting header");
-    res.header('Access-Control-Allow-Origin', config.x509.allow_origin||'*'); 
-    res.header('Access-Control-Allow-Methods', 'GET');
-    res.header('Access-Control-Allow-Headers', 'Pragma,Cache-Control,If-Modified-Since,Authorization');
-    next();
-}
-router.use(allowCrossDomain); //for OPTIONS method
-*/
 
 // this endpoint needs to be exposed via webserver that's requiring x509 DN
 // unlike /auth, this page will redirect back to #!/success/<jwt>
@@ -50,9 +39,9 @@ router.get('/signin', /*jwt({secret: config.auth.public_key, credentialsRequired
         logger.debug("x509 authentication successful with "+dn);
         common.createClaim(user, function(err, claim) {
             if(err) return next(err);
-            user.updateTime('x509_login:'+dn);
+            //user.time.x509_login:'+dn); //array time are todo
             user.save().then(function() {
-                common.publish("user.login."+user.id, {type: "x509", username: user.username, exp: claim.exp, headers: req.headers});
+                common.publish("user.login."+user.sub, {type: "x509", username: user.username, exp: claim.exp, headers: req.headers});
                 let jwt = common.signJwt(claim);
                 res.redirect(req.headers.referer+"#!/success/"+jwt);
             });
@@ -74,12 +63,12 @@ function(req, res, next) {
         if(!user) {
             //associate(req.user, dn, res);
             logger.info("associating user with x509 DN "+dn);
-            db.User.findOne({where: {id: req.user.sub}}).then(function(user) {
+            db.mongo.User.findOne({sub: req.user.sub}).then(function(user) {
                 if(!user) return next("couldn't find user record with jwt.sub:"+req.user.sub);
-                var dns = user.get('x509dns');
+                var dns = user.ext.x509dns;
                 if(!dns) dns = [];
                 if(!~dns.indexOf(dn)) dns.push(dn);
-                user.set('x509dns', dns);
+                user.ext.x509dns = dns;
                 user.save().then(function() {
                     var messages = [{type: "success", message: "Successfully associated your DN to your account."}];
                     res.cookie('messages', JSON.stringify(messages)/*, {path: '/'}*/);
@@ -88,7 +77,7 @@ function(req, res, next) {
             });
         } else {
             var messages;
-            if(user.id == req.user.sub) {
+            if(user.sub == req.user.sub) {
                 messages = [{type: "info", message: "The certificate you have provided("+dn+") is already connected to your account."}];
 
             } else { 
@@ -109,10 +98,10 @@ router.put('/disconnect', jwt({secret: config.auth.public_key}), function(req, r
         where: {id: req.user.sub}
     }).then(function(user) {
         if(!user) res.status(401).end();
-        var dns = user.get('x509dns');
+        var dns = user.ext.x509dns;
         var pos = dns.indexOf(dn);
         if(~pos) dns.splice(pos, 1);
-        user.set('x509dns', dns);
+        user.ext.x509dns = dns;
         user.save().then(function() {
             res.json({message: "Successfully disconnected X509 DN:"+dn, user: user});
         });    

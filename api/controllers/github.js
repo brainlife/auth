@@ -21,7 +21,7 @@ passport.use(new GitHubStrategy({
     clientSecret: config.github.client_secret,
     callbackURL: config.github.callback_url,
 }, function(accessToken, refreshToken, profile, cb) {
-    db.User.findOne({where: {github: profile.username, active: true}}).then(function(user) {
+    db.mongo.User.findOne({'ext.github': profile.username, active: true}).then(function(user) {
         cb(null, user, profile);
     });
 }));
@@ -53,21 +53,20 @@ router.get('/callback', jwt({
                     message: "Your github account is already associated to another account. Please signoff / login with your github account."
                 }];
                 res.cookie('messages', JSON.stringify(messages), {path: '/'});
-                res.redirect('/auth/#!/settings/account');
-            } else {
-                db.User.findOne({where: {id: req.user.sub}}).then(function(user) {
-                    if(!user) throw new Error("couldn't find user record with sub:"+req.user.sub);
-                    user.github = profile.username;
-                    user.save().then(function() {
-                        var messages = [{
-                            type: "success", 
-                            message: "Successfully associated your github account"
-                        }];
-                        res.cookie('messages', JSON.stringify(messages), {path: '/'});
-                        res.redirect('/auth/#!/settings/account');
-                    });
-                });
+                return res.redirect('/auth/#!/settings/account');
             }
+            db.mongo.User.findOne({sub: req.user.sub, active: true}).then(function(user) {
+                if(!user) throw new Error("couldn't find user record with sub:"+req.user.sub);
+                user.ext.github = profile.username;
+                user.save().then(function() {
+                    var messages = [{
+                        type: "success", 
+                        message: "Successfully associated your github account"
+                    }];
+                    res.cookie('messages', JSON.stringify(messages), {path: '/'});
+                    res.redirect('/auth/#!/settings/account');
+                });
+            });
         } else {
             if(!user) {
                 if(config.github.auto_register) {
@@ -78,9 +77,9 @@ router.get('/callback', jwt({
             } else {
                 common.createClaim(user, function(err, claim) {
                     if(err) return next(err);
-                    user.updateTime('github_login');
+                    user.times.github_login = new Date();
                     user.save().then(function() {
-                        common.publish("user.login."+user.id, {type: "github", username: user.username, exp: claim.exp, headers: req.headers});
+                        common.publish("user.login."+user.sub, {type: "github", username: user.username, exp: claim.exp, headers: req.headers});
                         let jwt = common.signJwt(claim);
                         res.redirect('/auth/#!/success/'+jwt);
                     });
@@ -91,25 +90,20 @@ router.get('/callback', jwt({
 });
 
 function register_newuser(profile, res, next) {
-    //var u = clone(config.auth.default);
-    //u.username = profile.username;
-    //u.github = profile.username;
-    //u.fullname = profile.displayName; //not always set
-    
-    //email could collide with already existing account - 
-    //let's not set email yet.. but let signup take care of this
-    //u.email = profile.emails[0].value; //TODO always set?
-    //u.email_confirmed = true; //let's trust github
-
     //issue temporary token to complete the signup process
-    var user = {
-        username: profile.username, //try github username..
-        github: profile.username,
+    let ext = {
+        github: profile.username, //don't need ext. here
+    }
+
+    let _default = {
+        username: profile.username, //default to github username.. (user can change it)
         fullname: profile.displayName,
     }
+    if(profile.emails && profile.emails[0]) _default.email = profile.emails[0].value; //some user doesn't have email in profile..
+
     if(profile.email && profile.emails.length > 0) user.email = profile.emails[0].value;
-    var temp_jwt = common.signJwt({ exp: (Date.now() + config.auth.ttl)/1000, user })
-    logger.info("signed temporary jwt token for github signup:", temp_jwt);
+    var temp_jwt = common.signJwt({ exp: (Date.now() + config.auth.ttl)/1000, ext, _default})
+    logger.info("signed temporary jwt token for github signup:"+temp_jwt);
     res.redirect('/auth/#!/signup/'+temp_jwt);
 }
 
@@ -127,11 +121,9 @@ function(req, res, next) {
 
 //should I refactor?
 router.put('/disconnect', jwt({secret: config.auth.public_key}), function(req, res, next) {
-    db.User.findOne({
-        where: {id: req.user.sub}
-    }).then(function(user) {
-        if(!user) res.status(401).end();
-        user.github = null;
+    db.mongo.User.findOne({sub: req.user.sub}).then(function(user) {
+        if(!user) return res.status(401).end();
+        user.ext.github = null;
         user.save().then(function() {
             res.json({message: "Successfully disconnected github account.", user: user});
         });    

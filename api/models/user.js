@@ -39,10 +39,10 @@ module.exports = function(sequelize, DataTypes) {
         googleid: Sequelize.STRING,
         github: Sequelize.STRING,
         facebook: Sequelize.STRING,
-        x509dns: JsonField(sequelize, 'User', 'x509dns'),
         orcid: Sequelize.STRING,
 
         //oauth2: Sequelize.STRING,
+        x509dns: JsonField(sequelize, 'User', 'x509dns'),
         oidc_subs: JsonField(sequelize, 'User', 'oidc_subs'), //openid connect subs
 
         ///////////////////////////////////////////////////////////////////////////////////////////

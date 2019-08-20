@@ -72,10 +72,10 @@
                 </div> 
                 <div class="well" ng-if="appconf.show.iucas">
                     <img src="images/iu.account_logo.png" class="account pull-left" style="padding-right: 10px;">
-                    <button class="btn pull-right" ng-if="user.iucas" ng-click="disconnect('iucas')">Disconnect</button>
-                    <button class="btn pull-right" ng-if="!user.iucas" ng-click="iucas_connect()">Connect</button>
+                    <button class="btn pull-right" ng-if="user.ext.iucas" ng-click="disconnect('iucas')">Disconnect</button>
+                    <button class="btn pull-right" ng-if="!user.ext.iucas" ng-click="iucas_connect()">Connect</button>
                     <p class="pull-right text-muted" style="margin: 11px;">
-                        <span ng-if="user.iucas"><b>{{user.iucas}}</b> |</span>
+                        <span ng-if="user.ext.iucas"><b>{{user.ext.iucas}}</b> |</span>
                         Last Login: 
                         <span ng-if="!user.times.iucas_login">Never</span>
                         <time ng-if="user.times.iucas_login">{{user.times.iucas_login | date:'medium'}}</time>
@@ -83,10 +83,10 @@
                     <h4>Indiana University CAS</h4>
                 </div> 
                 <div class="well" ng-if="appconf.show.google">
-                    <button class="btn pull-right" ng-if="user.googleid" ng-click="disconnect('google')">Disconnect</button>
-                    <button class="btn pull-right" ng-if="!user.googleid" ng-click="connect('google')">Connect</button>
+                    <button class="btn pull-right" ng-if="user.ext.googleid" ng-click="disconnect('google')">Disconnect</button>
+                    <button class="btn pull-right" ng-if="!user.ext.googleid" ng-click="connect('google')">Connect</button>
                     <p class="pull-right text-muted" style="margin: 11px;">
-                        <span ng-if="user.googleid"><b>{{user.googleid}}</b> |</span>
+                        <span ng-if="user.ext.googleid"><b>{{user.ext.googleid}}</b> |</span>
                         Last Login: 
                         <span ng-if="!user.times.google_login">Never</span>
                         <time ng-if="user.times.google_login">{{user.times.google_login | date:'medium'}}</time>
@@ -94,10 +94,10 @@
                     <h4><i class="fa fa-google" aria-hidden="true"></i> Google</h4>
                 </div>
                 <div class="well" ng-if="appconf.show.github">
-                    <button class="btn pull-right" ng-if="user.github" ng-click="disconnect('github')">Disconnect</button>
-                    <button class="btn pull-right" ng-if="!user.github" ng-click="connect('github')">Connect</button>
+                    <button class="btn pull-right" ng-if="user.ext.github" ng-click="disconnect('github')">Disconnect</button>
+                    <button class="btn pull-right" ng-if="!user.ext.github" ng-click="connect('github')">Connect</button>
                     <p class="pull-right text-muted" style="margin: 11px;">
-                        <span ng-if="user.github"><b>{{user.github}}</b> |</span>
+                        <span ng-if="user.ext.github"><b>{{user.ext.github}}</b> |</span>
                         Last Login: 
                         <span ng-if="!user.times.github_login">Never</span>
                         <time ng-if="user.times.github_login">{{user.times.github_login | date:'medium'}}</time>
@@ -106,10 +106,10 @@
                 </div>
                 <div class="well" ng-if="appconf.show.orcid">
                     <img src="images/orcid.ico" class="account pull-left" style="padding-right: 10px;">
-                    <button class="btn pull-right" ng-if="user.orcid" ng-click="disconnect('orcid')">Disconnect</button>
-                    <button class="btn pull-right" ng-if="!user.orcid" ng-click="connect('orcid')">Connect</button>
+                    <button class="btn pull-right" ng-if="user.ext.orcid" ng-click="disconnect('orcid')">Disconnect</button>
+                    <button class="btn pull-right" ng-if="!user.ext.orcid" ng-click="connect('orcid')">Connect</button>
                     <p class="pull-right text-muted" style="margin: 11px;">
-                        <span ng-if="user.orcid"><b>{{user.orcid}}</b> |</span>
+                        <span ng-if="user.ext.orcid"><b>{{user.ext.orcid}}</b> |</span>
                         Last Login: 
                         <span ng-if="!user.times.orcid_login">Never</span>
                         <time ng-if="user.times.orcid_login">{{user.times.orcid_login | date:'medium'}}</time>
@@ -117,10 +117,10 @@
                     <h4>ORCID</h4>
                 </div>
                 <div class="well" ng-if="appconf.show.facebook">
-                    <button class="btn pull-right" ng-if="user.facebook" ng-click="disconnect('facebook')">Disconnect</button>
-                    <button class="btn pull-right" ng-if="!user.facebook" ng-click="connect('facebook')">Connect</button>
+                    <button class="btn pull-right" ng-if="user.ext.facebook" ng-click="disconnect('facebook')">Disconnect</button>
+                    <button class="btn pull-right" ng-if="!user.ext.facebook" ng-click="connect('facebook')">Connect</button>
                     <p class="pull-right text-muted" style="margin: 11px;">
-                        <span ng-if="user.facebook"><b>{{user.facebook}}</b> |</span>
+                        <span ng-if="user.ext.facebook"><b>{{user.ext.facebook}}</b> |</span>
                         Last Login: 
                         <span ng-if="!user.times.facebook_login">Never</span>
                         <time ng-if="user.times.facebook_login">{{user.times.facebook_login | date:'medium'}}</time>
@@ -131,9 +131,9 @@
                     <span class="pull-left" style="font-size: 200%; padding-right: 10px;"><i class="fa fa-certificate"></i></span>
                     <button class="btn pull-right" ng-click="x509_connect()">Connect</button>
                     <h4>X509 Certificate</h4>
-                    <ul class="list-group" style="padding-top: 10px" ng-if="user.x509dns.length > 0">
-                        <li class="list-group-item" ng-repeat="dn in user.x509dns">
-                            <button class="btn btn-xs pull-right" ng-click="disconnect('x509', {dn: dn})">Disconnect</button>
+                    <ul class="list-group" style="padding-top: 10px" ng-if="user.ext.x509dns.length > 0">
+                        <li class="list-group-item" ng-repeat="dn in user.ext.x509dns">
+                            <button class="btn btn-xs pull-right" ng-click="disconnect('x509', {dn})">Disconnect</button>
                             <p>
                                 {{dn}} 
                                 <span class="text-muted"> | Last Login: 
@@ -148,11 +148,11 @@
                     <img ng-src="{{appconf.oidc_logo}}" class="account pull-left" style="padding-right: 10px;">
                     <button class="btn pull-right" ng-click="connect('oidc')">Connect</button>
                     <h4>{{appconf.oidc_label||'OpenID Connect'}}</h4>
-                    <ul class="list-group" style="padding-top: 10px" ng-if="user.oidc_subs.length > 0">
-                        <li class="list-group-item" ng-repeat="profile in user.oidc_subs">
-                            <button class="btn btn-xs pull-right" ng-if="user.oidc_subs" ng-click="disconnect('oidc', {sub: profile.sub})">Disconnect</button>
+                    <ul class="list-group" style="padding-top: 10px" ng-if="user.ext.openids.length > 0">
+                        <li class="list-group-item" ng-repeat="dn in user.ext.openids">
+                            <button class="btn btn-xs pull-right" ng-if="user.ext.openids" ng-click="disconnect('oidc', {dn})">Disconnect</button>
                             <p>
-                                {{profile.idp_name}} <small>{{profile.email}}</small>
+                                {{dn}}
                                 <span class="text-muted"> | Last Login: 
                                     <span ng-if="!user.times['oidc_login:'+profile.sub]">Never</span>
                                     <time>{{user.times['oidc_login:'+profile.sub] | date:'medium'}}</time>

@@ -45,10 +45,9 @@ angular.module('app.config', [])
         x509: true,
         google: true,
         github: true,
-        facebook: true,
 
         iucas: true,
-        facebook: false,
+        facebook: true,
         orcid: true, 
 
         oidc: true, //cilogon openid-connect service

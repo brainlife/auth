@@ -55,7 +55,7 @@
             localStorage.setItem(appconf.jwt_id, res.data.jwt);
             var redirect = sessionStorage.getItem('auth_redirect');
             sessionStorage.removeItem('auth_redirect');
-            scaMessage.success("Successfully logged in");
+            //scaMessage.success("Successfully logged in");
             console.log("done.. redirecting "+redirect);
             if(redirect) window.location = redirect; 
             else window.location = appconf.default_redirect_url;
