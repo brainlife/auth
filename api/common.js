@@ -37,9 +37,7 @@ get_amqp_connection((err, conn)=>{
 });
 
 exports.publish = (key, message, cb)=>{
-    //console.log("publishing");
     message.timestamp = (new Date().getTime())/1000; //it's crazy that amqp doesn't set this?
-    //console.dir(message);
     auth_ex.publish(key, message, {}, cb);
 }
 

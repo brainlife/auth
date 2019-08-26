@@ -139,6 +139,7 @@ function(req, res, next) {
                     if(err) return next(err);
                     var jwt = common.signJwt(claim);
                     //user.times.oidc_login = profile.sub; //TODO
+                    //user.markModified('times');
                     user.save().then(function() {
                         common.publish("user.login."+user.sub, {type: "oidc", username: user.username, exp: claim.exp, headers: req.headers});
                         res.redirect('/auth/#!/success/'+jwt);

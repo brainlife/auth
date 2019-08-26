@@ -60,6 +60,7 @@ router.post('/auth', function(req, res, next) {
             if(req.body.ttl) claim.exp = (Date.now() + req.body.ttl)/1000;
             var jwt = common.signJwt(claim);
             user.times.local_login = new Date();
+            user.markModified('times');
             user.save().then(function() {
                 common.publish("user.login."+user.sub, {type: "userpass", username: user.username, exp: claim.exp, headers: req.headers});
                 console.dir(user.toString());
@@ -150,6 +151,7 @@ router.post('/resetpass', function(req, res, next) {
                     user.password_reset_token = null;
                     user.password_reset_cookie = null;
                     user.times.password_reset = new Date();
+                    user.markModified('times');
                     user.save().then(function() {
                         res.json({status: "ok", message: "Password reset successfully."});
                     });

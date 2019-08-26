@@ -40,6 +40,7 @@ router.get('/signin', /*jwt({secret: config.auth.public_key, credentialsRequired
         common.createClaim(user, function(err, claim) {
             if(err) return next(err);
             //user.time.x509_login:'+dn); //array time are todo
+            //user.markModified('times');
             user.save().then(function() {
                 common.publish("user.login."+user.sub, {type: "x509", username: user.username, exp: claim.exp, headers: req.headers});
                 let jwt = common.signJwt(claim);
@@ -94,9 +95,7 @@ function(req, res, next) {
 router.put('/disconnect', jwt({secret: config.auth.public_key}), function(req, res, next) {
     var dn = req.body.dn;
     logger.debug("disconnecting "+dn);
-    db.User.findOne({
-        where: {id: req.user.sub}
-    }).then(function(user) {
+    db.User.findOne({sub: req.user.sub}).then(function(user) {
         if(!user) res.status(401).end();
         var dns = user.ext.x509dns;
         var pos = dns.indexOf(dn);

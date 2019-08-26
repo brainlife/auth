@@ -102,6 +102,7 @@ function(req, res, next) {
                     if(err) return next(err);
                     var jwt = common.signJwt(claim);
                     user.times.orcid_login = new Date();
+                    user.markModified('times');
                     user.save().then(function() {
                         common.publish("user.login."+user.sub, {type: "orcid", username: user.username, exp: claim.exp, headers: req.headers});
                         res.redirect('/auth/#!/success/'+jwt);

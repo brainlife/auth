@@ -78,6 +78,7 @@ router.get('/callback', jwt({
                 common.createClaim(user, function(err, claim) {
                     if(err) return next(err);
                     user.times.github_login = new Date();
+                    user.markModified('times');
                     user.save().then(function() {
                         common.publish("user.login."+user.sub, {type: "github", username: user.username, exp: claim.exp, headers: req.headers});
                         let jwt = common.signJwt(claim);

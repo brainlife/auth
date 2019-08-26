@@ -68,6 +68,7 @@ function issue_jwt_and_save(user, cb) {
     common.createClaim(user, function(err, claim) {
         if(err) return cb(err);
         user.times.iucas_login = new Date();
+        user.markModified('times');
         user.save().then(function() {
             common.publish("user.login."+user.sub, {type: "iucas", username: user.username, exp: claim.exp});
             cb(null, common.signJwt(claim));

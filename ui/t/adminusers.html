@@ -11,19 +11,16 @@
     <ul class="list-group">
         <li class="list-group-item" ng-repeat="user in users">
             <div class="pull-right edit_button">
-                <button type="button" ng-click="edit(user.id)" class="btn btn-xs pull-right"><i class="fa fa-pencil-square-o"></i></button>
+                <button type="button" ng-click="edit(user.sub)" class="btn btn-xs pull-right"><i class="fa fa-pencil-square-o"></i></button>
             </div>
             <p class="alert alert-danger" ng-if="!user.active">Account disabled (user can not issue new jwt token)</p>
-            <h4><small class="text-muted">{{user.id}}</small> {{user.username}} 
+            <h4><small class="text-muted">{{user.sub}}</small> {{user.username}} 
                 <span class="label label-danger" ng-if="user.active == false">Inactive</span>
             </h4>
             <p>
                 <span>{{user.fullname}} | </span>
                 <span> {{user.email}} <span class="label label-success" ng-if="user.email_confirmed">Confirmed</span> | </span>
-                <span ng-if="user.x509dns"> X509DNs: {{user.x509dns}} | </span>
-                <span ng-if="user.iucas">IUCAS: {{user.iucas}} | </span>
-                <span ng-if="user.googleid">Google ID: {{user.googleid}} | </span>
-                <span ng-if="user.gitid">Git ID: {{user.gitid}} | </span>
+
                 <span ng-if="user.password_hash" class="label label-warning">password set</span>
             </p>
             
@@ -35,6 +32,8 @@
                 <div class="col-md-6">
                     <b>Timestamps</b>
                     <small><pre>{{user.times|json}}</pre></small>
+                    <b>Ext</b>
+                    <small><pre>{{user.ext|json}}</pre></small>
                 </div>
             </div><!--row-->
         </li>

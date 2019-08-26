@@ -29,8 +29,7 @@ default:
 }
 
 function listuser() {
-    db.User.findAll({/*attributes: ['id', 'username', 'email', 'active', 'scopes', 'times', 'createdAt'],*/ raw: true})
-    .then(function(users) {
+    db.mongo.User.find({}).then(function(users) {
         console.dir(users);
     }); 
 }
@@ -44,12 +43,10 @@ function issue() {
 
     if(argv.username) {
         //load claim from user table
-        db.User.findOne({where: { 
-            $or: [
-                {username: argv.username}, 
-                {id: argv.id}, 
-            ]} 
-        }).then(user=>{
+        db.mongo.User.findOne({$or: [
+            {sub: argv.id}, 
+            {username: argv.username}, 
+        ]}).then(user=>{
             console.log(argv.username);
             common.createClaim(user, (err, claim)=>{ 
                 if(err) throw err;
@@ -132,12 +129,10 @@ function modscope() {
         return base;
     }
 
-    db.User.findOne({where: { 
-        $or: [
+    db.mongo.User.findOne({$or: [
+            {sub: argv.id}, 
             {username: argv.username}, 
-            {id: argv.id}, 
-        ]} 
-    }).then(function(user) {
+    ]}).then(function(user) {
         if(!user) return logger.error("can't find user:"+argv.username);
         if(argv.set) {
             user.scopes = JSON.parse(argv.set);
@@ -167,12 +162,10 @@ function setpass() {
         process.exit(1);
     }
 
-    db.User.findOne({where: { 
-        $or: [
-            {username: argv.username}, 
-            {id: argv.id}, 
-        ]} 
-    }).then(function(user) {
+    db.mongo.User.findOne({$or: [
+        {sub: argv.id}, 
+        {username: argv.username}, 
+    ]}).then(function(user) {
         if(!user) return logger.error("can't find user:"+argv.username);
         user.setPassword(argv.password, function(err) {
             if(err) throw err;
@@ -199,7 +192,7 @@ function useradd() {
         process.exit(1);
     }
 
-    var user = db.User.build(
+    var user = db.mongo.User.build(
         //extend from default
         Object.assign({
             username: argv.username,
@@ -222,15 +215,14 @@ function userdel() {
         process.exit(1);
     }
 
-    //TODO - does this cascade to group?
-    db.User.destroy({
-        where: { $or: [
-            {username: argv.username}, 
-            {id: argv.id}, 
-        ]} 
-    }).then(function(count) {
-        if(count == 1) logger.info("successfully removed user");
-        else logger.info("failed to remove user - maybe doesn't exist?")
+    db.mongo.User.findOne({$or: [
+        {sub: argv.id}, 
+        {username: argv.username}, 
+    ]}).then(user=>{
+        if(!user) return logger.error("no such user");
+        db.mongo.Group.update({members: user}, {$pull : { members: user }}, {multi: true});
+        db.mongo.Group.update({admins: user}, {$pull : { admins: user }}, {multi: true});
+        user.remove(); //TODO - should I just mark as inactive?
     });
 }
 

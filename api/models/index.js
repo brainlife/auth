@@ -80,16 +80,17 @@ models.User = mongoose.model('User', {
     
     //for 3rd party login
     ext: {
-        iucas: String,
-        ldap: String,
-        googleid: String,
-        github: String,
-        facebook: String,
-        orcid: String,
+        iucas: { type: String, unique: true, sparse: true },
+        ldap: { type: String, unique: true, sparse: true },
+        googleid: { type: String, unique: true, sparse: true },
+        github: { type: String, unique: true, sparse: true },
+        facebook: { type: String, unique: true, sparse: true },
+        orcid: { type: String, unique: true, sparse: true },
 
-        x509dns: [ String ], //list of DN strings .. ["CN=Soichi Hayashi A35421,O=Indiana University,C=US,DC=cilogon,DC=org"]
-        //openids: [ mongoose.Schema.Types.Mixed ], //openid connect cert_subject_dn ["/DC=org/DC=cilogon/C=US/O=Google/CN=Soichi Hayashi B30632"]
-        openids: [ String ], //openid connect cert_subject_dn ["/DC=org/DC=cilogon/C=US/O=Google/CN=Soichi Hayashi B30632"]
+        x509dns: [ { type: String, unique: true, sparse: true } ], //["CN=Soichi Hayashi A35421,O=Indiana University,C=US,DC=cilogon,DC=org"]
+        openids: [ { type: String, unique: true, sparse: true } ], //openid connect cert_subject_dn ["/DC=org/DC=cilogon/C=US/O=Google/CN=Soichi Hayashi B30632"]
+        //x509dns: [ { type: String, } ], //["CN=Soichi Hayashi A35421,O=Indiana University,C=US,DC=cilogon,DC=org"]
+        //openids: [ { type: String, } ], //openid connect cert_subject_dn ["/DC=org/DC=cilogon/C=US/O=Google/CN=Soichi Hayashi B30632"]
     },
 
     //last login time 
@@ -117,7 +118,7 @@ models.User = mongoose.model('User', {
 });
 
 models.Group = mongoose.model('Group', { 
-    id: {type: Number, index: true }, //old "id"
+    id: {type: Number, index: true }, 
 
     name: String,
     desc: String,

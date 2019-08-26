@@ -102,6 +102,7 @@ router.get('/callback', jwt({
                 common.createClaim(user, function(err, claim) {
                     if(err) return next(err);
                     user.times.google_login = new Date();
+                    user.markModified('times');
                     user.save().then(function() {
                         common.publish("user.login."+user.sub, {type: "google", username: user.username, exp: claim.exp, headers: req.headers});
                         var jwt = common.signJwt(claim);

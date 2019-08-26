@@ -374,11 +374,12 @@ function($scope, $route, toaster, $http, scaMessage, scaAdminMenu, $routeParams,
     $scope.$parent.active_menu = 'admin';
     $scope.admin_menu = scaAdminMenu;
 
-    $http.get($scope.appconf.api+'/user/'+$routeParams.id)
+    $http.get($scope.appconf.api+'/user/'+$routeParams.sub)
     .then(function(res) { 
         $scope.user = res.data; 
-        if($scope.user.x509dns) $scope.x509dns = JSON.stringify($scope.user.x509dns, null, 4);
-        if($scope.user.scopes) $scope.scopes = JSON.stringify($scope.user.scopes, null, 4);
+        $scope.x509dns = JSON.stringify($scope.user.ext.x509dns, null, 4);
+        $scope.openids = JSON.stringify($scope.user.ext.openids, null, 4);
+        $scope.scopes = JSON.stringify($scope.user.scopes, null, 4);
     }, function(res) {
         if(res.data && res.data.message) toaster.error(res.data.message);
         else toaster.error(res.statusText);
@@ -389,10 +390,10 @@ function($scope, $route, toaster, $http, scaMessage, scaAdminMenu, $routeParams,
     }
 
     $scope.submit = function() {
-        if($scope.x509dns) $scope.user.x509dns = JSON.parse($scope.x509dns);
+        $scope.user.ext.x509dns = JSON.parse($scope.x509dns);
+        $scope.user.ext.openids = JSON.parse($scope.openids);
         $scope.user.scopes = JSON.parse($scope.scopes);
-
-        $http.put($scope.appconf.api+'/user/'+$routeParams.id, $scope.user)
+        $http.put($scope.appconf.api+'/user/'+$routeParams.sub, $scope.user)
         .then(function(res) { 
             $location.path("/admin/users");
             toaster.success(res.data.message);
@@ -410,7 +411,12 @@ app.controller('GroupsController', function($scope, $route, toaster, $http, scaM
     profiles.then(function(_users) { 
         $scope.users = _users;
         $http.get($scope.appconf.api+'/groups')
-        .then(function(res) { 
+        .then(res=>{ 
+            res.data.sort((a,b)=>{
+                if(a.id < b.id) return -1;
+                if(a.id > b.id) return 1;
+                return 0
+            });
             $scope.groups = res.data; 
         }, function(res) {
             if(res.data && res.data.message) toaster.error(res.data.message);
@@ -452,16 +458,16 @@ app.controller('GroupController', function($scope, $route, toaster, $http, jwtHe
         .then(function(res) { 
             $scope.group = res.data; 
             $scope.admins = [];
-            $scope.group.Admins.forEach(function(admin) {
+            $scope.group.admins.forEach(function(admin) {
                 $scope.users.forEach(function(user) {
-                    if(admin.id == user.id) $scope.admins.push(user);
+                    if(admin._id == user._id) $scope.admins.push(user);
                 });
             });
  
             $scope.members = [];
-            $scope.group.Members.forEach(function(member) {
+            $scope.group.members.forEach(function(member) {
                 $scope.users.forEach(function(user) {
-                    if(member.id == user.id) $scope.members.push(user);
+                    if(member._id == user._id) $scope.members.push(user);
                 });
             });
         }, function(res) {
@@ -473,18 +479,18 @@ app.controller('GroupController', function($scope, $route, toaster, $http, jwtHe
     $scope.submit = function() {
         var admins = [];
         $scope.admins.forEach(function(admin) {
-            admins.push(admin.id);
+            admins.push(admin.sub);
         });
         var members = [];
         $scope.members.forEach(function(member) {
-            members.push(member.id);
+            members.push(member.sub);
         });
         var body = {
             name: $scope.group.name,
             desc: $scope.group.desc,
             active: $scope.group.active,
-            admins: admins,
-            members: members,
+            admins,
+            members,
         }
 
         //ui-select require doesn't work so I need to have this

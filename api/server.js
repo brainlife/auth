@@ -25,7 +25,6 @@ if(config.auth.default_scopes) {
 const app = express();
 app.use(cors());
 app.use(nocache());
-
 app.use(bodyParser.json()); //parse application/json
 app.use(bodyParser.urlencoded({extended: false})); //parse application/x-www-form-urlencoded //TODO - do we need this?
 app.use(expressWinston.logger(config.logger.winston)); 
@@ -34,25 +33,14 @@ app.use(passport.initialize());//needed for express-based application
 
 app.use('/', require('./controllers'));
 
-/*
-app.use((req, res, next)=>{
-    console.log("audit log............");
-    console.dir(req.user);
-    next();
-});
-*/
-
 //error handling
 app.use(expressWinston.errorLogger(config.logger.winston));
 app.use(function(err, req, res, next) {
     if(typeof err == "string") err = {message: err};
-    //log this error
-    logger.info(err);
-    if(err.name) switch(err.name) {
-    case "UnauthorizedError":
-        logger.info(req.headers); //dump headers for debugging purpose..
-        break;
+    if(!err.name || err.name != "UnauthorizedError") {
+        logger.error(err);
     }
+
     if(err.stack) err.stack = "hidden"; //don't sent call stack to UI - for security reason
     res.status(err.status || 500);
     res.json(err);

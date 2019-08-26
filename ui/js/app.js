@@ -104,7 +104,7 @@ app.config(['$routeProvider', 'appconf', function($routeProvider, appconf) {
         controller: 'AdminUsersController',
         requiresLogin: true
     })
-    .when('/admin/user/:id', {
+    .when('/admin/user/:sub', {
         templateUrl: 't/adminuser.html',
         controller: 'AdminUserController',
         requiresLogin: true

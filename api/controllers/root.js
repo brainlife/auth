@@ -141,7 +141,7 @@ router.get('/me', jwt({secret: config.auth.public_key}), function(req, res, next
 router.get('/users', jwt({secret: config.auth.public_key}), scope("admin"), function(req, res, next) {
     var where = {};
     if(req.query.where) where = JSON.parse(req.query.find||req.query.where);
-    db.mongo.User.find(where).select('sub username fullname email ext times scopes active').lean().then(users=>{
+    db.mongo.User.find(where).select('sub username email_confirmed fullname email ext times scopes active').lean().then(users=>{
         res.json(users);
     });
 });
@@ -183,21 +183,14 @@ router.get('/user/groups/:id', jwt({secret: config.auth.public_key}), scope("adm
     });
 });
  
-/*
-//DEPRECATED - use /users
-//return detail from just one user - admin only (used by event service to query for user's email)
-router.get('/user/:id', jwt({secret: config.auth.public_key}), scope("admin"), function(req, res) {
-    db.User.findOne({
-        where: {id: req.params.id},
-        attributes: [
-            'id', 'username', 'fullname',
-            'email', 'email_confirmed', 'iucas', 'googleid', 'github', 'x509dns', 
-            'times', 'scopes', 'active'],
-    }).then(function(user) {
+//return detail from just one user - admin only 
+//users: (used by event service to query for user's email)
+//users: adminuser ui to pull user info
+router.get('/user/:id', jwt({secret: config.auth.public_key}), scope("admin"), (req, res, next)=>{
+    db.mongo.User.findOne({sub: req.params.id}).select('-password_hash -password_reset_token').then(user=>{
         res.json(user);
     });
 });
-*/
 
 /**
  * @apiName UserGroups
@@ -224,58 +217,68 @@ router.get('/jwt/:id', jwt({secret: config.auth.public_key}), scope("admin"), fu
                 logger.debug(override);
                 Object.assign(claim, override);
             }
-
 			res.json({jwt: common.signJwt(claim)});
 		});
-    }).catch(next);
+    });
 });
 
 //update user info (admin only)
-router.put('/user/:id', jwt({secret: config.auth.public_key}), scope("admin") ,function(req, res, next) {
+router.put('/user/:id', jwt({secret: config.auth.public_key}), scope("admin"), function(req, res, next) {
     db.mongo.User.findOne({sub: req.params.id}).then(user=>{
         if(!user) return next("can't find user d:"+req.params.id);
-        user.update(req.body).then(function(err) {
+        user.updateOne({$set: req.body}).then(()=>{
             common.publish("user.update."+user.sub, req.body);
             res.json({message: "User updated successfully"});
+        }).catch(err=>{
+            next(err.toString());
         });
-    }).catch(next);
+    });
 });
 
-//return list of all groups (open to all users)
+/**
+ * @apiName UserGroups
+ * @api {get} /jwt/:id  list all groups
+ * @apiDescription      list all groups with basic info (available to all authenticated users)
+ * @apiGroup User
+ *
+ * @apiHeader {String}  authorization A valid JWT token "Bearer: xxxxx"
+ *
+ * @apiSuccessExample {json} Success-Response:
+ *     HTTP/1.1 200 OK
+ *     [ 1,2,3 ] 
+ */
 router.get('/groups', jwt({secret: config.auth.public_key}), async (req, res, next)=>{
     let user = await db.mongo.User.findOne({sub: req.user.sub});
     if(!user) return next("can't find user sub:"+req.user.sub);
 
     let admin_groups = await db.mongo.Group.find({admins: user._id})
-        .populate('admins.email admins.fullname members.email members.fullname');
+        .lean().populate('admins members', 'email fullname username');
     let member_only_groups = await db.mongo.Group.find({admins: {$ne: user._id}, members: user._id})
-        .populate('admins.email admins.fullname members.email members.fullname');
-        /*
-        include: [
-            {model: db.User, as: 'Admins', attributes: ['id', 'email', 'fullname']},
-            {model: db.User, as: 'Members', attributes: ['id', 'email', 'fullname']},
-        ],
-        */
+        .lean().populate('admins members', 'email fullname username');
+
     admin_groups.forEach(group=>{
-        //if(has_scope(req, "admin")) group.canedit = true; //admin can edit all groups 
         group.canedit = true;
     });
-    let groups = admin_groups; 
-    member_only_groups.forEach(group=>{
-        groups.push(group);
-    });
-    res.json(groups);
+
+    res.json([...admin_groups, ...member_only_groups]);
 });
 
 //update group (super admin, or admin of the group can update)
+//admin/members should be a list of user subs (not _id)
 router.put('/group/:id', jwt({secret: config.auth.public_key}), function(req, res, next) {
     logger.debug("updadting group", req.params.id);
-    db.mongo.Group.findOne({id: req.params.id}).then(group=>{
+    db.mongo.Group.findOne({id: req.params.id}).then(async group=>{
         if (!group) return next("can't find group id:"+req.params.id);
         logger.debug("loading current admin");
         if(!~group.admins.indexOf(req.user.sub) && !has_scope(req, "admin")) return res.status(401).send("you can't update this group");
+
         logger.debug("user can update this group.. updating");
-        group.update(req.body).then(()=>{
+
+        //convert list of subs to list of users
+        req.body.admins = await db.mongo.User.find({sub: {$in: req.body.admins}});
+        req.body.members = await db.mongo.User.find({sub: {$in: req.body.members}});
+
+        group.updateOne({$set: req.body}).then(()=>{
             common.publish("group.update."+group.id, req.body);
             logger.debug("all done");
             res.json({message: "Group updated successfully"});
@@ -284,6 +287,7 @@ router.put('/group/:id', jwt({secret: config.auth.public_key}), function(req, re
 });
 
 //create new group (any user can create group?)
+//admin/members should be a list of user subs (not _id)
 router.post('/group', jwt({secret: config.auth.public_key}), async (req, res, next)=>{
 
     //find next group id
@@ -291,9 +295,13 @@ router.post('/group', jwt({secret: config.auth.public_key}), async (req, res, ne
     if(!last_record) req.body.id = 1;
     else req.body.id = last_record.id + 1;
     
+    //convert list of subs to list of users
+    req.body.admins = await db.mongo.User.find({sub: {$in: req.body.admins}});
+    req.body.members = await db.mongo.User.find({sub: {$in: req.body.members}});
+    
     var group = new db.mongo.Group(req.body);
-    group.save().then(function() {
-        common.publish("group.create."+group.id, req.body);
+    group.save().then(newgroup=>{
+        common.publish("group.create."+group.id, newgroup);
         res.json({message: "Group created", group});
     }).catch(function(err) {
         next(err);
@@ -303,8 +311,8 @@ router.post('/group', jwt({secret: config.auth.public_key}), async (req, res, ne
 //return detail from just one group (open to all users)
 //redundant with /groups. I should probabaly depcreate this and implement query capability for /groups
 router.get('/group/:id', jwt({secret: config.auth.public_key}), function(req, res) {
-    db.mongo.Group.findOne({id: req.params.id})
-        .populate('admins.email admins.fullname members.email members.fullname').then(function(group) {
+    db.mongo.Group.findOne({id: req.params.id}).lean().populate('admins members', 'email fullname username')
+    .then(function(group) {
         res.json(group);
     });
 });
@@ -348,17 +356,18 @@ router.put('/profile', jwt({secret: config.auth.public_key}), function(req, res,
  *                              A valid JWT token "Bearer: xxxxx"
  */
 router.get('/profile', jwt({secret: config.auth.public_key}), async (req, res, next)=>{
-    logger.debug("profile query request received");
     var where = {};
     if(req.query.where) where = JSON.parse(req.query.where);
     var order = 'fullname';
     if(req.query.order) order = JSON.parse(req.query.order);
 
-    console.dir(req.query);
+    let limit = 100;
+    if(req.query.limit) limit = parseInt(req.query.limit);
+    let skip = 0;
+    if(req.query.offset) skip = parseInt(req.query.offset);
 
-    let count = await db.mongo.User.count(where);
-    let users = await db.mongo.User.find(where).sort(order).limit(req.query.limit||100).skip(req.query.offset||0)
-        .select('id fullname email active username');
+    let count = await db.mongo.User.countDocuments(where);
+    let users = await db.mongo.User.find(where).sort(order).limit(limit).skip(skip).select('sub fullname email active username');
     res.json({profiles: users, count});
 });
 

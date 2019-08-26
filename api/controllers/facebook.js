@@ -70,6 +70,7 @@ router.get('/callback', jwt({
                 if(err) return next(err);
                 var jwt = common.signJwt(claim);
                 user.times.facebook_login = new Date();
+                user.markModified('times');
                 user.save().then(function() {
                     common.publish("user.login."+user.sub, {type: "facebook", username: user.username, exp: claim.exp, headers: req.headers});
                     res.redirect('/auth/#!/success/'+jwt);

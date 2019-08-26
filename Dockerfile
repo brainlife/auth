@@ -1,17 +1,20 @@
-FROM node:8
+FROM node:10
 
 MAINTAINER Soichi Hayashi <hayashis@iu.edu>
 
-RUN npm install http-server -g && \
-    npm install pm2 -g && \
-    pm2 install pm2-logrotate
+RUN apt-get update && apt install -y vim
+
+#for legacy ui
+RUN npm install http-server -g
+EXPOSE 80
+
+#    npm install pm2 -g && \
+#    pm2 install pm2-logrotate
 
 COPY . /app
 RUN cd /app && npm install --production
 RUN cd /app/ui && npm install --production
-
-EXPOSE 80
 EXPOSE 8080
 
-CMD [ "/app/docker/start.sh" ]
+#CMD [ "/app/docker/start.sh" ]
 
