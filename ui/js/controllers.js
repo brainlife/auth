@@ -7,8 +7,6 @@ function($scope, appconf, $route, $location, toaster, $http, menu, scaSettingsMe
     $scope.appconf = appconf;
     $scope.settings_menu = scaSettingsMenu;
 
-    //console.dir(appconf);
-    //console.log("params");
     let app = $location.search().app;
     switch(app) {
     case "localhost":
@@ -35,27 +33,13 @@ function($scope, $route, toaster, $http, $routeParams, $location, scaMessage, $s
             let res = await $http.post(url, $scope.userpass);
             localStorage.setItem($scope.appconf.jwt_id, res.data.jwt);
             $rootScope.$broadcast("jwt_update", res.data.jwt)
-
-            /*
-            if($scope.appconf.profile) {
-                let profile = JSON.parse(localStorage.getItem("public.profile"));
-                await $http.put($scope.appconf.profile.api+'/public/'+res.data.sub, profile, {
-                    Authorization: 'Bearer '+res.data.jwt, //use newly issued temp jwt.. 
-                })
-                localStorage.removeItem("public.profile");
-                console.log("published public profile");
-            }
-            */
-
             handle_redirect($scope.appconf);
         } catch(res) {
             console.log("failed to login");
             if(res.data && res.data.path) {
-                //console.log("path requested "+res.data.path);
                 $location.path(res.data.path);
                 if(res.data.message) scaMessage.error(res.data.message);
             } else {
-                //console.dir(res);
                 if(res.data && res.data.message) toaster.error(res.data.message);
                 else toaster.error(res.statusText || "Oops.. unknown authentication error");
             }

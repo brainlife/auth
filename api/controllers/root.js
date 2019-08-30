@@ -238,7 +238,7 @@ router.put('/user/:id', jwt({secret: config.auth.public_key}), scope("admin"), f
 /**
  * @apiName UserGroups
  * @api {get} /jwt/:id  list all groups
- * @apiDescription      list all groups with basic info (available to all authenticated users)
+ * @apiDescription      list all groups with basic info (available to all authenticated users) including inactive ones
  * @apiGroup User
  *
  * @apiHeader {String}  authorization A valid JWT token "Bearer: xxxxx"
@@ -250,27 +250,39 @@ router.put('/user/:id', jwt({secret: config.auth.public_key}), scope("admin"), f
 router.get('/groups', jwt({secret: config.auth.public_key}), async (req, res, next)=>{
     let user = await db.mongo.User.findOne({sub: req.user.sub});
     if(!user) return next("can't find user sub:"+req.user.sub);
+    
+    let groups;
+    if(has_scope(req, "admin")) {
+        //return all groups for admin
+        groups = await db.mongo.Group.find({})
+            .lean().populate('admins members', 'email fullname username');
+        groups.forEach(group=>{
+            group.canedit = true;
+        });
+        res.json(groups);
+    } else {
+        //normal user only gets to see groups that they are admin/members
+        let admin_groups = await db.mongo.Group.find({admins: user._id})
+            .lean().populate('admins members', 'email fullname username');
+        let member_only_groups = await db.mongo.Group.find({admins: {$ne: user._id}, members: user._id})
+            .lean().populate('admins members', 'email fullname username');
+        admin_groups.forEach(group=>{
+            group.canedit = true;
+        });
 
-    let admin_groups = await db.mongo.Group.find({admins: user._id})
-        .lean().populate('admins members', 'email fullname username');
-    let member_only_groups = await db.mongo.Group.find({admins: {$ne: user._id}, members: user._id})
-        .lean().populate('admins members', 'email fullname username');
-
-    admin_groups.forEach(group=>{
-        group.canedit = true;
-    });
-
-    res.json([...admin_groups, ...member_only_groups]);
+        res.json([...admin_groups, ...member_only_groups]);
+    }
 });
 
 //update group (super admin, or admin of the group can update)
 //admin/members should be a list of user subs (not _id)
 router.put('/group/:id', jwt({secret: config.auth.public_key}), function(req, res, next) {
-    logger.debug("updadting group", req.params.id);
-    db.mongo.Group.findOne({id: req.params.id}).then(async group=>{
+    logger.debug("updating group", req.params.id);
+    db.mongo.Group.findOne({id: req.params.id}).populate('admins').then(async group=>{
         if (!group) return next("can't find group id:"+req.params.id);
         logger.debug("loading current admin");
-        if(!~group.admins.indexOf(req.user.sub) && !has_scope(req, "admin")) return res.status(401).send("you can't update this group");
+        let isadmin = group.admins.find(contact=>contact.sub == req.user.sub);
+        if(!isadmin && !has_scope(req, "admin")) return res.status(401).send("you can't update this group");
 
         logger.debug("user can update this group.. updating");
 

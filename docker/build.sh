@@ -1,4 +1,4 @@
-tag=1.5.0
+tag=1.5.2
 
 set -e
 set -x
