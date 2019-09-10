@@ -45,20 +45,10 @@ exports.createClaim = async function(user, cb) {
     var err = exports.check_user(user);
     if(err) return cb(err);
     
-    //load active groups (using sequelize generated code)
-    /*
-    var gids = []; 
-    let groups = await user.getAdminGroups({attributes: ['id', 'active']});
-    groups.forEach(group=>{
-        if(group.active && !~gids.indexOf(group.id)) gids.push(group.id);  
-    });
-    groups = await user.getMemberGroups({attributes: ['id', 'active']});
-    groups.forEach(group=>{
-        if(group.active && !~gids.indexOf(group.id)) gids.push(group.id);  
-    });
-    */
     let groups = await db.mongo.Group.find({active: true, $or: [{members: user._id}, {admins: user._id}]});
     let gids = groups.map(group=>group.id);
+
+    //gids = [1, ...gids]; //inject the global id (TODO make this configurable)
 
     /* http://websec.io/2014/08/04/Securing-Requests-with-JWT.html
     iss: The issuer of the token

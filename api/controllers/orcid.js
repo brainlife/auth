@@ -8,7 +8,6 @@ const jwt = require('express-jwt');
 const clone = require('clone');
 const passport = require('passport');
 const OAuth2Strategy = require('passport-oauth2').Strategy;
-const xml2js = require('xml2js');
 
 //mine
 const config = require('../config');

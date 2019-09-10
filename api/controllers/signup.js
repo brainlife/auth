@@ -57,6 +57,7 @@ async function register_newuser(req, done) {
         user.save().then(user=>{
             let raw_user = user.toObject();
             raw_user._profile = req.body.profile;
+            raw_user.headers = req.headers;
             logger.debug("publishing to "+user.sub);
             logger.debug(raw_user);
             common.publish("user.create."+user.sub, raw_user);
@@ -116,7 +117,6 @@ router.post('/', jwt({secret: config.auth.public_key, credentialsRequired: false
             //no need for email confrmation.. issue jwt!
             common.createClaim(user, function(err, claim) {
                 if(err) return next(err);
-
                 var jwt = common.signJwt(claim);
                 res.json({jwt: jwt, sub: user.sub});
             });
