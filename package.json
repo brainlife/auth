@@ -6,7 +6,9 @@
     "start": "node api/auth.js",
     "test": "mocha --reporter spec",
     "apidoc": "apidoc -i api/ -o docs/apidoc/",
-    "cover": "node_modules/istanbul/lib/cli.js cover node_modules/mocha/bin/_mocha -- -R spec test/*.js"
+    "cover": "node_modules/istanbul/lib/cli.js cover node_modules/mocha/bin/_mocha -- -R spec test/*.js",
+    "deploy": "ssh -t test.brainlife.io sudo \"sudo /root/docker/auth/update.sh\"",
+    "deploy-prod": "ssh -t brainlife.io sudo \"sudo /root/docker/auth/update.sh\""
   },
   "dependencies": {
     "amqp": "^0.2.7",

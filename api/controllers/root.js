@@ -48,8 +48,9 @@ function scope(role) {
 router.post('/refresh', jwt({secret: config.auth.public_key}), function(req, res, next) {
     db.mongo.User.findOne({sub: req.user.sub, active: true}).then(user=>{
         if(!user) return next("Couldn't find any user with sub:"+req.user.sub);
+        
         //intersect requested scopes
-        if(req.body.scopes) user.scopes = common.intersect_scopes(user.scoppes, req.body.scopes);
+        if(req.body.scopes) user.scopes = common.intersect_scopes(user.scopes, req.body.scopes);
         common.createClaim(user, function(err, claim) {
             if(err) return next(err);
             common.publish("user.refresh."+user.sub, {username: user.username, exp: claim.exp});
@@ -224,24 +225,29 @@ router.put('/user/:id', jwt({secret: config.auth.public_key}), scope("admin"), f
 
 /**
  * @apiName UserGroups
- * @api {get} /jwt/:id  list all groups
- * @apiDescription      list all groups with basic info (available to all authenticated users) including inactive ones
+ * @api {get} /jwt/:id      list all groups
+ * @apiDescription          list all groups with basic info (available to all authenticated users) including inactive ones
  * @apiGroup User
  *
- * @apiHeader {String}  authorization A valid JWT token "Bearer: xxxxx"
+ * @apiHeader {String}      authorization A valid JWT token "Bearer: xxxxx"
+ *
+ * @apiParam {Object} find  Optional sequelize where query - defaults to {}
  *
  * @apiSuccessExample {json} Success-Response:
  *     HTTP/1.1 200 OK
  *     [ 1,2,3 ] 
  */
 router.get('/groups', jwt({secret: config.auth.public_key}), async (req, res, next)=>{
+    var find = {};
+    if(req.query.find) find = JSON.parse(req.query.find);
+
     let user = await db.mongo.User.findOne({sub: req.user.sub});
     if(!user) return next("can't find user sub:"+req.user.sub);
     
     let groups;
     if(has_scope(req, "admin")) {
         //return all groups for admin
-        groups = await db.mongo.Group.find({})
+        groups = await db.mongo.Group.find(find)
             .lean().populate('admins members', 'email fullname username');
         groups.forEach(group=>{
             group.canedit = true;
@@ -311,7 +317,7 @@ router.post('/group', jwt({secret: config.auth.public_key}), async (req, res, ne
 });
 
 //return detail from just one group (open to all users)
-//redundant with /groups. I should probabaly depcreate this and implement query capability for /groups
+//DEPRECATED by with /groups.
 router.get('/group/:id', jwt({secret: config.auth.public_key}), function(req, res) {
     db.mongo.Group.findOne({id: req.params.id}).lean().populate('admins members', 'email fullname username')
     .then(function(group) {
@@ -349,7 +355,7 @@ router.put('/profile', jwt({secret: config.auth.public_key}), function(req, res,
  * @apiDescription              Query auth profiles
  * @apiName Get auth (public) profiles
  *
- * @apiParam {Object} where     Optional sequelize where query - defaults to {}
+ * @apiParam {Object} find      Optional sequelize where query - defaults to {}
  * @apiParam {Object} order     Optional sequelize sort object - defaults to [['fullname', 'DESC']]
  * @apiParam {Number} limit     Optional Maximum number of records to return - defaults to 100
  * @apiParam {Number} offset    Optional Record offset for pagination
@@ -358,8 +364,9 @@ router.put('/profile', jwt({secret: config.auth.public_key}), function(req, res,
  *                              A valid JWT token "Bearer: xxxxx"
  */
 router.get('/profile', jwt({secret: config.auth.public_key}), async (req, res, next)=>{
-    var where = {};
-    if(req.query.where) where = JSON.parse(req.query.where);
+    var find = {};
+    if(req.query.where) find = JSON.parse(req.query.where);
+    if(req.query.find) find = JSON.parse(req.query.find);
     var order = 'fullname';
     if(req.query.order) order = JSON.parse(req.query.order);
 
@@ -368,9 +375,9 @@ router.get('/profile', jwt({secret: config.auth.public_key}), async (req, res, n
     let skip = 0;
     if(req.query.offset) skip = parseInt(req.query.offset);
 
-    let count = await db.mongo.User.countDocuments(where);
+    let count = await db.mongo.User.countDocuments(find);
     let users = await db.mongo.User
-        .find(where)
+        .find(find)
         .sort(order)
         .limit(limit)
         .skip(skip)
