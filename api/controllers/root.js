@@ -347,11 +347,9 @@ router.put('/profile', jwt({secret: config.auth.public_key}), function(req, res,
     });
 });
 
-//I feel very iffy about this API.. I should only expose user's auth email.
-//maybe I should make this admin only and let other services proxy subsets?
 /**
  * @apiGroup Profile
- * @api {get} /profile          Query auth profiles
+ * @api {get} /profile          Query auth profiles (public api)
  * @apiDescription              Query auth profiles
  * @apiName Get auth (public) profiles
  *
@@ -360,10 +358,8 @@ router.put('/profile', jwt({secret: config.auth.public_key}), function(req, res,
  * @apiParam {Number} limit     Optional Maximum number of records to return - defaults to 100
  * @apiParam {Number} offset    Optional Record offset for pagination
  *
- * @apiHeader {String} authorization 
- *                              A valid JWT token "Bearer: xxxxx"
  */
-router.get('/profile', jwt({secret: config.auth.public_key}), async (req, res, next)=>{
+router.get('/profile', /*jwt({secret: config.auth.public_key}),*/ async (req, res, next)=>{
     var find = {};
     if(req.query.where) find = JSON.parse(req.query.where);
     if(req.query.find) find = JSON.parse(req.query.find);
