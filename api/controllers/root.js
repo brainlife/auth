@@ -353,16 +353,31 @@ router.put('/profile', jwt({secret: config.auth.public_key}), function(req, res,
  * @apiDescription              Query auth profiles
  * @apiName Get auth (public) profiles
  *
- * @apiParam {Object} find      Optional sequelize where query - defaults to {}
+ * @apiParam {Object} find      Optional sequelize where query - defaults to {} (can onlu query certain field)
  * @apiParam {Object} order     Optional sequelize sort object - defaults to [['fullname', 'DESC']]
  * @apiParam {Number} limit     Optional Maximum number of records to return - defaults to 100
  * @apiParam {Number} offset    Optional Record offset for pagination
  *
  */
-router.get('/profile', /*jwt({secret: config.auth.public_key}),*/ async (req, res, next)=>{
-    var find = {};
-    if(req.query.where) find = JSON.parse(req.query.where);
-    if(req.query.find) find = JSON.parse(req.query.find);
+//TODO - I feel very iffiy about this.. I should probably create separate API for
+//each use cases for any publicaly accessible APIs
+//users:
+//  warehouse/components/contactlist.vue 
+//  warehouse/mixin/authprofilecache (used by contact.vue)
+//  warehouse/dashboard.vue (for recently registered users)
+let safe_fields = ["sub", "fullname", "email", "username", "active"];
+
+router.get('/profile', async (req, res, next)=>{
+    var dirty_find = {};
+    if(req.query.where) dirty_find = JSON.parse(req.query.where);
+    if(req.query.find) dirty_find = JSON.parse(req.query.find);
+
+    //limit the field that user can query on
+    let find = {};
+    for(let k in dirty_find) {
+        if(~safe_fields.indexOf(k)) find[k] = dirty_find[k];
+    }
+
     var order = 'fullname';
     if(req.query.order) order = JSON.parse(req.query.order);
 
@@ -377,8 +392,19 @@ router.get('/profile', /*jwt({secret: config.auth.public_key}),*/ async (req, re
         .sort(order)
         .limit(limit)
         .skip(skip)
-        .select('sub fullname email active username');
+        .select(safe_fields);
     res.json({profiles: users, count});
+});
+
+//return recently registered users
+router.get('/profile/recreg/:days', async (req, res, next)=>{
+    let date = new Date();
+    date.setDate(date.getDate()-req.params.days);
+    let users = await db.mongo.User
+        .find({"times.register":{"$gt": date},"email_confirmed":true})
+        .sort('times.register')
+        .select(safe_fields);
+    res.json({users});
 });
 
 module.exports = router;
