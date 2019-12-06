@@ -5,7 +5,7 @@ const path = require('path');
 const express = require('express');
 const cookieParser = require('cookie-parser'); //google auth uses this
 const bodyParser = require('body-parser');
-const Sequelize = require('sequelize');
+//const Sequelize = require('sequelize');
 const passport = require('passport');
 const winston = require('winston');
 const expressWinston = require('express-winston');
@@ -15,7 +15,7 @@ const nocache = require('nocache');
 const config = require('./config');
 const logger = winston.createLogger(config.logger.winston);
 const db = require('./models');
-const migration = require('./migration');
+//const migration = require('./migration');
 
 //prevent startup if config is old
 if(config.auth.default_scopes) {

@@ -56,25 +56,45 @@ angular.module('app.config', [])
 
     //optional config to add any profile information
     profile: {
-        api: '../api/profile',
-        fields: [
+        //api: '../api/profile',
+        public: [
             {
                 id: "institution", //id used to store the profile in session storage
                 name: "Institution",
-                desc: "Name of your institution/lab that you'd like to share publicly.",
+                desc: "Name of your institution/lab that you are part of.",
                 rows: 1, //textarea row size
+                required: true,
             },
 
             {
                 id: "bio", 
-                name: "Biograph",
-                desc: "Please provide a brief introduction about you that you'd like to share with brainlife community.",
-                rows: 3, //textarea row size
+                name: "Biography",
+                desc: "Please provide a brief introduction about you.",
+                rows: 3,
+                required: true,
+            },
+        ],
+
+        private: [
+            {
+                id: "position", 
+                name: "Position",
+                desc: "What is your primary role within your institution?",
+                rows: 1, 
+                required: true,
+            },
+
+            {
+                id: "purpose", 
+                name: "Purpose",
+                desc: "What would you like to accomplish using brainlife.io, and what is your expecations?",
+                rows: 3, 
+                required: false,
             },
         ],
     },
 
-    aup: "https://brainlife.io/docs/privacy/",
+    aup: "https://brainlife.io/docs/aup",
 });
 
 

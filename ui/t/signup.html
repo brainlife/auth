@@ -15,12 +15,6 @@
                 <label>Full Name *</label>
                 <input type="text" class="form-control" ng-model="form.fullname" name="fullname" placeholder="Enter your full name" required/>
             </div>
-            <!-- auth service doesn't deal with profile... so we can't have it here
-            <div class="form-group">
-                <label>Public Biography</label>
-                <textarea class="form-control" ng-model="form.bio" placeholder="Please describe who you are." rows="3"/>
-            </div>
-            -->
             <div class="panel panel-default">
                 <div class="panel-body">
                     <p class="help-block" ng-if="jwt">Please pick a new password to login in case you are not able to login with 3rd party identity provider</p>
@@ -39,20 +33,30 @@
                 </div>
             </div>
             <!--<img class="logo" ng-src="{{appconf.logo_400_url}}"/>-->
-            <div ng-if="appconf.profile">
-                <h5>Public Profile</h5>
-                <div ng-repeat="field in appconf.profile.fields" class="form-group">
-                    <label>{{field.name}}</label>
-                    <p class="help-block">{{field.desc}}</p>
-                    <textarea class="form-control" ng-model="form.profile[field.id]" name="{{field.id}}" rows="{{field.rows}}"/>
+            <div ng-if="appconf.profile" class="row">
+                <div class="col-md-6">
+                    <h5>Public Profile</h5>
+                    <p class="help-block" style="height: 35px;">This information will be shared publically to allow other brainlife.io users know who you are.</p>
+                    <div ng-repeat="field in appconf.profile.public" class="form-group">
+                        <label>{{field.name}} <span ng-if="field.required">*</span></label>
+                        <textarea class="form-control" placeholder="{{field.desc}}" ng-model="form.profile.public[field.id]" name="{{field.id}}" rows="{{field.rows}}" required="{{field.required}}"/>
+                    </div>
+                </div>
+
+                <div class="col-md-6">
+                    <h5>Private Profile</h5>
+                    <p class="help-block" style="height: 35px;">This information will be used by brainlife administrators to better assist you and improve our platform.</p>
+                    <div ng-repeat="field in appconf.profile.private" class="form-group">
+                        <label>{{field.name}} <span ng-if="field.required">*</span></label>
+                        <textarea class="form-control" placeholder="{{field.desc}}" ng-model="form.profile.private[field.id]" name="{{field.id}}" rows="{{field.rows}}" required="{{field.required}}"/>
+                    </div>
                 </div>
             </div>
 
             <div ng-if="appconf.aup">
                 <h5>Usage Policy</h5>
-                <btf-markdown>##hello</btf-markdown>
                 <p>
-                    <input type="checkbox" required/> Agree to the use policy.
+                <input type="checkbox" required/> Agree to our <a href="{{appconf.aup}}" target="_blank">Acceptable Use Policy</a>.
                 </p>
                 <br>
             </div>

@@ -130,7 +130,12 @@ app.controller('SignupController',
 function($scope, $route, toaster, $http, $routeParams, scaMessage, $location, $rootScope, jwtHelper, $sce) {
     $scope.$parent.active_menu = 'signup';
     scaMessage.show(toaster);
-    $scope.form = {};
+    $scope.form = {
+        profile: {
+            public: {},
+            private: {},
+        },
+    };
 
     var postconfig = {};
 
@@ -143,10 +148,7 @@ function($scope, $route, toaster, $http, $routeParams, scaMessage, $location, $r
         if(user._default.username) $scope.form.username = user._default.username;
         if(user._default.email) $scope.form.email = user._default.email;
         if(user._default.fullname) $scope.form.fullname = user._default.fullname;
-        if(user._default.institution) {
-            $scope.form.profile = {};
-            $scope.form.profile['institution'] = user._default.institution;
-        }
+        if(user._default.institution) $scope.form.profile.public.institution = user._default.institution;
         
         //localStorage.setItem($scope.appconf.jwt_id, $routeParams.jwt);
         postconfig.headers =  {
@@ -172,15 +174,6 @@ function($scope, $route, toaster, $http, $routeParams, scaMessage, $location, $r
             }
             if(res.data.message) scaMessage.success(res.data.message);
 
-            /*
-            //store public profile (to be posted to profile service when user login for the first time)
-            if($scope.form.profile) {
-                localStorage.setItem("public.profile", JSON.stringify($scope.form.profile));
-            } else {
-                localStorage.removeItem("public.profile"); //just in case..
-            }
-            */
-        
             //redirect to somewhere..
             if(res.data.path) $location.path(res.data.path); //maybe .. email_confirmation
             else handle_redirect($scope.appconf);
@@ -212,7 +205,7 @@ function($scope, $route, toaster, $http, jwtHelper, scaMessage) {
     });
 
     $scope.submit_profile = function() {
-        $http.put($scope.appconf.api+'/profile', $scope.user)
+        $http.patch($scope.appconf.api+'/profile', $scope.user)
         .then(function(res, status, headers, config) {
             $scope.user = res.data; 
             toaster.success("Profile updated successfully");

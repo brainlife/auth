@@ -1,12 +1,10 @@
 
-//contrib
 const express = require('express');
 const router = express.Router();
 const winston = require('winston');
 const async = require('async');
 const jwt = require('express-jwt');
 
-//mine
 const config = require('../config');
 const logger = winston.createLogger(config.logger.winston);
 const db = require('../models');
@@ -21,34 +19,13 @@ async function register_newuser(req, done) {
         username: req.body.username,
         fullname: req.body.fullname,
         email: req.body.email,
+        profile: req.body.profile,
     }, config.auth.default);
     
     //signup is used to finalize first time 3rd party login (like github)
     //when github auth succeeds for the first time, it creates a temporary jwt token 
     //containing github ID for example. We can apply that info here
     if(req.user && req.user.ext) u.ext = req.user.ext;
-
-    ///////////////////////////////////////////////////////////////////////////////////////////////
-    //
-    //now register (deprecated)
-    //
-    /*
-    var user = db.User.build(u);
-    logger.info("registering new user", u);
-    user.setPassword(req.body.password, function(err) {
-        if(err) return done(err);
-        logger.debug("password set");
-        user.updateTime('register');
-        user.save().then(function() {
-            //add to default groups
-            user.addMemberGroups(u.gids, function() {
-                //done(null, user);    
-            });
-        });
-    });
-    */
-    //
-    ///////////////////////////////////////////////////////////////////////////////////////////////
 
     common.hash_password(req.body.password, async (err, hash)=>{
         if(err) return done(err);

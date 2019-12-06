@@ -12,7 +12,7 @@ if(config.mongoose_debug) mongoose.set("debug", true);
 models.connection = mongoose.connect(config.mongodb, {useNewUrlParser: true});
 
 models.User = mongoose.model('User', { 
-    sub: {type: Number, index: true }, //old "id"
+    sub: {type: Number, index: true }, //numeric user id
 
     username: { type: String, unique: true },
 
@@ -21,6 +21,17 @@ models.User = mongoose.model('User', {
     email: { type: String, unique: true },
     email_confirmed: { type: Boolean, default: false},
     email_confirmation_token: String,
+
+    profile: {
+        //any other private profile info that user can set
+        public: {type: mongoose.Schema.Types.Mixed, default: {}},
+    
+        //any other private profile info that user can set
+        private: {type: mongoose.Schema.Types.Mixed, default: {}},
+    
+        //administrative profile for this user that only admin can set
+        admin: {type: mongoose.Schema.Types.Mixed, default: {}},
+    },
 
     password_hash: String, //used by local auth
 

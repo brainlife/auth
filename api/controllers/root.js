@@ -13,20 +13,8 @@ const logger = winston.createLogger(config.logger.winston);
 const common = require('../common');
 const db = require('../models');
 
-function has_scope(req, role) {
-    if(!req.user) return false;
-    if(!req.user.scopes) return false;
-    if(!req.user.scopes.auth) return false;
-    if(!~req.user.scopes.auth.indexOf(role)) return false;
-    return true;
-}
 
-function scope(role) {
-    return function(req, res, next) {
-        if(has_scope(req, role)) next();
-        else res.status(401).send(role+" role required");
-    }
-}
+router.use('/profile', require('./profile'));
 
 /**
  * @api {post} /refresh Refresh JWT Token.
@@ -138,7 +126,7 @@ router.get('/me', jwt({secret: config.auth.public_key}), function(req, res, next
  *     HTTP/1.1 200 OK
  *     [ 1,2,3 ] 
  */
-router.get('/users', jwt({secret: config.auth.public_key}), scope("admin"), function(req, res, next) {
+router.get('/users', jwt({secret: config.auth.public_key}), common.scope("admin"), function(req, res, next) {
     var where = {};
     if(req.query.where) where = JSON.parse(req.query.find||req.query.where);
     db.mongo.User.find(where).select('sub username email_confirmed fullname email ext times scopes active').lean().then(users=>{
@@ -158,7 +146,7 @@ router.get('/users', jwt({secret: config.auth.public_key}), scope("admin"), func
  *     HTTP/1.1 200 OK
  *     [ 1,2,3 ] 
  */
-router.get('/user/groups/:id', jwt({secret: config.auth.public_key}), scope("admin"), function(req, res, next) {
+router.get('/user/groups/:id', jwt({secret: config.auth.public_key}), common.scope("admin"), function(req, res, next) {
     db.mongo.User.findOne({sub: req.params.id, active: true}).then(async user=>{
         if(!user) return res.status(404).end();
         try {
@@ -174,7 +162,7 @@ router.get('/user/groups/:id', jwt({secret: config.auth.public_key}), scope("adm
 //return detail from just one user - admin only 
 //users: (used by event service to query for user's email)
 //users: adminuser ui to pull user info
-router.get('/user/:id', jwt({secret: config.auth.public_key}), scope("admin"), (req, res, next)=>{
+router.get('/user/:id', jwt({secret: config.auth.public_key}), common.scope("admin"), (req, res, next)=>{
     db.mongo.User.findOne({sub: req.params.id}).select('-password_hash -password_reset_token').then(user=>{
         res.json(user);
     });
@@ -194,7 +182,7 @@ router.get('/user/:id', jwt({secret: config.auth.public_key}), scope("admin"), (
  *     HTTP/1.1 200 OK
  *     [ 1,2,3 ] 
  */
-router.get('/jwt/:id', jwt({secret: config.auth.public_key}), scope("admin"), function(req, res, next) {
+router.get('/jwt/:id', jwt({secret: config.auth.public_key}), common.scope("admin"), function(req, res, next) {
     db.mongo.User.findOne({sub: req.params.id, active: true}).then(user=>{
         if(!user) return next("Couldn't find any user with sub:"+req.params.id);
 		common.createClaim(user, function(err, claim) {
@@ -211,7 +199,7 @@ router.get('/jwt/:id', jwt({secret: config.auth.public_key}), scope("admin"), fu
 });
 
 //update user info (admin only)
-router.put('/user/:id', jwt({secret: config.auth.public_key}), scope("admin"), function(req, res, next) {
+router.put('/user/:id', jwt({secret: config.auth.public_key}), common.scope("admin"), function(req, res, next) {
     db.mongo.User.findOne({sub: req.params.id}).then(user=>{
         if(!user) return next("can't find user d:"+req.params.id);
         user.updateOne({$set: req.body}).then(()=>{
@@ -245,7 +233,7 @@ router.get('/groups', jwt({secret: config.auth.public_key}), async (req, res, ne
     if(!user) return next("can't find user sub:"+req.user.sub);
     
     let groups;
-    if(has_scope(req, "admin")) {
+    if(common.has_scope(req, "admin")) {
         //return all groups for admin
         groups = await db.mongo.Group.find(find)
             .lean().populate('admins members', 'email fullname username');
@@ -278,7 +266,7 @@ router.put('/group/:id', jwt({secret: config.auth.public_key}), function(req, re
         
         //make sure the user is listed as admin
         let isadmin = group.admins.find(contact=>contact.sub == req.user.sub);
-        if(!isadmin && !has_scope(req, "admin")) return res.status(401).send("you can't update this group");
+        if(!isadmin && !common.has_scope(req, "admin")) return res.status(401).send("you can't update this group");
 
         //logger.debug("user can update this group.. updating");
 
@@ -323,88 +311,6 @@ router.get('/group/:id', jwt({secret: config.auth.public_key}), function(req, re
     .then(function(group) {
         res.json(group);
     });
-});
-
-/**
- * @apiGroup Profile
- * @api {put} /profile Set user profile
- * @apiDescription Update user's auth profile
- * @apiName PutProfile
- *
- * @apiHeader {String} authorization A valid JWT token (Bearer:)
- * @apiParam {String} fullname User's fullname
- *
- * @apiSuccess {Object} updated user object
- */
-router.put('/profile', jwt({secret: config.auth.public_key}), function(req, res, next) {
-    db.mongo.User.findOne({sub: req.user.sub, active: true}).then(function(user) {
-        if(!user) return next("no such active user");
-        user.fullname = req.body.fullname;
-        user.save().then(function() {
-            common.publish("user.update."+user.sub, req.body);
-            res.json(user);
-        });
-    });
-});
-
-/**
- * @apiGroup Profile
- * @api {get} /profile          Query auth profiles (public api)
- * @apiDescription              Query auth profiles
- * @apiName Get auth (public) profiles
- *
- * @apiParam {Object} find      Optional sequelize where query - defaults to {} (can onlu query certain field)
- * @apiParam {Object} order     Optional sequelize sort object - defaults to [['fullname', 'DESC']]
- * @apiParam {Number} limit     Optional Maximum number of records to return - defaults to 100
- * @apiParam {Number} offset    Optional Record offset for pagination
- *
- */
-//TODO - I feel very iffiy about this.. I should probably create separate API for
-//each use cases for any publicaly accessible APIs
-//users:
-//  warehouse/components/contactlist.vue 
-//  warehouse/mixin/authprofilecache (used by contact.vue)
-//  warehouse/dashboard.vue (for recently registered users)
-let safe_fields = ["sub", "fullname", "email", "username", "active"];
-
-router.get('/profile', async (req, res, next)=>{
-    var dirty_find = {};
-    if(req.query.where) dirty_find = JSON.parse(req.query.where);
-    if(req.query.find) dirty_find = JSON.parse(req.query.find);
-
-    //limit the field that user can query on
-    let find = {};
-    for(let k in dirty_find) {
-        if(~safe_fields.indexOf(k)) find[k] = dirty_find[k];
-    }
-
-    var order = 'fullname';
-    if(req.query.order) order = JSON.parse(req.query.order);
-
-    let limit = 100;
-    if(req.query.limit) limit = parseInt(req.query.limit);
-    let skip = 0;
-    if(req.query.offset) skip = parseInt(req.query.offset);
-
-    let count = await db.mongo.User.countDocuments(find);
-    let users = await db.mongo.User
-        .find(find)
-        .sort(order)
-        .limit(limit)
-        .skip(skip)
-        .select(safe_fields);
-    res.json({profiles: users, count});
-});
-
-//return recently registered users
-router.get('/profile/recreg/:days', async (req, res, next)=>{
-    let date = new Date();
-    date.setDate(date.getDate()-req.params.days);
-    let users = await db.mongo.User
-        .find({"times.register":{"$gt": date},"email_confirmed":true})
-        .sort('times.register')
-        .select(safe_fields);
-    res.json({users});
 });
 
 module.exports = router;

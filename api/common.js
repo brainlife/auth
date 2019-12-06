@@ -83,14 +83,20 @@ exports.signJwt = function(claim) {
 }
 
 function do_send_email_confirmation(url, user, cb) {
-    var fullurl = url+"#!/confirm_email/"+user.id+"/"+user.email_confirmation_token;
+
+    let text = "Hello!\n\nIf you have created a new brainlife.io account, please visit following URL to confirm your email address.\n\n";
+    text+= url+"#!/confirm_email/"+user.id+"/"+user.email_confirmation_token;
+
+    console.log("sending email.. to", user.email);
+    console.dir(config.local.email_confirmation);
+    console.log(text);
 
     var transporter = nodemailer.createTransport(config.local.mailer); 
     transporter.sendMail({
         from: config.local.email_confirmation.from,
         to: user.email,
         subject: config.local.email_confirmation.subject,
-        text: "Hello!\n\nIf you have created a new account, please visit following URL to confirm your email address.\n\n"+ fullurl,
+        text,
         //html:  ejs.render(html_template, params),
     }, function(err, info) {
         if(err) return cb(err);
@@ -197,4 +203,18 @@ exports.get_nextsub = async function() {
     return last_user.sub+1;
 }
 
+exports.has_scope = function(req, role) {
+    if(!req.user) return false;
+    if(!req.user.scopes) return false;
+    if(!req.user.scopes.auth) return false;
+    if(!~req.user.scopes.auth.indexOf(role)) return false;
+    return true;
+}
+
+exports.scope = function(role) {
+    return function(req, res, next) {
+        if(exports.has_scope(req, role)) next();
+        else res.status(401).send(role+" role required");
+    }
+}
 
