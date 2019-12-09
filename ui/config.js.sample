@@ -87,7 +87,7 @@ angular.module('app.config', [])
             {
                 id: "purpose", 
                 name: "Purpose",
-                desc: "What would you like to accomplish using brainlife.io, and what is your expecations?",
+                desc: "Please describe how you'd like to use brainlife.io, and your expectations of this platform.",
                 rows: 3, 
                 required: false,
             },

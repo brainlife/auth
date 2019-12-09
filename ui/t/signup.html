@@ -36,20 +36,21 @@
             <div ng-if="appconf.profile" class="row">
                 <div class="col-md-6">
                     <h5>Public Profile</h5>
-                    <p class="help-block" style="height: 35px;">This information will be shared publically to allow other brainlife.io users know who you are.</p>
                     <div ng-repeat="field in appconf.profile.public" class="form-group">
                         <label>{{field.name}} <span ng-if="field.required">*</span></label>
                         <textarea class="form-control" placeholder="{{field.desc}}" ng-model="form.profile.public[field.id]" name="{{field.id}}" rows="{{field.rows}}" required="{{field.required}}"/>
                     </div>
+                    <p class="help-block">* This information will be shared publically among all brainlife.io users.</p>
                 </div>
 
                 <div class="col-md-6">
                     <h5>Private Profile</h5>
-                    <p class="help-block" style="height: 35px;">This information will be used by brainlife administrators to better assist you and improve our platform.</p>
                     <div ng-repeat="field in appconf.profile.private" class="form-group">
                         <label>{{field.name}} <span ng-if="field.required">*</span></label>
                         <textarea class="form-control" placeholder="{{field.desc}}" ng-model="form.profile.private[field.id]" name="{{field.id}}" rows="{{field.rows}}" required="{{field.required}}"/>
                     </div>
+                    <p class="help-block">* This information will be shared with your project members and brainlife administrators. </p>
+                    <p class="help-block">Brainlife.io is a NSF funded project and supported by Indiana University. We'd like to collect private user profile information for annual reporting purposes (anonymously) and to help us better support our users and to meet their expectations. Please read our <a href="https://brainlife.io/docs/privacy" target="_blank">Privacy Policy</a> to know what information we collect and how we use it.</p>
                 </div>
             </div>
 

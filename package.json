@@ -7,8 +7,8 @@
     "test": "mocha --reporter spec",
     "apidoc": "apidoc -i api/ -o docs/apidoc/",
     "cover": "node_modules/istanbul/lib/cli.js cover node_modules/mocha/bin/_mocha -- -R spec test/*.js",
-    "deploy": "ssh -t test.brainlife.io sudo \"sudo /root/docker/auth/update.sh\"",
-    "deploy-prod": "ssh -t brainlife.io sudo \"sudo /root/docker/auth/update.sh\""
+    "deploy": "ssh -t test.brainlife.io \"sudo /root/docker/auth/update.sh\"",
+    "deploy-prod": "ssh -t brainlife.io \"sudo /root/docker/auth/update.sh\""
   },
   "dependencies": {
     "amqp": "^0.2.7",
@@ -22,7 +22,7 @@
     "express-jwt": "^5.3.0",
     "express-winston": "^3.4.0",
     "jsonwebtoken": "^8.5.1",
-    "mongoose": "^5.7.13",
+    "mongoose": "^5.7.14",
     "nocache": "^2.1.0",
     "node-uuid": "^1.4.8",
     "nodemailer": "^6.4.0",
@@ -39,7 +39,7 @@
     "sequelize": "^5.21.2",
     "sequelize-json": "^2.1.2",
     "sqlite": "^3.0.3",
-    "sqlite3": "^4.1.0",
+    "sqlite3": "^4.1.1",
     "underscore": "^1.9.1",
     "winston": "^3.2.1",
     "xml2js": "^0.4.22",
