@@ -57,7 +57,7 @@
             <div ng-if="appconf.aup">
                 <h5>Usage Policy</h5>
                 <p>
-                <input type="checkbox" required/> Agree to our <a href="{{appconf.aup}}" target="_blank">Acceptable Use Policy</a>.
+                <input type="checkbox" ng-model="form.profile.private.aup" required/> Agree to our <a href="{{appconf.aup}}" target="_blank">Acceptable Use Policy</a>.
                 </p>
                 <br>
             </div>
