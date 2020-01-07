@@ -71,10 +71,14 @@ exports.createClaim = async function(user, cb) {
         sub: user.sub, 
 
         gids, //TODO - toString() this also?
+
+        //store a bit of important profile information in jwt..
         profile: { 
             username: user.username,
             email: user.email,
-            fullname: user.fullname 
+            fullname: user.fullname,
+
+            aup: user.profile.private.aup,
         },
     });
 }
