@@ -27,7 +27,8 @@ angular.module('app.config', [])
     x509api: 'https://dev1.soichi.us:9443',
 
     //default location to redirect after successful login
-    default_redirect_url: '/auth/#!/settings/account',  //don't start with #
+    //default_redirect_url: '/auth/#!/settings/account',  //don't start with #
+    default_redirect_url: 'https://localhost:8080',
 
     jwt_id: 'jwt',
     iucas_url: 'https://cas.iu.edu/cas/login',

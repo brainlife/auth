@@ -10,17 +10,38 @@ const logger = winston.createLogger(config.logger.winston);
 const db = require('../models');
 const common = require('../common');
 
+//https://stackoverflow.com/questions/27936772/how-to-deep-merge-instead-of-shallow-merge
+function isObject(item) {
+  return (item && typeof item === 'object' && !Array.isArray(item));
+}
+
+function mergeDeep(target, ...sources) {
+  if (!sources.length) return target;
+  const source = sources.shift();
+
+  if (isObject(target) && isObject(source)) {
+    for (const key in source) {
+      if (isObject(source[key])) {
+        if (!target[key]) Object.assign(target, { [key]: {} });
+        mergeDeep(target[key], source[key]);
+      } else {
+        Object.assign(target, { [key]: source[key] });
+      }
+    }
+  }
+  return mergeDeep(target, ...sources);
+}
+
 async function register_newuser(req, done) {
     //username / email check should have already done at this point
-
-    var u = Object.assign({
+    var u = Object.assign({}, config.auth.default, {
         sub: await common.get_nextsub(),
         times: {register: new Date()},
         username: req.body.username,
         fullname: req.body.fullname,
         email: req.body.email,
         profile: req.body.profile,
-    }, config.auth.default);
+    });
     
     //signup is used to finalize first time 3rd party login (like github)
     //when github auth succeeds for the first time, it creates a temporary jwt token 
