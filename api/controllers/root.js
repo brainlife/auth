@@ -129,7 +129,7 @@ router.get('/me', jwt({secret: config.auth.public_key}), function(req, res, next
 router.get('/users', jwt({secret: config.auth.public_key}), common.scope("admin"), function(req, res, next) {
     var where = {};
     if(req.query.where) where = JSON.parse(req.query.find||req.query.where);
-    db.mongo.User.find(where).select('sub username email_confirmed fullname email ext times scopes active').lean().then(users=>{
+    db.mongo.User.find(where).select('sub profile username email_confirmed fullname email ext times scopes active').lean().then(users=>{
         res.json(users);
     });
 });
@@ -290,6 +290,11 @@ router.post('/group', jwt({secret: config.auth.public_key}), async (req, res, ne
     let last_record = await db.mongo.Group.findOne({}).sort({_id:-1});
     if(!last_record) req.body.id = 1;
     else req.body.id = last_record.id + 1;
+
+    //TODO - there is concurrency issue with finding max gid v.s. using it for next one
+    //another user could interupt between above and below code..
+    //so let's make it unique by multiplying by the user's sub
+    req.body.id *= parseInt(req.user.sub);
     
     //convert list of subs to list of users
     req.body.admins = await db.mongo.User.find({sub: {$in: req.body.admins}});

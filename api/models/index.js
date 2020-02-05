@@ -12,7 +12,7 @@ if(config.mongoose_debug) mongoose.set("debug", true);
 models.connection = mongoose.connect(config.mongodb, {useNewUrlParser: true});
 
 models.User = mongoose.model('User', { 
-    sub: {type: Number, index: true }, //numeric user id
+    sub: {type: Number, unique: true }, //numeric user id
 
     username: { type: String, unique: true },
 
@@ -79,13 +79,13 @@ models.User = mongoose.model('User', {
 });
 
 models.Group = mongoose.model('Group', { 
-    id: {type: Number, index: true }, 
+    id: {type: Number, unique: true }, 
 
     name: String,
     desc: String,
 
-    admins: [ {type: mongoose.Schema.Types.ObjectId, ref: 'User', index: true} ],
-    members: [ {type: mongoose.Schema.Types.ObjectId, ref: 'User', index: true} ],
+    admins: [ {type: mongoose.Schema.Types.ObjectId, ref: 'User', unique: true} ],
+    members: [ {type: mongoose.Schema.Types.ObjectId, ref: 'User', unique: true} ],
 
     active: { type: Boolean, default: true },
 

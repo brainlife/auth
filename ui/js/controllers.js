@@ -357,6 +357,7 @@ function($scope, $route, toaster, $http, scaMessage, scaAdminMenu, $routeParams,
         $scope.x509dns = JSON.stringify($scope.user.ext.x509dns, null, 4);
         $scope.openids = JSON.stringify($scope.user.ext.openids, null, 4);
         $scope.scopes = JSON.stringify($scope.user.scopes, null, 4);
+        $scope.profile = JSON.stringify($scope.user.profile, null, 4);
     }, function(res) {
         if(res.data && res.data.message) toaster.error(res.data.message);
         else toaster.error(res.statusText);
@@ -369,6 +370,7 @@ function($scope, $route, toaster, $http, scaMessage, scaAdminMenu, $routeParams,
     $scope.submit = function() {
         $scope.user.ext.x509dns = JSON.parse($scope.x509dns);
         $scope.user.ext.openids = JSON.parse($scope.openids);
+        $scope.user.profile = JSON.parse($scope.profile);
         $scope.user.scopes = JSON.parse($scope.scopes);
         $http.put($scope.appconf.api+'/user/'+$routeParams.sub, $scope.user)
         .then(function(res) { 

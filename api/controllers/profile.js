@@ -74,16 +74,17 @@ router.patch('/:sub?', jwt({secret: config.auth.public_key}), function(req, res,
 //  warehouse/api common/cache_contact
 //  warehouse/ui components/contactlist.vue 
 //  warehouse/ui mixin/authprofilecache (used by contact.vue)
+//  warehosue/api common/mail - users_general, etc..
 //  cli.queryProfiles / queryAllProfiles
-router.get('/list', async (req, res, next)=>{
+router.get('/list', jwt({secret: config.auth.public_key, credentialsRequired: false}), async (req, res, next)=>{
     var dirty_find = {};
     if(req.query.where) dirty_find = JSON.parse(req.query.where);
     if(req.query.find) dirty_find = JSON.parse(req.query.find);
 
-    //limit the field that user can query on
+    //for non-admin, limit the field that user can query on
     let find = {};
     for(let k in dirty_find) {
-        if(~safe_fields.indexOf(k)) find[k] = dirty_find[k];
+        if(common.has_scope(req, "admin") || ~safe_fields.indexOf(k)) find[k] = dirty_find[k];
     }
 
     var order = 'fullname';
