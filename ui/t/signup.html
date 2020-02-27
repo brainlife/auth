@@ -34,33 +34,34 @@
             </div>
             <!--<img class="logo" ng-src="{{appconf.logo_400_url}}"/>-->
             <div ng-if="appconf.profile" class="row">
-                <div class="col-md-6">
+                <div class="col-md-6" style="border-right: 1px solid #ddd;">
                     <h5>Public Profile</h5>
+                    <p class="help-block">This information will be shared publically among all brainlife.io users.</p>
                     <div ng-repeat="field in appconf.profile.public" class="form-group">
                         <label>{{field.name}} <span ng-if="field.required">*</span></label>
                         <textarea class="form-control" placeholder="{{field.desc}}" ng-model="form.profile.public[field.id]" name="{{field.id}}" rows="{{field.rows}}" required="{{field.required}}"/>
                     </div>
-                    <p class="help-block">* This information will be shared publically among all brainlife.io users.</p>
                 </div>
 
                 <div class="col-md-6">
                     <h5>Private Profile</h5>
+                    <p class="help-block">This information will be shared with your project members and brainlife administrators. </p>
                     <div ng-repeat="field in appconf.profile.private" class="form-group">
                         <label>{{field.name}} <span ng-if="field.required">*</span></label>
                         <textarea class="form-control" placeholder="{{field.desc}}" ng-model="form.profile.private[field.id]" name="{{field.id}}" rows="{{field.rows}}" required="{{field.required}}"/>
                     </div>
-                    <p class="help-block">* This information will be shared with your project members and brainlife administrators. </p>
-                    <p class="help-block">Brainlife.io is a NSF funded project and supported by Indiana University. We'd like to collect private user profile information for annual reporting purposes (anonymously) and to help us better support our users and to meet their expectations. Please read our <a href="https://brainlife.io/docs/privacy" target="_blank">Privacy Policy</a> to know what information we collect and how we use it.</p>
+                    <p class="help-block">Brainlife.io is a NSF funded project and supported by Indiana University. We'd like to collect private user profile information for annual reporting purposes (anonymously) and to help us better support our users and to meet their expectations.</p>
                 </div>
             </div>
 
-            <div ng-if="appconf.aup">
-                <h5>Usage Policy</h5>
-                <p>
-                <input type="checkbox" ng-model="form.profile.private.aup" required/> Agree to our <a href="{{appconf.aup}}" target="_blank">Acceptable Use Policy</a>.
-                </p>
-                <br>
-            </div>
+            <center style="background-color: #f8f8f8; padding-top: 20px; margin: 20px 0;">
+                <iframe src="{{aup}}" style="border: none; width: 900px; height: 1050px;"></iframe>
+                <iframe src="{{privacy}}" style="border: none; width: 900px; height: 5410px;"></iframe>
+            </center>
+            <p>
+                <input type="checkbox" ng-model="form.profile.private.aup" required/> I have read and consent to brainlife.io <a href="{{appconf.aup}}" target="_blank">Acceptable Use Policy</a> and <a href="{{appconf.privacy}}">Privacy Policy</a>
+            </p>
+            <br>
 
             <input type="button" class="btn" value="Cancel" ng-click="cancel()"/>
             <input type="submit" class="btn btn-primary" value="Submit"/>

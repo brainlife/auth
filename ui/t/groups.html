@@ -17,6 +17,7 @@
             </div>
             <h4>
                 <small class="text-muted">{{group.id}}</small> {{group.name}} 
+                <small class="text-muted">{{group._id}}</small>
                 <span class="label label-danger" ng-if="group.active == false">Inactive</span>
                 <p class="help-block">{{group.desc}}</p>
             </h4>
@@ -30,7 +31,6 @@
                     <userlist users="group.members"></userlist>
                 </div>
                 <div class="col-md-4">
-                    <small class="text-muted">{{group._id}}</small>
                     Created <b>{{group.create_date}}</b>
                 </div>
             </div><!--row-->

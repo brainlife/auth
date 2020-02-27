@@ -160,8 +160,9 @@ function($scope, $route, toaster, $http, $routeParams, scaMessage, $location, $r
         window.location = "#"; //back to login form
     }
 
-    //$scope.aup = $sce.trustAsResourceUrl($scope.appconf.aup);
-    $scope.aup = "##hello";
+    $scope.aup = $sce.trustAsResourceUrl($scope.appconf.aup);
+    $scope.privacy = $sce.trustAsResourceUrl($scope.appconf.privacy);
+    //$scope.aup = "##hello";
 
     $scope.submit = async function() {
         //new registration (or do registration complete with temp jwt)
@@ -346,14 +347,13 @@ app.controller('AdminUsersController', function($scope, $route, toaster, $http, 
 });
 
 app.controller('AdminUserController', 
-function($scope, $route, toaster, $http, scaMessage, scaAdminMenu, $routeParams, $location, $window) {
+function($scope, $route, toaster, $http, scaMessage, scaAdminMenu, $routeParams, $location, $window, profiles) {
     scaMessage.show(toaster);
     $scope.$parent.active_menu = 'admin';
     $scope.admin_menu = scaAdminMenu;
 
-    $http.get($scope.appconf.api+'/user/'+$routeParams.sub)
-    .then(function(res) { 
-        $scope.user = res.data; 
+    profiles.then(function(_users) { 
+        $scope.users = _users;
         $scope.x509dns = JSON.stringify($scope.user.ext.x509dns, null, 4);
         $scope.openids = JSON.stringify($scope.user.ext.openids, null, 4);
         $scope.scopes = JSON.stringify($scope.user.scopes, null, 4);
@@ -383,7 +383,7 @@ function($scope, $route, toaster, $http, scaMessage, scaAdminMenu, $routeParams,
     }
 });
 
-app.controller('GroupsController', function($scope, $route, toaster, $http, scaMessage, profiles, $location) {
+app.controller('GroupsController', function($scope, $route, toaster, $http, scaMessage, $location, profiles) {
     $scope.$parent.active_menu = 'groups';
     scaMessage.show(toaster);
 
@@ -407,7 +407,7 @@ app.controller('GroupsController', function($scope, $route, toaster, $http, scaM
     }
 });
 
-app.controller('GroupController', function($scope, $route, toaster, $http, jwtHelper, scaMessage, $routeParams, $location, profiles) {
+app.controller('GroupController', function($scope, $route, toaster, $http, jwtHelper, scaMessage, $routeParams, profiles, $location) {
     scaMessage.show(toaster);
     $scope.$parent.active_menu = 'groups';
     var jwt = localStorage.getItem($scope.appconf.jwt_id);
@@ -418,8 +418,11 @@ app.controller('GroupController', function($scope, $route, toaster, $http, jwtHe
     $scope.admins = [];
     $scope.members = [];
 
-    profiles.then(function(_users) { 
-        $scope.users = _users;
+    $http.get($scope.appconf.api+'/users')
+    .then(function(res) { 
+        console.log("users");
+        console.dir(res.data);
+        $scope.users = res.data;
         if($routeParams.id != 'new') {
             load_group($routeParams.id);
         } else {

@@ -96,6 +96,7 @@ angular.module('app.config', [])
     },
 
     aup: "https://brainlife.io/docs/aup",
+    privacy: "https://brainlife.io/docs/privacy",
 });
 
 

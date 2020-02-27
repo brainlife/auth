@@ -12,7 +12,6 @@ var app = angular.module('app', [
     'sca-shared',
     'ui.gravatar',
     'ui.select',
-    'btford.markdown',
 ]);
 
 //http://wijmo.com/easy-form-validation-in-angularjs/
@@ -50,10 +49,10 @@ app.directive('validjson', function () {
 });
 
 app.factory('profiles', function(appconf, $http, jwtHelper, toaster) {
-    return $http.get(appconf.api+'/profile', {params: {limit: 3000}})
-    .then(function(res) {
-        return res.data.profiles;
-    }, function(res) {
+    return $http.get(appconf.api+'/users', {params: {limit: 3000}})
+    .then(function(res) { 
+        return res.data;
+    }).catch(res=>{
         if(res.data && res.data.message) toaster.error(res.data.message);
         else toaster.error(res.statusText);
     });
@@ -250,6 +249,7 @@ app.directive('userlist', function() {
 });
 
 
+/*
 app.config(['markdownConverterProvider', function (markdownConverterProvider) {
   // options to be passed to Showdown
   // see: https://github.com/coreyti/showdown#extensions
@@ -257,3 +257,4 @@ app.config(['markdownConverterProvider', function (markdownConverterProvider) {
     extensions: ['twitter']
   });
 }])
+*/
