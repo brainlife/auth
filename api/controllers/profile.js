@@ -16,7 +16,6 @@ const db = require('../models');
 //fields that are safe to include in public profile api
 let safe_fields = ["sub", "fullname", "email", "username", "active", "profile.public"];
 
-
 /**
  * @apiGroup Profile
  * @api {put} /profile/:sub? 
@@ -87,6 +86,12 @@ router.get('/list', jwt({secret: config.auth.public_key, credentialsRequired: fa
         if(common.has_scope(req, "admin") || ~safe_fields.indexOf(k)) find[k] = dirty_find[k];
     }
 
+    let select = safe_fields.slice();
+    if(common.has_scope(req, "admin")) {
+        select.push("times");
+        select.push("profile.private");
+    }
+
     var order = 'fullname';
     if(req.query.order) order = JSON.parse(req.query.order);
 
@@ -101,7 +106,7 @@ router.get('/list', jwt({secret: config.auth.public_key, credentialsRequired: fa
         .sort(order)
         .limit(limit)
         .skip(skip)
-        .select(safe_fields);
+        .select(select);
     res.json({profiles: users, count});
 });
 
@@ -135,5 +140,4 @@ router.get('/recreg/:days', async (req, res, next)=>{
 });
 
 module.exports = router;
-
 
