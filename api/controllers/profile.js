@@ -14,7 +14,7 @@ const common = require('../common');
 const db = require('../models');
 
 //fields that are safe to include in public profile api
-let safe_fields = ["sub", "fullname", "email", "username", "active", "profile.public"];
+let safe_fields = ["sub", "fullname", "email", "username", "active", "profile.public", "times.register"];
 
 /**
  * @apiGroup Profile
