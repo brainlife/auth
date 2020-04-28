@@ -39,7 +39,7 @@
                     <p class="help-block">This information will be shared publically among all brainlife.io users.</p>
                     <div ng-repeat="field in appconf.profile.public" class="form-group">
                         <label>{{field.name}} <span ng-if="field.required">*</span></label>
-                        <textarea class="form-control" placeholder="{{field.desc}}" ng-model="form.profile.public[field.id]" name="{{field.id}}" rows="{{field.rows}}" required="{{field.required}}"/>
+                        <textarea class="form-control" placeholder="{{field.desc}}" ng-model="form.profile.public[field.id]" name="{{field.id}}" rows="{{field.rows}}" required="{{field.required}}"></textarea>
                     </div>
                 </div>
 
@@ -48,7 +48,7 @@
                     <p class="help-block">This information will be shared with your project members and brainlife administrators. </p>
                     <div ng-repeat="field in appconf.profile.private" class="form-group">
                         <label>{{field.name}} <span ng-if="field.required">*</span></label>
-                        <textarea class="form-control" placeholder="{{field.desc}}" ng-model="form.profile.private[field.id]" name="{{field.id}}" rows="{{field.rows}}" required="{{field.required}}"/>
+                        <textarea class="form-control" placeholder="{{field.desc}}" ng-model="form.profile.private[field.id]" name="{{field.id}}" rows="{{field.rows}}" required="{{field.required}}"></textarea>
                     </div>
                     <p class="help-block">Brainlife.io is a NSF funded project and supported by Indiana University. We'd like to collect private user profile information for annual reporting purposes (anonymously) and to help us better support our users and to meet their expectations.</p>
                 </div>
