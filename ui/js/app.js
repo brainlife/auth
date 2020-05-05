@@ -49,9 +49,9 @@ app.directive('validjson', function () {
 });
 
 app.factory('profiles', function(appconf, $http, jwtHelper, toaster) {
-    return $http.get(appconf.api+'/users', {params: {limit: 3000}})
+    return $http.get(appconf.api+'/profile/list', {params: {limit: 3000}})
     .then(function(res) { 
-        return res.data;
+        return res.data.profiles;
     }).catch(res=>{
         if(res.data && res.data.message) toaster.error(res.data.message);
         else toaster.error(res.statusText);

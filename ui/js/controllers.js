@@ -347,13 +347,14 @@ app.controller('AdminUsersController', function($scope, $route, toaster, $http, 
 });
 
 app.controller('AdminUserController', 
-function($scope, $route, toaster, $http, scaMessage, scaAdminMenu, $routeParams, $location, $window, profiles) {
+function($scope, $route, toaster, $http, scaMessage, scaAdminMenu, $routeParams, $location, $window) {
     scaMessage.show(toaster);
     $scope.$parent.active_menu = 'admin';
     $scope.admin_menu = scaAdminMenu;
 
-    profiles.then(function(_users) { 
-        $scope.users = _users;
+    $http.get($scope.appconf.api+'/user/'+$routeParams.sub).then(res=>{
+        $scope.user = res.data;
+        console.dir(res.data);
         $scope.x509dns = JSON.stringify($scope.user.ext.x509dns, null, 4);
         $scope.openids = JSON.stringify($scope.user.ext.openids, null, 4);
         $scope.scopes = JSON.stringify($scope.user.scopes, null, 4);
@@ -364,7 +365,7 @@ function($scope, $route, toaster, $http, scaMessage, scaAdminMenu, $routeParams,
     });
 
     $scope.cancel = function() {
-        $window.history.back();
+        $location.path("/admin/users");
     }
 
     $scope.submit = function() {
