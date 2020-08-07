@@ -189,8 +189,8 @@ router.get('/jwt/:id', jwt({secret: config.auth.public_key}), common.scope("admi
 			if(err) return next(err);
             if(req.query.claim) {
                 let override = JSON.parse(req.query.claim);
-                logger.debug('claim override requested');
-                logger.debug(override);
+                //logger.debug('claim override requested');
+                //logger.debug(override);
                 Object.assign(claim, override);
             }
 			res.json({jwt: common.signJwt(claim)});
