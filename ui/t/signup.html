@@ -3,7 +3,7 @@
         <h1 class="page-header">SIGNUP</h1>
         <p><small style="opacity: 0.5">* required fields</small></p>
         <form ng-submit="submit();">
-            <p class="help-block" ng-if="jwt">This is your first time you've accessed this application. Please complete your registration.</p>
+            <p class="help-block" ng-if="jwt">This is your first time you have accessed brainlife.io. Please complete our registration form.</p>
             <div class="form-group">
                 <label>Username *</label>
                 <input type="text" class="form-control" ng-model="form.username" name="username" placeholder="Pick a username" required ng-disabled="username_readonly"/>
@@ -18,7 +18,7 @@
             </div>
             <div class="panel panel-default">
                 <div class="panel-body">
-                    <p class="help-block" ng-if="jwt">Please pick a new password to login in case you are not able to login with 3rd party identity provider</p>
+                    <p class="help-block" ng-if="jwt">Please choose a secure password to login in case login using a 3rd-party identity provider is not working for you.</p>
                     <div class="form-group">
                         <label>Password *</label>
                         <input type="password" class="form-control" ng-model="form.password" placeholder="Choose your password" required/>
@@ -37,7 +37,7 @@
             <div ng-if="appconf.profile" class="row">
                 <div class="col-md-6" style="border-right: 1px solid #ddd;">
                     <h5><b>Public Profile</b></h5>
-                    <p class="help-block">This information will be shared publicly among all brainlife.io users. If you'd like to remain anonymous, please contact brlife@iu.edu to obtain a guest account.</p>
+                    <p class="help-block">This information will be shared with the brainlife.io users community. If you would prefer to remain anonymous, please contact brlife@iu.edu to obtain a limited guest account.</p>
                     <div ng-repeat="field in appconf.profile.public" class="form-group">
                         <label>{{field.name}} <span ng-if="field.required">*</span></label>
                         <textarea class="form-control" placeholder="{{field.desc}}" ng-model="form.profile.public[field.id]" name="{{field.id}}" rows="{{field.rows}}" ng-required="field.required"></textarea>
@@ -46,7 +46,7 @@
 
                 <div class="col-md-6">
                     <h5><b>Private Profile</b></h5>
-                    <p class="help-block">This information will be privately shared by brainlife administrators for reporting and project management purposes. </p>
+                    <p class="help-block">This information will be kept private and only shared with the brainlife.io administrators for reporting and project management purposes. </p>
                     <div ng-repeat="field in appconf.profile.private" class="form-group">
                         <label>{{field.name}} <span ng-if="field.required">*</span></label>
                         <textarea class="form-control" placeholder="{{field.desc}}" ng-model="form.profile.private[field.id]" name="{{field.id}}" rows="{{field.rows}}" ng-required="field.required"></textarea>
