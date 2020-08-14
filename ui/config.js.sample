@@ -68,12 +68,21 @@ angular.module('app.config', [])
             },
 
             {
+                id: "url", 
+                name: "URL",
+                desc: "Please enter a URL for your homepage / project / institution, etc",
+                rows: 1,
+                required: false,
+            },
+
+            {
                 id: "bio", 
                 name: "Biography",
                 desc: "Please provide a brief introduction about you.",
-                rows: 3,
-                required: true,
+                rows: 4,
+                required: false,
             },
+
         ],
 
         private: [
@@ -86,12 +95,21 @@ angular.module('app.config', [])
             },
 
             {
-                id: "purpose", 
-                name: "Purpose",
-                desc: "Please describe how you'd like to use brainlife.io, and your expectations of this platform.",
-                rows: 3, 
+                id: "orcid", 
+                name: "ORCID",
+                desc: "Please enter your ORCID (https://orcid.org/) if you have one.",
+                rows: 1,
                 required: false,
             },
+
+            {
+                id: "purpose", 
+                name: "Purpose / Expectations",
+                desc: "Please describe how you'd like to use brainlife.io, and your expectations for this platform. Brainlife.io is funded by NSF and NIH. We will use this information for annual reporting purposes (anonymously) and to help us better support our users and to meet their expectations.",
+                rows: 4, 
+                required: false,
+            },
+
         ],
     },
 
