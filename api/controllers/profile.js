@@ -70,10 +70,11 @@ router.patch('/:sub?', jwt({secret: config.auth.public_key}), function(req, res,
 //TODO - I feel very iffiy about this.. I should probably create separate API for
 //each use cases for any publicaly accessible APIs
 //users:
-//  warehouse/api common/cache_contact
 //  warehouse/ui components/contactlist.vue 
 //  warehouse/ui mixin/authprofilecache (used by contact.vue)
+//  warehouse/api common/cache_contact
 //  warehosue/api common/mail - users_general, etc..
+//  warehouse/app bin/metrics.js contact_details
 //  cli.queryProfiles / queryAllProfiles
 router.get('/list', jwt({secret: config.auth.public_key, credentialsRequired: false}), async (req, res, next)=>{
     var dirty_find = {};
