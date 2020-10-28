@@ -92,7 +92,7 @@ exports.signJwt = function(claim) {
 function do_send_email_confirmation(url, user, cb) {
 
     let text = "Hello!\n\nIf you have created a new brainlife.io account, please visit following URL to confirm your email address.\n\n";
-    text+= url+"#!/confirm_email/"+user.id+"/"+user.email_confirmation_token;
+    text+= url+"#!/confirm_email/"+user.sub+"/"+user.email_confirmation_token;
 
     console.log("sending email.. to", user.email);
     console.dir(config.local.email_confirmation);
@@ -199,7 +199,7 @@ exports.check_password = function(user, password) {
 exports.check_user = function(user) {
     if(!user.active) return {message: "Account is disabled. Please contact the administrator.", code: "inactive"};
     if(config.local && config.local.email_confirmation && user.email_confirmed !== true) {
-        return {message: "Email is not confirmed yet", path: "/confirm_email/"+user.id};
+        return {message: "Email is not confirmed yet", path: "/confirm_email/"+user.sub};
     }
     return null;
 }
