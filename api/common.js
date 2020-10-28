@@ -28,18 +28,20 @@ function get_amqp_connection(cb) {
 }
 
 let auth_ex;
-get_amqp_connection((err, conn)=>{
-    if(err) throw err;
-    logger.debug("creating auth amqp exchange");
-    conn.exchange("auth", {autoDelete: false, durable: true, type: 'topic', confirm: true}, (ex)=>{
-        auth_ex = ex;
+if(config.event) {
+    get_amqp_connection((err, conn)=>{
+        if(err) throw err;
+        logger.debug("creating auth amqp exchange");
+        conn.exchange("auth", {autoDelete: false, durable: true, type: 'topic', confirm: true}, (ex)=>{
+            auth_ex = ex;
+        });
     });
-});
+}
 
 exports.publish = (key, message, cb)=>{
     message.timestamp = (new Date().getTime())/1000; //it's crazy that amqp doesn't set this?
     console.debug(key, message);
-    auth_ex.publish(key, message, {}, cb);
+    if(auth_ex) auth_ex.publish(key, message, {}, cb);
 }
 
 exports.createClaim = async function(user, cb) {
