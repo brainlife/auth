@@ -50,8 +50,6 @@ models.User = mongoose.model('User', {
 
         x509dns: [ { type: String, unique: true, sparse: true } ], //["CN=Soichi Hayashi A35421,O=Indiana University,C=US,DC=cilogon,DC=org"]
         openids: [ { type: String, unique: true, sparse: true } ], //openid connect cert_subject_dn ["/DC=org/DC=cilogon/C=US/O=Google/CN=Soichi Hayashi B30632"]
-        //x509dns: [ { type: String, } ], //["CN=Soichi Hayashi A35421,O=Indiana University,C=US,DC=cilogon,DC=org"]
-        //openids: [ { type: String, } ], //openid connect cert_subject_dn ["/DC=org/DC=cilogon/C=US/O=Google/CN=Soichi Hayashi B30632"]
     },
 
     //last login time 

@@ -3,7 +3,7 @@
         <h1 class="page-header">SIGNUP</h1>
         <p><small style="opacity: 0.5">* required fields</small></p>
         <form ng-submit="submit();">
-            <p class="help-block" ng-if="jwt">This is your first time you have accessed brainlife.io. Please complete our registration form.</p>
+            <p class="help-block" ng-if="jwt">This is your first time you have accessed this site. Please complete our registration form.</p>
             <div class="form-group">
                 <label>Username *</label>
                 <input type="text" class="form-control" ng-model="form.username" name="username" placeholder="Pick a username" required ng-disabled="username_readonly"/>
@@ -37,7 +37,7 @@
             <div ng-if="appconf.profile" class="row">
                 <div class="col-md-6" style="border-right: 1px solid #ddd;">
                     <h5><b>Public Profile</b></h5>
-                    <p class="help-block">This information will be shared with the brainlife.io users community. If you would prefer to remain anonymous, please contact brlife@iu.edu to obtain a limited guest account.</p>
+                    <p class="help-block">This information maybe shared among other users.</p>
                     <div ng-repeat="field in appconf.profile.public" class="form-group">
                         <label>{{field.name}} <span ng-if="field.required">*</span></label>
                         <textarea class="form-control" placeholder="{{field.desc}}" ng-model="form.profile.public[field.id]" name="{{field.id}}" rows="{{field.rows}}" ng-required="field.required"></textarea>
@@ -46,7 +46,7 @@
 
                 <div class="col-md-6">
                     <h5><b>Private Profile</b></h5>
-                    <p class="help-block">This information will be kept private and only shared with the brainlife.io administrators for reporting and project management purposes. </p>
+                    <p class="help-block">This information will be kept private and only shared with the administrators for reporting and project management purposes. </p>
                     <div ng-repeat="field in appconf.profile.private" class="form-group">
                         <label>{{field.name}} <span ng-if="field.required">*</span></label>
                         <textarea class="form-control" placeholder="{{field.desc}}" ng-model="form.profile.private[field.id]" name="{{field.id}}" rows="{{field.rows}}" ng-required="field.required"></textarea>
@@ -54,7 +54,7 @@
                 </div>
             </div>
 
-            <p style="background-color: #ddd; padding: 10px;">The information provided in your profile is used for security purposes by the brainlife.io team. Instances of violations of the user agreements, fake accounts or bots can be identified using the information in the users profile. If your profile does not contain sufficient and meaningful information the brainlife.io team will audit you to request additional information and may remove your account. We thank you for your understanding and cooperation.</p>
+            <p style="background-color: #ddd; padding: 10px;">The information provided in your profile is used to screen and prevent violations of the user agreements, registrations of fake accounts or access by bots. If your profile does not contain sufficient and meaningful information, we may request additional information and may temporarly disable your account. We thank you for your understanding and cooperation.</p>
             </p>
 
             <center style="background-color: #f8f8f8; padding-top: 20px; margin: 20px 0;">
@@ -62,7 +62,7 @@
                 <iframe src="{{privacy}}" style="border: none; width: 900px; height: 5410px;"></iframe>
             </center>
             <p>
-                <input type="checkbox" ng-model="form.profile.private.aup" required/> I have read and consent to the brainlife.io <a href="{{appconf.aup}}" target="_blank">Acceptable Use Policy</a> and <a href="{{appconf.privacy}}">Privacy Policy</a>
+                <input type="checkbox" ng-model="form.profile.private.aup" required/> I have read and consent to <a href="{{appconf.aup}}" target="_blank">Acceptable Use Policy</a> and <a href="{{appconf.privacy}}">Privacy Policy</a>
             </p>
             <br>
 
