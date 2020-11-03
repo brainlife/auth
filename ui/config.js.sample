@@ -113,8 +113,18 @@ angular.module('app.config', [])
         ],
     },
 
+    show_aup: true,
     aup: "https://brainlife.io/docs/aup",
     privacy: "https://brainlife.io/docs/privacy",
+
+    //approved cross domain apps to send jwt token
+    cross_domain: {
+        "dev": {
+            auth_redirect: "http://localhost:8080",
+        },
+        "prod": {
+            auth_redirect: "http://ctil.iu.edu/projects/apred/",
+        },
+    },
+
 });
-
-

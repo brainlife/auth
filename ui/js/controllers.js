@@ -8,12 +8,11 @@ function($scope, appconf, $route, $location, toaster, $http, menu, scaSettingsMe
     $scope.settings_menu = scaSettingsMenu;
 
     let app = $location.search().app;
-    switch(app) {
-    case "localhost":
-        console.log("reconfiguring for local development");
-        sessionStorage.setItem('auth_redirect', 'http://localhost:8080');
+    if($scope.appconf.cross_domain && $scope.appconf.cross_domain[app]) {
+        let config = $scope.appconf.cross_domain[app]
+        //sessionStorage.setItem('auth_redirect', 'http://localhost:8080');
+        sessionStorage.setItem('auth_redirect', config.auth_redirect);
         sessionStorage.setItem('jwt_on_url', true);
-        break;
     }
 });
 
