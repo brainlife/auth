@@ -91,7 +91,7 @@ exports.signJwt = function(claim) {
 
 function do_send_email_confirmation(url, user, cb) {
 
-    let text = "Hello!\n\nIf you have created a new brainlife.io account, please visit following URL to confirm your email address.\n\n";
+    let text = "Hello!\n\nIf you have created a new account, please visit the following URL to confirm your email address.\n\n";
     text+= url+"#!/confirm_email/"+user.sub+"/"+user.email_confirmation_token;
 
     console.log("sending email.. to", user.email);

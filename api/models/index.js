@@ -48,8 +48,11 @@ models.User = mongoose.model('User', {
         facebook: { type: String, unique: true, sparse: true },
         orcid: { type: String, unique: true, sparse: true },
 
-        x509dns: [ { type: String, unique: true, sparse: true } ], //["CN=Soichi Hayashi A35421,O=Indiana University,C=US,DC=cilogon,DC=org"]
-        openids: [ { type: String, unique: true, sparse: true } ], //openid connect cert_subject_dn ["/DC=org/DC=cilogon/C=US/O=Google/CN=Soichi Hayashi B30632"]
+        //x509dns: [ { type: String, unique: true, sparse: true } ], 
+        x509dns: [ String ], //unique index breaks signup?
+        //["CN=Soichi Hayashi A35421,O=Indiana University,C=US,DC=cilogon,DC=org"]
+        openids: [ String ],  //unique index breaks signup?
+        //openid connect cert_subject_dn ["/DC=org/DC=cilogon/C=US/O=Google/CN=Soichi Hayashi B30632"]
     },
 
     //last login time 

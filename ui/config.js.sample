@@ -122,9 +122,6 @@ angular.module('app.config', [])
         "dev": {
             auth_redirect: "http://localhost:8080",
         },
-        "prod": {
-            auth_redirect: "http://ctil.iu.edu/projects/apred/",
-        },
     },
 
 });
