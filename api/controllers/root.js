@@ -30,6 +30,7 @@ router.use('/profile', require('./profile'));
  *
  * @apiHeader {String} authorization    A valid JWT token (Bearer:)
  * @apiParam {Object} scopes    Desired scopes to intersect (you can remove certain scopes)
+ * @apiParam {String} [ttl]     time-to-live in milliseconds (if not set, it will be defaulted to server default)
  *
  * @apiSuccess {Object} jwt New JWT token
  */
@@ -41,9 +42,10 @@ router.post('/refresh', jwt({secret: config.auth.public_key}), function(req, res
         if(req.body.scopes) user.scopes = common.intersect_scopes(user.scopes, req.body.scopes);
         common.createClaim(user, function(err, claim) {
             if(err) return next(err);
-            common.publish("user.refresh."+user.sub, {username: user.username, exp: claim.exp});
+            if(req.body.ttl) claim.exp = (Date.now() + req.body.ttl)/1000;
             var jwt = common.signJwt(claim);
-            return res.json({jwt: jwt});
+            common.publish("user.refresh."+user.sub, {username: user.username, exp: claim.exp});
+            return res.json({jwt});
         });
     });
 });
