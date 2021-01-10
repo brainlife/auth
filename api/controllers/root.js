@@ -219,9 +219,9 @@ router.put('/user/:id', jwt({secret: config.auth.public_key}), common.scope("adm
  * @apiDescription          list all groups with basic info (available to all authenticated users) including inactive ones
  * @apiGroup User
  *
- * @apiHeader {String}      authorization A valid JWT token "Bearer: xxxxx"
+ * @apiParam {Object} find  query - defaults to {}
  *
- * @apiParam {Object} find  Optional sequelize where query - defaults to {}
+ * @apiHeader {String}      authorization A valid JWT token "Bearer: xxxxx"
  *
  * @apiSuccessExample {json} Success-Response:
  *     HTTP/1.1 200 OK
