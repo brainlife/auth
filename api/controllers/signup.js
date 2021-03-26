@@ -78,7 +78,11 @@ async function register_newuser(req, done) {
  *
  */
 
-router.post('/', jwt({secret: config.auth.public_key, credentialsRequired: false}), async (req, res, next)=>{
+router.post('/', jwt({
+    secret: config.auth.public_key, 
+    algorithms: [config.auth.sign_opt.algorithm],
+    credentialsRequired: false,
+}), async (req, res, next)=>{
     let username = req.body.username;
     let email = req.body.email;
     let profile = req.body.profile;

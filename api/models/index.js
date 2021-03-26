@@ -9,7 +9,11 @@ let models = {};
 const mongoose = require('mongoose');
 if(config.mongoose_debug) mongoose.set("debug", true);
 
-models.connection = mongoose.connect(config.mongodb, {useNewUrlParser: true});
+models.connection = mongoose.connect(config.mongodb, {
+    useNewUrlParser: true,
+    useUnifiedTopology: true,
+    server: { auto_reconnect: true },
+});
 
 models.User = mongoose.model('User', { 
     sub: {type: Number, unique: true }, //numeric user id
@@ -85,8 +89,8 @@ models.Group = mongoose.model('Group', {
     name: String,
     desc: String,
 
-    admins: [ {type: mongoose.Schema.Types.ObjectId, ref: 'User', unique: true} ],
-    members: [ {type: mongoose.Schema.Types.ObjectId, ref: 'User', unique: true} ],
+    admins: [ {type: mongoose.Schema.Types.ObjectId, ref: 'User'} ],
+    members: [ {type: mongoose.Schema.Types.ObjectId, ref: 'User'} ],
 
     active: { type: Boolean, default: true },
 

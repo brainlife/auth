@@ -77,7 +77,11 @@ function issue_jwt_and_save(user, cb) {
 }
 
 //XHR get only
-router.get('/verify', jwt({secret: config.auth.public_key, credentialsRequired: false}), function(req, res, next) {
+router.get('/verify', jwt({
+    secret: config.auth.public_key, 
+    algorithms: [config.auth.sign_opt.algorithm],
+    credentialsRequired: false,
+}), function(req, res, next) {
     var ticket = req.query.casticket;
 
     //guess casurl using referer - TODO - should I use cookie and pass it from the UI method begin_iucas() instead?
@@ -135,7 +139,10 @@ router.get('/verify', jwt({secret: config.auth.public_key, credentialsRequired: 
     })
 });
 
-router.put('/disconnect', jwt({secret: config.auth.public_key}), function(req, res, next) {
+router.put('/disconnect', jwt({
+    secret: config.auth.public_key,
+    algorithms: [config.auth.sign_opt.algorithm],
+}), function(req, res, next) {
     db.mongo.User.findOne({sub: req.user.sub}).then(user=>{
         if(!user) res.status(401).end();
         user.ext.iucas = null;

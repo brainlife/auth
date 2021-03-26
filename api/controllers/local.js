@@ -71,7 +71,10 @@ router.post('/auth', function(req, res, next) {
 });
 
 //used to setpassword if password_hash is empty or update exiting password (with a valid current password)
-router.put('/setpass', jwt({secret: config.auth.public_key}), function(req, res, next) {
+router.put('/setpass', jwt({
+    secret: config.auth.public_key,
+    algorithms: [config.auth.sign_opt.algorithm],
+}), function(req, res, next) {
     db.mongo.User.findOne({sub: req.user.sub}).then(user=>{
         logger.debug("setting password for sub:"+req.user.sub);
         if(user) {
@@ -160,11 +163,5 @@ router.post('/resetpass', function(req, res, next) {
         });
     }
 });
-
-/*
-//reset password (with a valid reset token) ?token=123
-router.put('/resetpass', function(req, res, next) {
-});
-*/
 
 module.exports = router;

@@ -22,10 +22,7 @@ function finduserByDN(dn, done) {
 
 // this endpoint needs to be exposed via webserver that's requiring x509 DN
 // unlike /auth, this page will redirect back to #!/success/<jwt>
-router.get('/signin', /*jwt({secret: config.auth.public_key, credentialsRequired: false}),*/ function(req, res, next) {
-    //logger.debug(req.user);
-    //res.header("Access-Control-Allow-Headers", "X-Requested-With");
-    //return res.json({status: "ok", dn: req.headers[config.x509.dn_header], /*headers: req.headers*/});
+router.get('/signin', function(req, res, next) {
     var dn = req.headers[config.x509.dn_header];
     if(!dn) {
         console.dir(req.headers);
@@ -51,9 +48,11 @@ router.get('/signin', /*jwt({secret: config.auth.public_key, credentialsRequired
 });
 
 // this endpoint needs to be exposed via webserver that's requiring x509 DN
-router.get('/associate/:jwt', jwt({secret: config.auth.public_key, getToken: function(req) { return req.params.jwt; }}), 
-function(req, res, next) {
-//router.get('/connect', jwt({secret: config.auth.public_key}), function(req, res, next) {
+router.get('/associate/:jwt', jwt({
+    secret: config.auth.public_key, 
+    algorithms: [config.auth.sign_opt.algorithm],
+    getToken: function(req) { return req.params.jwt; }
+}), function(req, res, next) {
     var dn = req.headers[config.x509.dn_header];
     if(!dn) {
         console.dir(req.headers);
@@ -92,7 +91,10 @@ function(req, res, next) {
     });
 });
 
-router.put('/disconnect', jwt({secret: config.auth.public_key}), function(req, res, next) {
+router.put('/disconnect', jwt({
+    secret: config.auth.public_key,
+    algorithms: [config.auth.sign_opt.algorithm],
+}), function(req, res, next) {
     var dn = req.body.dn;
     logger.debug("disconnecting "+dn);
     db.User.findOne({sub: req.user.sub}).then(function(user) {

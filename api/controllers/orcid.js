@@ -52,9 +52,12 @@ function find_profile(profiles, sub) {
 }
 
 //this handles both normal callback from incommon and account association (if cookies.associate_jwt is set)
-router.get('/callback', 
-jwt({ secret: config.auth.public_key, credentialsRequired: false, getToken: req=>req.cookies.associate_jwt }),
-function(req, res, next) {
+router.get('/callback', jwt({ 
+    secret: config.auth.public_key, 
+    algorithms: [config.auth.sign_opt.algorithm],
+    credentialsRequired: false, 
+    getToken: req=>req.cookies.associate_jwt 
+}), function(req, res, next) {
     passport.authenticate(orcid_strat.name, function(err, user, profile) {
         logger.debug("orcid callback", profile);
         if(err) {
@@ -143,8 +146,11 @@ async function register_newuser(profile, res, next) {
 }
 
 //start orcid account association
-router.get('/associate/:jwt', jwt({secret: config.auth.public_key, getToken: req=>req.params.jwt}), 
-function(req, res, next) {
+router.get('/associate/:jwt', jwt({
+    secret: config.auth.public_key, 
+    algorithms: [config.auth.sign_opt.algorithm],
+    getToken: req=>req.params.jwt
+}), function(req, res, next) {
     res.cookie("associate_jwt", req.params.jwt, {
         //it's really overkill but .. why not? (maybe helps to hide from log?)
         httpOnly: true,
@@ -155,7 +161,10 @@ function(req, res, next) {
 });
 
 //should I refactor?
-router.put('/disconnect', jwt({secret: config.auth.public_key}), function(req, res, next) {
+router.put('/disconnect', jwt({
+    secret: config.auth.public_key,
+    algorithms: [config.auth.sign_opt.algorithm],
+}), function(req, res, next) {
     var sub = req.body.sub;
     db.mongo.User.findOne({sub: req.user.sub}).then(user=>{
         if(!user) res.status(401).end();

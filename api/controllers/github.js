@@ -32,6 +32,7 @@ router.get('/signin', passport.authenticate('github'));
 //callback that handles both normal and association(if cookies.associate_jwt is set and valid)
 router.get('/callback', jwt({
     secret: config.auth.public_key,
+    algorithms: [config.auth.sign_opt.algorithm],
     credentialsRequired: false,
     getToken: function(req) {
         return req.cookies.associate_jwt;
@@ -109,8 +110,11 @@ function register_newuser(profile, res, next) {
 }
 
 //start github account association
-router.get('/associate/:jwt', jwt({secret: config.auth.public_key, getToken: function(req) { return req.params.jwt; }}), 
-function(req, res, next) {
+router.get('/associate/:jwt', jwt({
+    secret: config.auth.public_key, 
+    algorithms: [config.auth.sign_opt.algorithm],
+    getToken: function(req) { return req.params.jwt; }
+}), function(req, res, next) {
     res.cookie("associate_jwt", req.params.jwt, {
         //it's really overkill but .. why not? (maybe helps to hide from log?)
         httpOnly: true,
@@ -121,7 +125,10 @@ function(req, res, next) {
 });
 
 //should I refactor?
-router.put('/disconnect', jwt({secret: config.auth.public_key}), function(req, res, next) {
+router.put('/disconnect', jwt({
+    secret: config.auth.public_key,
+    algorithms: [config.auth.sign_opt.algorithm],
+}), function(req, res, next) {
     db.mongo.User.findOne({sub: req.user.sub}).then(function(user) {
         if(!user) return res.status(401).end();
         user.ext.github = null;

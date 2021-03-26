@@ -29,7 +29,10 @@ let safe_fields = ["sub", "fullname", "email", "username", "active", "profile.pu
  *
  * @apiSuccess {Object}     updated user object
  */
-router.patch('/:sub?', jwt({secret: config.auth.public_key}), function(req, res, next) {
+router.patch('/:sub?', jwt({
+    secret: config.auth.public_key,
+    algorithms: [config.auth.sign_opt.algorithm],
+}), function(req, res, next) {
     let sub = req.user.sub;
     if(common.has_scope(req, "admin") && req.params.sub) sub = req.params.sub;
     let select = [...safe_fields, "profile"];
@@ -76,7 +79,11 @@ router.patch('/:sub?', jwt({secret: config.auth.public_key}), function(req, res,
 //  warehosue/api common/mail - users_general, etc..
 //  warehouse/app bin/metrics.js contact_details
 //  cli.queryProfiles / queryAllProfiles
-router.get('/list', jwt({secret: config.auth.public_key, credentialsRequired: false}), async (req, res, next)=>{
+router.get('/list', jwt({
+    secret: config.auth.public_key, 
+    algorithms: [config.auth.sign_opt.algorithm],
+    credentialsRequired: false,
+}), async (req, res, next)=>{
     var dirty_find = {};
     if(req.query.where) dirty_find = JSON.parse(req.query.where);
     if(req.query.find) dirty_find = JSON.parse(req.query.find);
@@ -120,7 +127,10 @@ router.get('/list', jwt({secret: config.auth.public_key, credentialsRequired: fa
  * @apiHeader {String}          Authorization A valid JWT token "Bearer: xxxxx"
  *
  */
-router.get("/:sub?", jwt({secret: config.auth.public_key}), function(req, res, next) {
+router.get("/:sub?", jwt({
+    secret: config.auth.public_key,
+    algorithms: [config.auth.sign_opt.algorithm],
+}), function(req, res, next) {
     let sub = req.user.sub;
     if(common.has_scope(req, "admin") && req.params.sub) sub = req.params.sub;
     let select = [...safe_fields, "profile"];
