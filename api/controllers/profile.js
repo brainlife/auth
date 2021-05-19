@@ -127,11 +127,10 @@ router.get('/list', jwt({
  * @apiHeader {String}          Authorization A valid JWT token "Bearer: xxxxx"
  *
  */
-router.get("/:sub?", jwt({
-    secret: config.auth.public_key,
-    algorithms: [config.auth.sign_opt.algorithm],
-}), function(req, res, next) {
+router.get("/:sub?", jwt({secret: config.auth.public_key,algorithms: [config.auth.sign_opt.algorithm],}), 
+function(req, res, next) {
     let sub = req.user.sub;
+    console.log("auth/profile requested", sub);
     if(common.has_scope(req, "admin") && req.params.sub) sub = req.params.sub;
     let select = [...safe_fields, "profile"];
     db.mongo.User.findOne({sub, active: true}).select(select).lean().then(user=>{

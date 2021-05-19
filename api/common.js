@@ -51,8 +51,6 @@ exports.createClaim = async function(user, cb) {
     let groups = await db.mongo.Group.find({active: true, $or: [{members: user._id}, {admins: user._id}]});
     let gids = groups.map(group=>group.id);
 
-    //gids = [1, ...gids]; //inject the global id (TODO make this configurable)
-
     /* http://websec.io/2014/08/04/Securing-Requests-with-JWT.html
     iss: The issuer of the token
     aud: The audience that the JWT is intended for
@@ -64,9 +62,9 @@ exports.createClaim = async function(user, cb) {
     */
 
     cb(null, {
+        //"iat": (Date.now())/1000, //this gets set automatically
         iss: config.auth.iss,
         exp: (Date.now() + config.auth.ttl)/1000,
-        //"iat": (Date.now())/1000, //this gets set automatically
         scopes: user.scopes,
         
         //can't use user.username which might not be set

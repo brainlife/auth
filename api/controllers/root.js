@@ -26,7 +26,10 @@ router.use('/profile', require('./profile'));
  * @apiGroup User
  *
  * @apiHeader {String} authorization    A valid JWT token (Bearer:)
- * @apiParam {Object} scopes    Desired scopes to intersect (you can remove certain scopes)
+ * @apiParam {Object} [scopes]    Desired scopes to intersect (you can remove certain scopes)
+ * @apiParam {Number[]} [gids]    Desired gids to intersect (you can remove certain gids)
+ * @apiParam {Boolean} [clearProfile]
+ *                              Set this to true if you don't need profile info 
  * @apiParam {String} [ttl]     time-to-live in milliseconds (if not set, it will be defaulted to server default)
  *
  * @apiSuccess {Object} jwt New JWT token
@@ -37,12 +40,27 @@ router.post('/refresh', jwt({
 }), function(req, res, next) {
     db.mongo.User.findOne({sub: req.user.sub, active: true}).then(user=>{
         if(!user) return next("Couldn't find any user with sub:"+req.user.sub);
+
+        /*
+        //intersect with the jwt token's scopes (token might contain already restricted set of tokens)
+        //this means that, user need to re-login to gain scopes that are recently granted
+        user.scopes = common.intersect_scopes(req.user.scopes, user.scopes);
+        */
         
-        //intersect requested scopes
-        if(req.body.scopes) user.scopes = common.intersect_scopes(user.scopes, req.body.scopes);
+       
         common.createClaim(user, function(err, claim) {
             if(err) return next(err);
+            
+            //intersect scopes with requested scopes (restriction)
+            if(req.body.scopes) claim.scopes = common.intersect_scopes(claim.scopes, req.body.scopes);
+
+            //intersect gids with requested gids
+            if(req.body.gids) claim.gids = claim.gids.filter(id=>req.body.gids.includes(id));
+
+            if(req.body.clearProfile) delete claim.profile;
+
             if(req.body.ttl) claim.exp = (Date.now() + req.body.ttl)/1000;
+
             var jwt = common.signJwt(claim);
             common.publish("user.refresh."+user.sub, {username: user.username, exp: claim.exp});
             return res.json({jwt});
@@ -202,14 +220,14 @@ router.get('/jwt/:id', jwt({
 }), common.scope("admin"), function(req, res, next) {
     db.mongo.User.findOne({sub: req.params.id, active: true}).then(user=>{
         if(!user) return next("Couldn't find any user with sub:"+req.params.id);
-		common.createClaim(user, function(err, claim) {
-			if(err) return next(err);
+        common.createClaim(user, function(err, claim) {
+            if(err) return next(err);
             if(req.query.claim) {
                 let override = JSON.parse(req.query.claim);
                 Object.assign(claim, override);
             }
-			res.json({jwt: common.signJwt(claim)});
-		});
+            res.json({jwt: common.signJwt(claim)});
+        });
     });
 });
 
