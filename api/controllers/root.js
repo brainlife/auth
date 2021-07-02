@@ -46,7 +46,6 @@ router.post('/refresh', jwt({
         //this means that, user need to re-login to gain scopes that are recently granted
         user.scopes = common.intersect_scopes(req.user.scopes, user.scopes);
         */
-        
        
         common.createClaim(user, function(err, claim) {
             if(err) return next(err);
@@ -302,7 +301,6 @@ router.put('/group/:id', jwt({
     secret: config.auth.public_key,
     algorithms: [config.auth.sign_opt.algorithm],
 }), function(req, res, next) {
-    console.debug("updating group", req.params.id);
     db.mongo.Group.findOne({id: req.params.id}).populate('admins').then(async group=>{
         if (!group) return next("can't find group id:"+req.params.id);
         
@@ -319,7 +317,7 @@ router.put('/group/:id', jwt({
             console.debug("all done");
             res.json({message: "Group updated successfully"});
         });
-    });
+    }).catch(next);
 });
 
 let g_next_gid = 1;
