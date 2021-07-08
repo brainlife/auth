@@ -122,6 +122,8 @@ router.get('/list', jwt({
     res.json({profiles: users, count});
 });
 
+//count number of users based on profile.private.position info
+//it users group logic configured in config.positionGroups
 router.get('/poscount', jwt({secret: config.auth.public_key,algorithms: [config.auth.sign_opt.algorithm]}), async (req, res, next)=>{
     if(!common.has_scope(req, "admin")) return next("admin only");
     const users = await db.mongo.User.find({}, {"profile.private.position": 1});
@@ -142,6 +144,16 @@ router.get('/poscount', jwt({secret: config.auth.public_key,algorithms: [config.
         counts[match]++;
     });
     res.json(counts);
+});
+
+//public api to download user map (user's institution location)
+router.get('/userlocs', async (req, res, next)=>{
+    const users = await db.mongo.User.find({'profile.public.showOnMap': true}, {
+        "profile.public.lat": 1, 
+        "profile.public.lng": 1,
+        "profile.public.institution": 1,
+    });
+    res.json(users.map(u=>u.profile.public));
 });
 
 /**
