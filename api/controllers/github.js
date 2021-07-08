@@ -21,7 +21,7 @@ passport.use(new GitHubStrategy({
     clientSecret: config.github.client_secret,
     callbackURL: config.github.callback_url,
 }, function(accessToken, refreshToken, profile, cb) {
-    db.mongo.User.findOne({'ext.github': profile.username, active: true}).then(function(user) {
+    db.mongo.User.findOne({'ext.github': profile.username}).then(function(user) {
         cb(null, user, profile);
     });
 }));
@@ -56,7 +56,7 @@ router.get('/callback', jwt({
                 res.cookie('messages', JSON.stringify(messages), {path: '/'});
                 return res.redirect('/auth/#!/settings/account');
             }
-            db.mongo.User.findOne({sub: req.user.sub, active: true}).then(function(user) {
+            db.mongo.User.findOne({sub: req.user.sub}).then(function(user) {
                 if(!user) throw new Error("couldn't find user record with sub:"+req.user.sub);
                 user.ext.github = profile.username;
                 user.save().then(function() {
@@ -75,18 +75,22 @@ router.get('/callback', jwt({
                 } else {
                     res.redirect('/auth/#!/signin?msg='+"Your github account is not yet registered. Please login using your username/password first, then associate your github account inside account settings.");
                 }
-            } else {
-                common.createClaim(user, function(err, claim) {
-                    if(err) return next(err);
-                    user.times.github_login = new Date();
-                    user.markModified('times');
-                    user.save().then(function() {
-                        common.publish("user.login."+user.sub, {type: "github", username: user.username, exp: claim.exp, headers: req.headers});
-                        let jwt = common.signJwt(claim);
-                        res.redirect('/auth/#!/success/'+jwt);
-                    });
-                });
+                return;
             }
+
+            const error = common.checkUser(user, req);
+            if(error) return next(error);
+            common.createClaim(user, function(err, claim) {
+                if(err) return next(err);
+                user.times.github_login = new Date();
+                user.reqHeaders = req.headers;
+                user.markModified('times');
+                user.save().then(function() {
+                    common.publish("user.login."+user.sub, {type: "github", username: user.username, exp: claim.exp, headers: req.headers});
+                    let jwt = common.signJwt(claim);
+                    res.redirect('/auth/#!/success/'+jwt);
+                });
+            });
         }
     })(req, res, next);
 });

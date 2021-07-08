@@ -25,7 +25,7 @@ const orcid_strat = new OAuth2Strategy({
     scope: "/authenticate",
 }, function(accessToken, refreshToken, profile, _needed, cb) {
     logger.debug("orcid loading userinfo ..", accessToken, refreshToken, profile);
-    db.mongo.User.findOne({'ext.orcid': profile.orcid, active: true}).then(function(user) {
+    db.mongo.User.findOne({'ext.orcid': profile.orcid}).then(function(user) {
         cb(null, user, profile);
     });
 });
@@ -78,7 +78,7 @@ router.get('/callback', jwt({
                 res.cookie('messages', JSON.stringify(messages), {path: '/'});
                 res.redirect('/auth/#!/settings/account');
             } else {
-                db.mongo.User.findOne({sub: req.user.sub, active: true}).then(function(user) {
+                db.mongo.User.findOne({sub: req.user.sub}).then(function(user) {
                     if(!user) throw new Error("couldn't find user record with sub:"+req.user.sub);
                     user.ext.orcid = profile.orcid;
                     user.save().then(function() {
@@ -99,18 +99,22 @@ router.get('/callback', jwt({
                 } else {
                     res.redirect('/auth/#!/signin?msg='+"Your InCommon account("+profile.sub+") is not yet registered. Please login using your username/password first, then associate your InCommon account inside the account settings.");
                 }
-            } else {
-                common.createClaim(user, function(err, claim) {
-                    if(err) return next(err);
-                    var jwt = common.signJwt(claim);
-                    user.times.orcid_login = new Date();
-                    user.markModified('times');
-                    user.save().then(function() {
-                        common.publish("user.login."+user.sub, {type: "orcid", username: user.username, exp: claim.exp, headers: req.headers});
-                        res.redirect('/auth/#!/success/'+jwt);
-                    });
+                return;
+            } 
+
+            const error = common.checkUser(user, req);
+            if(error) return next(error);
+            common.createClaim(user, function(err, claim) {
+                if(err) return next(err);
+                var jwt = common.signJwt(claim);
+                user.times.orcid_login = new Date();
+                user.markModified('times');
+                user.reqHeaders = req.headers;
+                user.save().then(function() {
+                    common.publish("user.login."+user.sub, {type: "orcid", username: user.username, exp: claim.exp, headers: req.headers});
+                    res.redirect('/auth/#!/success/'+jwt);
                 });
-            }            
+            });
         }
     })(req, res, next);
 });

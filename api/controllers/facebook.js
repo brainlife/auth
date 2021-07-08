@@ -16,12 +16,13 @@ var logger = winston.createLogger(config.logger.winston);
 var common = require('../common');
 var db = require('../models');
 
+//TODO - why is this using GitHubStrategy!?
 passport.use(new GitHubStrategy({
     clientID: config.facebook.app_id,
     clientSecret: config.facebook.app_secret,
     callbackURL: config.facebook.callback_url,
 }, function(accessToken, refreshToken, profile, cb) {
-    db.mongo.User.findOne({facebook: profile.id, active: true}).then(function(user) {
+    db.mongo.User.findOne({facebook: profile.id}).then(function(user) {
         cb(null, user, profile);
     });
 }));
@@ -53,7 +54,7 @@ router.get('/callback', jwt({
                 res.cookie('messages', JSON.stringify(messages), {path: '/'});
                 return res.redirect('/auth/#!/settings/account');
             }
-            db.User.findOne({sub: req.user.sub, active: true}).then(function(user) {
+            db.User.findOne({sub: req.user.sub}).then(function(user) {
                 if(!user) throw new Error("couldn't find user record with sub:"+req.user.sub);
                 user.ext.facebook = info.id;
                 user.save().then(function() {
@@ -67,10 +68,14 @@ router.get('/callback', jwt({
             if(!user) {
                 return res.redirect('/auth/#!/signin?msg='+"Your facebook account is not registered yet. Please login using your username/password first, then associate your facebook account inside account settings.");
             }
+
+            const error = common.checkUser(user, req);
+            if(error) return next(error);
             common.createClaim(user, function(err, claim) {
                 if(err) return next(err);
                 var jwt = common.signJwt(claim);
                 user.times.facebook_login = new Date();
+                user.reqHeaders = req.headers;
                 user.markModified('times');
                 user.save().then(function() {
                     common.publish("user.login."+user.sub, {type: "facebook", username: user.username, exp: claim.exp, headers: req.headers});

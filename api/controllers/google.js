@@ -22,7 +22,7 @@ passport.use(new GoogleStrategy({
     callbackURL: config.google.callback_url,
 }, function(accessToken, refreshToken, profile, cb) {
     console.dir(profile);
-    db.mongo.User.findOne({'ext.googleid': profile.id, active: true}).then(function(user) {
+    db.mongo.User.findOne({'ext.googleid': profile.id}).then(function(user) {
         cb(null, user, profile);
     });
 }));
@@ -83,7 +83,7 @@ router.get('/callback', jwt({
                 res.cookie('messages', JSON.stringify(messages), {path: '/'});
                 return res.redirect('/auth/#!/settings/account');
             }
-            db.mongo.User.findOne({sub: req.user.sub, active: true}).then(function(user) {
+            db.mongo.User.findOne({sub: req.user.sub}).then(function(user) {
                 if(!user) throw new Error("couldn't find user record with sub:"+req.user.sub);
                 user.ext.googleid = profile.id;
                 user.save().then(function() {
@@ -99,18 +99,22 @@ router.get('/callback', jwt({
                 } else {
                     res.redirect('/auth/#!/signin?msg='+"Your google account is not registered yet. Please login using your username/password first, then associate your google account inside account settings.");
                 }
-            } else {
-                common.createClaim(user, function(err, claim) {
-                    if(err) return next(err);
-                    user.times.google_login = new Date();
-                    user.markModified('times');
-                    user.save().then(function() {
-                        common.publish("user.login."+user.sub, {type: "google", username: user.username, exp: claim.exp, headers: req.headers});
-                        var jwt = common.signJwt(claim);
-                        res.redirect('/auth/#!/success/'+jwt);
-                    });
+                return;
+            } 
+
+            const error = common.checkUser(user, req);
+            if(error) return next(error);
+            common.createClaim(user, function(err, claim) {
+                if(err) return next(err);
+                user.times.google_login = new Date();
+                user.reqHeaders = req.headers;
+                user.markModified('times');
+                user.save().then(function() {
+                    common.publish("user.login."+user.sub, {type: "google", username: user.username, exp: claim.exp, headers: req.headers});
+                    var jwt = common.signJwt(claim);
+                    res.redirect('/auth/#!/success/'+jwt);
                 });
-            }
+            });
         }
     })(req, res, next);
 });

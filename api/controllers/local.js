@@ -16,17 +16,20 @@ passport.use(new passport_localst(
         db.mongo.User.findOne({$or: [{"username": username_or_email}, {"email": username_or_email}]}).then(user=>{
             if (!user) {
                 setTimeout(function() {
-                    done(null, false, { message: 'Incorrect email or username' });
+                    done(null, false, { message: 'Incorrect email or username', code: 'bad_username' });
                 }, 2000);
                 return;
             } else {
                 if(!user.password_hash) {
-                    return done(null, false, { message: 'Password login is not enabled for this account (please try 3rd party authentication)' });
+                    return done(null, false, { 
+                        message: 'Password login is not enabled for this account (please try 3rd party authentication)', 
+                        code: 'no_password' 
+                    });
                 }
                 if(!common.check_password(user, password)) {
                     //delay returning to defend against password sweeping attack
                     setTimeout(function() {
-                        done(null, false, { message: 'Incorrect user/password' });
+                        done(null, false, { message: 'Incorrect user/password', code: 'bad_password' });
                     }, 2000);
                     return;
                 }
@@ -52,18 +55,23 @@ router.post('/auth', function(req, res, next) {
     passport.authenticate('local', function(err, user, info) {
         if (err) return next(err);
         if (!user) {
+            const audit = new db.mongo.FailedLogin({username: req.body.username, code: info.code, headers: req.headers});
+            audit.save();
             common.publish("user.login_fail", {type: "userpass", headers: req.headers, message: info.message, username: req.body.username});
             return next(info);
         }
+
+        const error = common.checkUser(user, req);
+        if(error) return next(error);
         common.createClaim(user, function(err, claim) {
             if(err) return next(err);
             if(req.body.ttl) claim.exp = (Date.now() + req.body.ttl)/1000;
             var jwt = common.signJwt(claim);
             user.times.local_login = new Date();
+            user.reqHeaders = req.headers;
             user.markModified('times');
             user.save().then(function() {
                 common.publish("user.login."+user.sub, {type: "userpass", username: user.username, exp: claim.exp, headers: req.headers});
-                console.dir(user.toString());
                 res.json({message: "Login Success", jwt, sub: user.sub});
             });
         });

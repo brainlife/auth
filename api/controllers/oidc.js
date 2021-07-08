@@ -59,7 +59,7 @@ const oidc_strat = new OAuth2Strategy({
     logger.debug("oidc loading userinfo ..", accessToken, profile);
     request.get({url: config.oidc.userinfo_url, qs: {access_token: accessToken}, json: true},  function(err, _res, profile) {
         if(err) return cb(err); 
-        db.mongo.User.findOne({"ext.openids": {$regex: '^'+profile.cert_subject_dn}, active: true}).then(function(user) {
+        db.mongo.User.findOne({"ext.openids": {$regex: '^'+profile.cert_subject_dn}}).then(function(user) {
             cb(null, user, profile);
         });
     });
@@ -113,7 +113,7 @@ router.get('/callback', jwt({
                 res.cookie('messages', JSON.stringify(messages), {path: '/'});
                 res.redirect('/auth/#!/settings/account');
             } else {
-                db.mongo.User.findOne({sub: req.user.sub, active: true}).then(user=>{
+                db.mongo.User.findOne({sub: req.user.sub}).then(user=>{
                     if(!user) throw new Error("couldn't find user record with sub:"+req.user.sub);
                     var openids = user.ext.openids||[];
                     if(!~openids.indexOf(profile.cert_subject_dn)) openids.push(profile.cert_subject_dn);
@@ -136,18 +136,27 @@ router.get('/callback', jwt({
                 } else {
                     res.redirect('/auth/#!/signin?msg='+"Your InCommon account("+profile.cert_subject_dn+") is not yet registered. Please login using your username/password first, then associate your InCommon account inside the account settings.");
                 }
-            } else {
-                common.createClaim(user, function(err, claim) {
-                    if(err) return next(err);
-                    var jwt = common.signJwt(claim);
-                    //user.times.oidc_login = profile.sub; //TODO
-                    //user.markModified('times');
-                    user.save().then(function() {
-                        common.publish("user.login."+user.sub, {type: "oidc", username: user.username, exp: claim.exp, headers: req.headers});
-                        res.redirect('/auth/#!/success/'+jwt);
-                    });
+                return;
+            } 
+
+            const error = common.checkUser(user, req);
+            if(error) return next(error);
+            common.createClaim(user, function(err, claim) {
+                if(err) return next(err);
+                const jwt = common.signJwt(claim);
+
+                //we could have multiple openids so let's look for the idx
+                const idx = user.ext.openids.indexOf(profile.cert_subject_dn);
+                if(!user.times.oidc_login) user.times.oidc_login = [];
+                user.times.oidc_login[idx] = new Date();
+                user.markModified('times');
+
+                user.reqHeaders = req.headers;
+                user.save().then(function() {
+                    common.publish("user.login."+user.sub, {type: "oidc", username: user.username, exp: claim.exp, headers: req.headers});
+                    res.redirect('/auth/#!/success/'+jwt);
                 });
-            }            
+            });
         }
     })(req, res, next);
 });

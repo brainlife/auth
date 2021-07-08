@@ -38,15 +38,10 @@ router.post('/refresh', jwt({
     secret: config.auth.public_key,
     algorithms: [config.auth.sign_opt.algorithm],
 }), function(req, res, next) {
-    db.mongo.User.findOne({sub: req.user.sub, active: true}).then(user=>{
+    db.mongo.User.findOne({sub: req.user.sub}).then(user=>{
         if(!user) return next("Couldn't find any user with sub:"+req.user.sub);
-
-        /*
-        //intersect with the jwt token's scopes (token might contain already restricted set of tokens)
-        //this means that, user need to re-login to gain scopes that are recently granted
-        user.scopes = common.intersect_scopes(req.user.scopes, user.scopes);
-        */
-       
+        const error = common.checkUser(user, req);
+        if(error) return next(error);
         common.createClaim(user, function(err, claim) {
             if(err) return next(err);
             
@@ -175,7 +170,7 @@ router.get('/user/groups/:id', jwt({
     secret: config.auth.public_key,
     algorithms: [config.auth.sign_opt.algorithm],
 }), common.scope("admin"), function(req, res, next) {
-    db.mongo.User.findOne({sub: req.params.id, active: true}).then(async user=>{
+    db.mongo.User.findOne({sub: req.params.id}).then(async user=>{
         if(!user) return res.status(404).end();
         try {
             let groups = await db.mongo.Group.find({$or: [{admins: user}, {members: user}]}, {id: 1});
@@ -217,8 +212,10 @@ router.get('/jwt/:id', jwt({
     secret: config.auth.public_key,
     algorithms: [config.auth.sign_opt.algorithm],
 }), common.scope("admin"), function(req, res, next) {
-    db.mongo.User.findOne({sub: req.params.id, active: true}).then(user=>{
+    db.mongo.User.findOne({sub: req.params.id}).then(user=>{
         if(!user) return next("Couldn't find any user with sub:"+req.params.id);
+        const error = common.checkUser(user, req);
+        if(error) return next(error);
         common.createClaim(user, function(err, claim) {
             if(err) return next(err);
             if(req.query.claim) {

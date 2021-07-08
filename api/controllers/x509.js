@@ -15,7 +15,7 @@ var common = require('../common');
 var db = require('../models');
 
 function finduserByDN(dn, done) {
-    db.mongo.User.findOne({'ext.x509dns': dn, active: true}).then(function(user) {
+    db.mongo.User.findOne({'ext.x509dns': dn}).then(function(user) {
         done(null, user);
     });
 }
@@ -31,13 +31,16 @@ router.get('/signin', function(req, res, next) {
     finduserByDN(dn, function(err, user) {
         if(err) return next(err); 
         if(!user) return next("Your DN("+dn+") is not yet registered. Please Signup/Signin with your username/password first, then associate your x509 certificate under your account settings.");
-        
-        //all good. issue token
-        logger.debug("x509 authentication successful with "+dn);
+
+        const error = common.checkUser(user, req);
+        if(error) return next(error);
         common.createClaim(user, function(err, claim) {
             if(err) return next(err);
-            //user.time.x509_login:'+dn); //array time are todo
-            //user.markModified('times');
+            const idx = user.ext.x509dns.indexOf(dn);
+            if(!user.times.x509_login) user.times.x509_login = [];
+            user.times.x509_login[idx] = new Date();
+            user.markModified('times');
+            user.reqHeaders = req.headers;
             user.save().then(function() {
                 common.publish("user.login."+user.sub, {type: "x509", username: user.username, exp: claim.exp, headers: req.headers});
                 let jwt = common.signJwt(claim);
