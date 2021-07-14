@@ -13,7 +13,6 @@ const logger = winston.createLogger(config.logger.winston);
 const common = require('../common');
 const db = require('../models');
 
-
 //fields that are safe to include in public profile api
 let safe_fields = ["sub", "fullname", "email", "username", "active", "profile.public", "times.register"];
 
@@ -36,7 +35,7 @@ router.patch('/:sub?', jwt({
 }), function(req, res, next) {
     let sub = req.user.sub;
     if(common.has_scope(req, "admin") && req.params.sub) sub = req.params.sub;
-    let select = [...safe_fields, "profile"];
+    let select = [...safe_fields, "profile.private"];
     db.mongo.User.findOne({sub, active: true}).select(select).then(function(user) {
         if(!user) return next("no such active user");
         if(req.body.fullname) user.fullname = req.body.fullname;
