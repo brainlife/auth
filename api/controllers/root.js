@@ -271,7 +271,8 @@ router.get('/groups', jwt({
     if(common.has_scope(req, "admin")) {
         //return all groups for admin
         groups = await db.mongo.Group.find(find)
-            .lean().populate('admins members', 'email fullname username');
+            .lean()
+            .populate('admins members', 'email fullname username sub');
         groups.forEach(group=>{
             group.canedit = true;
         });
@@ -280,10 +281,10 @@ router.get('/groups', jwt({
         //normal user only gets to see groups that they are admin/members
         let admin_groups = await db.mongo.Group.find({admins: user._id})
             .lean()
-            .populate('admins members', 'email fullname username');
+            .populate('admins members', 'email fullname username sub');
         let member_only_groups = await db.mongo.Group.find({admins: {$ne: user._id}, members: user._id})
             .lean()
-            .populate('admins members', 'email fullname username');
+            .populate('admins members', 'email fullname username sub');
         admin_groups.forEach(group=>{
             group.canedit = true;
         });
@@ -357,7 +358,7 @@ router.get('/group/:id', jwt({
     secret: config.auth.public_key,
     algorithms: [config.auth.sign_opt.algorithm],
 }), function(req, res) {
-    db.mongo.Group.findOne({id: req.params.id}).lean().populate('admins members', 'email fullname username')
+    db.mongo.Group.findOne({id: req.params.id}).lean().populate('admins members', 'email fullname username sub')
     .then(function(group) {
         res.json(group);
     });
