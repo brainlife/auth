@@ -11,9 +11,13 @@ if(config.mongoose_debug) mongoose.set("debug", true);
 const models = {};
 
 models.connection = mongoose.connect(config.mongodb, {
+    readPreference: 'nearest',
+    readConcern: 'majority', //prevents read to grab stale data from secondary
+    writeConcern: {
+	    w: 'majority', //isn't this the default?
+    },
     useNewUrlParser: true,
     useUnifiedTopology: true,
-    server: { auto_reconnect: true },
 });
 
 models.User = mongoose.model('User', { 

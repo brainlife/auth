@@ -52,7 +52,7 @@ router.get('/callback', jwt({
                     message: "Your facebook account is already associated to another account"
                 }];
                 res.cookie('messages', JSON.stringify(messages), {path: '/'});
-                return res.redirect('/auth/#!/settings/account');
+                return res.redirect(config.auth.settingsCallback);
             }
             db.User.findOne({sub: req.user.sub}).then(function(user) {
                 if(!user) throw new Error("couldn't find user record with sub:"+req.user.sub);
@@ -61,7 +61,7 @@ router.get('/callback', jwt({
                     console.log("saved");
                     console.dir(user);
                     console.dir(info);
-                    res.redirect('/auth/#!/settings/account');
+                    res.redirect(config.auth.settingsCallback);
                 });
             });
         } else {

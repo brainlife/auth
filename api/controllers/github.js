@@ -54,7 +54,7 @@ router.get('/callback', jwt({
                     message: "Your github account is already associated to another account. Please signoff / login with your github account."
                 }];
                 res.cookie('messages', JSON.stringify(messages), {path: '/'});
-                return res.redirect('/auth/#!/settings/account');
+                return res.redirect(config.auth.settingsCallback);
             }
             db.mongo.User.findOne({sub: req.user.sub}).then(function(user) {
                 if(!user) throw new Error("couldn't find user record with sub:"+req.user.sub);
@@ -65,7 +65,7 @@ router.get('/callback', jwt({
                         message: "Successfully associated your github account"
                     }];
                     res.cookie('messages', JSON.stringify(messages), {path: '/'});
-                    res.redirect('/auth/#!/settings/account');
+                    res.redirect(config.auth.settingsCallback);
                 });
             });
         } else {

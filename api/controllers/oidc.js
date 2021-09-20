@@ -111,7 +111,7 @@ router.get('/callback', jwt({
                     message: "There is another account with the same OIDC ID registered. Please contact support."
                 }];
                 res.cookie('messages', JSON.stringify(messages), {path: '/'});
-                res.redirect('/auth/#!/settings/account');
+                res.redirect(config.auth.settingsCallback);
             } else {
                 db.mongo.User.findOne({sub: req.user.sub}).then(user=>{
                     if(!user) throw new Error("couldn't find user record with sub:"+req.user.sub);
@@ -124,7 +124,7 @@ router.get('/callback', jwt({
                             message: "Successfully associated your OIDC account"
                         }];
                         res.cookie('messages', JSON.stringify(messages), {path: '/'});
-                        res.redirect('/auth/#!/settings/account');
+                        res.redirect(config.auth.settingsCallback);
                     });
                 });
             }

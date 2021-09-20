@@ -81,13 +81,13 @@ router.get('/callback', jwt({
                     message: "Your Google account is already associated to another account. Please signoff / login with your google account.",
                 }];
                 res.cookie('messages', JSON.stringify(messages), {path: '/'});
-                return res.redirect('/auth/#!/settings/account');
+                return res.redirect(config.auth.settingsCallback);
             }
             db.mongo.User.findOne({sub: req.user.sub}).then(function(user) {
                 if(!user) throw new Error("couldn't find user record with sub:"+req.user.sub);
                 user.ext.googleid = profile.id;
                 user.save().then(function() {
-                    res.redirect('/auth/#!/settings/account');
+                    res.redirect(config.auth.settingsCallback);
                 });
             });
         } else {
