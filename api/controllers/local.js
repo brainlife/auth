@@ -23,6 +23,9 @@ passport.use(new passport_localst(
                 if(!user.password_hash) {
                     return done(null, false, { message: 'Password login is not enabled for this account (please try 3rd party authentication)' });
                 }
+                if(common.LoginAttemptLock(user)) {
+                    done(null, false, { message: 'Account Locked ! try after 24 hours' });
+                }
                 if(!common.check_password(user, password)) {
                     //delay returning to defend against password sweeping attack
                     setTimeout(function() {
@@ -53,6 +56,12 @@ router.post('/auth', function(req, res, next) {
         if (err) return next(err);
         if (!user) {
             common.publish("user.login_fail", {type: "userpass", headers: req.headers, message: info.message, username: req.body.username});
+            db.mongo.User.findOneAndUpdate({"username" : req.body.username}, {
+                $inc: { "times.failedCount" : 1 },
+                "times.lastFailed" : new Date()
+            }).then(updatedDoc=>{
+                if(!updatedDoc) return next(info);
+            });
             return next(info);
         }
         common.createClaim(user, function(err, claim) {
@@ -64,6 +73,7 @@ router.post('/auth', function(req, res, next) {
             user.save().then(function() {
                 common.publish("user.login."+user.sub, {type: "userpass", username: user.username, exp: claim.exp, headers: req.headers});
                 console.dir(user.toString());
+                common.resetLoginAttempt(user);
                 res.json({message: "Login Success", jwt, sub: user.sub});
             });
         });
