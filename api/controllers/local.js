@@ -14,6 +14,7 @@ const db = require('../models');
 passport.use(new passport_localst(
     function(username_or_email, password, done) {
         db.mongo.User.findOne({$or: [{"username": username_or_email}, {"email": username_or_email}]}).then(user=>{
+            let oneDay = new Date().getTime() + 60 * 60 * 1000;
             if (!user) {
                 setTimeout(function() {
                     done(null, false, { message: 'Incorrect email or username' });
@@ -23,8 +24,8 @@ passport.use(new passport_localst(
                 if(!user.password_hash) {
                     return done(null, false, { message: 'Password login is not enabled for this account (please try 3rd party authentication)' });
                 }
-                if(common.LoginAttemptLock(user)) {
-                    done(null, false, { message: 'Account Locked ! try after 24 hours' });
+                if(user.failedCount >= 3 && oneDay > user.times.lastFailed) {
+                    done(null, false, { message: 'Account Locked ! Try after an hour' });
                 }
                 if(!common.check_password(user, password)) {
                     //delay returning to defend against password sweeping attack
@@ -33,6 +34,7 @@ passport.use(new passport_localst(
                     }, 2000);
                     return;
                 }
+                user.failedCount = 0;
                 done(null, user);
             }
         });
@@ -57,7 +59,7 @@ router.post('/auth', function(req, res, next) {
         if (!user) {
             common.publish("user.login_fail", {type: "userpass", headers: req.headers, message: info.message, username: req.body.username});
             db.mongo.User.findOneAndUpdate({"username" : req.body.username}, {
-                $inc: { "times.failedCount" : 1 },
+                $inc: { "failedCount" : 1 },
                 "times.lastFailed" : new Date()
             }).then(updatedDoc=>{
                 if(!updatedDoc) return next(info);
@@ -71,9 +73,7 @@ router.post('/auth', function(req, res, next) {
             user.times.local_login = new Date();
             user.markModified('times');
             user.save().then(function() {
-                common.publish("user.login."+user.sub, {type: "userpass", username: user.username, exp: claim.exp, headers: req.headers});
-                console.dir(user.toString());
-                common.resetLoginAttempt(user);
+                common.publish("user.login."+user.sub, {type: "userpass", username: user.username, exp: claim.exp, headers: req.headers});                
                 res.json({message: "Login Success", jwt, sub: user.sub});
             });
         });

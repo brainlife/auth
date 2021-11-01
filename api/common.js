@@ -44,25 +44,6 @@ exports.publish = (key, message, cb)=>{
     if(auth_ex) auth_ex.publish(key, message, {}, cb);
 }
 
-exports.LoginAttemptLock = function(user) {
-    let oneDay = new Date().getTime() + (1 * 24 * 60 * 60 * 1000);
-    if(user.times.failedCount >= 3 && oneDay > user.times.lastFailed) {
-        return true;
-    }
-    if(user.times.failedCount >= 3 && oneDay < user.times.lastFailed ) {
-        resetLoginAttempt(user);
-        return false;
-    }
-    return false;
-}
-
-exports.resetLoginAttempt = function(user) {
-    db.mongo.User.findOneAndUpdate({$or: [{"username": user.username}, {"email": user.username}]}, { "times.failedCount" : 0 }).then(document=>{
-        if(!document) return;       
-    });
-}
-
-
 exports.createClaim = async function(user, cb) {
     var err = exports.check_user(user);
     if(err) return cb(err);
