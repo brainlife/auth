@@ -14,7 +14,7 @@ const db = require('../models');
 passport.use(new passport_localst(
     function(username_or_email, password, done) {
         db.mongo.User.findOne({$or: [{"username": username_or_email}, {"email": username_or_email}]}).then(user=>{
-            let oneDay = new Date().getTime() + 60 * 60 * 1000;
+            const hourlater = new Date(new Date().getTime() + 3600*1000)
             if (!user) {
                 setTimeout(function() {
                     done(null, false, { message: 'Incorrect email or username', code: 'bad_username' });
@@ -27,7 +27,7 @@ passport.use(new passport_localst(
                         code: 'no_password' 
                     });
                 }
-                if(user.failedCount >= 3 && oneDay > user.times.lastFailed) {
+                if(user.failedCount >= 3 && hourlater > user.times.lastFailed) {
                     done(null, false, { message: 'Account Locked ! Try after an hour' });
                 }
                 if(!common.check_password(user, password)) {
