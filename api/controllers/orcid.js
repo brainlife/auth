@@ -25,7 +25,7 @@ const orcid_strat = new OAuth2Strategy({
     scope: "/authenticate",
 }, function(accessToken, refreshToken, profile, _needed, cb) {
     logger.debug("orcid loading userinfo ..", accessToken, refreshToken, profile);
-    db.mongo.User.findOne({'ext.orcid': profile.orcid, active: true}).then(function(user) {
+    db.mongo.User.findOne({'ext.orcid': profile.orcid}).then(function(user) {
         cb(null, user, profile);
     });
 });
@@ -52,9 +52,12 @@ function find_profile(profiles, sub) {
 }
 
 //this handles both normal callback from incommon and account association (if cookies.associate_jwt is set)
-router.get('/callback', 
-jwt({ secret: config.auth.public_key, credentialsRequired: false, getToken: req=>req.cookies.associate_jwt }),
-function(req, res, next) {
+router.get('/callback', jwt({ 
+    secret: config.auth.public_key, 
+    algorithms: [config.auth.sign_opt.algorithm],
+    credentialsRequired: false, 
+    getToken: req=>req.cookies.associate_jwt 
+}), function(req, res, next) {
     passport.authenticate(orcid_strat.name, function(err, user, profile) {
         logger.debug("orcid callback", profile);
         if(err) {
@@ -73,9 +76,9 @@ function(req, res, next) {
                     message: "There is another account with the same ORCID registered. Please contact support."
                 }];
                 res.cookie('messages', JSON.stringify(messages), {path: '/'});
-                res.redirect('/auth/#!/settings/account');
+                res.redirect(config.auth.settingsCallback);
             } else {
-                db.mongo.User.findOne({sub: req.user.sub, active: true}).then(function(user) {
+                db.mongo.User.findOne({sub: req.user.sub}).then(function(user) {
                     if(!user) throw new Error("couldn't find user record with sub:"+req.user.sub);
                     user.ext.orcid = profile.orcid;
                     user.save().then(function() {
@@ -84,7 +87,7 @@ function(req, res, next) {
                             message: "Successfully associated your OIDC account"
                         }];
                         res.cookie('messages', JSON.stringify(messages), {path: '/'});
-                        res.redirect('/auth/#!/settings/account');
+                        res.redirect(config.auth.settingsCallback);
                     });
                 });
             }
@@ -96,18 +99,22 @@ function(req, res, next) {
                 } else {
                     res.redirect('/auth/#!/signin?msg='+"Your InCommon account("+profile.sub+") is not yet registered. Please login using your username/password first, then associate your InCommon account inside the account settings.");
                 }
-            } else {
-                common.createClaim(user, function(err, claim) {
-                    if(err) return next(err);
-                    var jwt = common.signJwt(claim);
-                    user.times.orcid_login = new Date();
-                    user.markModified('times');
-                    user.save().then(function() {
-                        common.publish("user.login."+user.sub, {type: "orcid", username: user.username, exp: claim.exp, headers: req.headers});
-                        res.redirect('/auth/#!/success/'+jwt);
-                    });
+                return;
+            } 
+
+            const error = common.checkUser(user, req);
+            if(error) return next(error);
+            common.createClaim(user, function(err, claim) {
+                if(err) return next(err);
+                var jwt = common.signJwt(claim);
+                user.times.orcid_login = new Date();
+                user.markModified('times');
+                user.reqHeaders = req.headers;
+                user.save().then(function() {
+                    common.publish("user.login."+user.sub, {type: "orcid", username: user.username, exp: claim.exp, headers: req.headers});
+                    res.redirect('/auth/#!/success/'+jwt);
                 });
-            }            
+            });
         }
     })(req, res, next);
 });
@@ -143,8 +150,11 @@ async function register_newuser(profile, res, next) {
 }
 
 //start orcid account association
-router.get('/associate/:jwt', jwt({secret: config.auth.public_key, getToken: req=>req.params.jwt}), 
-function(req, res, next) {
+router.get('/associate/:jwt', jwt({
+    secret: config.auth.public_key, 
+    algorithms: [config.auth.sign_opt.algorithm],
+    getToken: req=>req.params.jwt
+}), function(req, res, next) {
     res.cookie("associate_jwt", req.params.jwt, {
         //it's really overkill but .. why not? (maybe helps to hide from log?)
         httpOnly: true,
@@ -155,7 +165,10 @@ function(req, res, next) {
 });
 
 //should I refactor?
-router.put('/disconnect', jwt({secret: config.auth.public_key}), function(req, res, next) {
+router.put('/disconnect', jwt({
+    secret: config.auth.public_key,
+    algorithms: [config.auth.sign_opt.algorithm],
+}), function(req, res, next) {
     var sub = req.body.sub;
     db.mongo.User.findOne({sub: req.user.sub}).then(user=>{
         if(!user) res.status(401).end();

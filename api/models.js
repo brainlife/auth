@@ -1,15 +1,24 @@
-let config    = require('../config');
+
+const mongoose = require('mongoose');
+const config = require('./config');
+
+if(config.mongoose_debug) mongoose.set("debug", true);
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 //
 // mongoose
 //
-let models = {};
+const models = {};
 
-const mongoose = require('mongoose');
-if(config.mongoose_debug) mongoose.set("debug", true);
-
-models.connection = mongoose.connect(config.mongodb, {useNewUrlParser: true});
+models.connection = mongoose.connect(config.mongodb, {
+    readPreference: 'nearest',
+    readConcern: 'majority', //prevents read to grab stale data from secondary
+    writeConcern: {
+	    w: 'majority', //isn't this the default?
+    },
+    useNewUrlParser: true,
+    useUnifiedTopology: true,
+});
 
 models.User = mongoose.model('User', { 
     sub: {type: Number, unique: true }, //numeric user id
@@ -72,9 +81,12 @@ models.User = mongoose.model('User', {
     },
     */
 
+    //req.headers from last successful login (for auditing purpose)
+    reqHeaders: mongoose.Schema.Types.Mixed,
+
     scopes: mongoose.Schema.Types.Mixed,
     
-    //prevent user from loggin in (usually temporarily)
+    //prevent user from issuing jwt (usually temporarily)
     active: { type: Boolean, default: true },
 
     //create_date: {type: Date, default: new Date() }, //same as "times.register"
@@ -90,6 +102,24 @@ models.Group = mongoose.model('Group', {
     members: [ {type: mongoose.Schema.Types.ObjectId, ref: 'User', unique: false} ],
 
     active: { type: Boolean, default: true },
+
+    create_date: {type: Date, default: new Date() },
+});
+
+//record recent login activity.. (TODO will be used to prevent password guessing attack)
+models.FailedLogin = mongoose.model('FailedLogin', { 
+    username: String, //username or email used to attempt login (might not set if username is not used)
+    user_id: {type: mongoose.Schema.Types.ObjectId, ref: 'User'}, //might not set
+
+    headers: mongoose.Schema.Types.Mixed, //express req object containing ip/headers, etc.
+    
+    //reason for the failurer 
+    //* bad_username 
+    //* bad_password
+    //* no_password (password_has is not set for this user - 3d party only?)
+    //* un_confirmed (email is not yset confirmed)
+    //* inactive (user account is deactivated)
+    code: String, 
 
     create_date: {type: Date, default: new Date() },
 });

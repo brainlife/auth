@@ -3,27 +3,24 @@ const fs = require('fs');
 const jwt = require('jsonwebtoken');
 const nodemailer = require('nodemailer');
 const uuid = require('node-uuid');
-const winston = require('winston');
 const amqp = require('amqp');
 const os = require('os');
 const bcrypt = require('bcryptjs');
 const zxcvbn = require('zxcvbn');
 
 const config = require('./config');
-const logger = winston.createLogger(config.logger.winston);
 const db = require('./models');
 
 let amqp_conn;
 function get_amqp_connection(cb) {
     if(amqp_conn) return cb(null, amqp_conn); //already connected
-    logger.debug("connecting to amqp");
     amqp_conn = amqp.createConnection(config.event.amqp, {reconnectBackoffTime: 1000*10});
     amqp_conn.once("ready", ()=>{
-        logger.debug("connected to amqp");
+        console.debug("connected to amqp");
         cb(null, amqp_conn);
     });
     amqp_conn.on("error", err=>{
-        logger.error(err);
+        console.error(err);
     });
 }
 
@@ -31,7 +28,7 @@ let auth_ex;
 if(config.event) {
     get_amqp_connection((err, conn)=>{
         if(err) throw err;
-        logger.debug("creating auth amqp exchange");
+        console.debug("creating auth amqp exchange");
         conn.exchange("auth", {autoDelete: false, durable: true, type: 'topic', confirm: true}, (ex)=>{
             auth_ex = ex;
         });
@@ -45,13 +42,13 @@ exports.publish = (key, message, cb)=>{
 }
 
 exports.createClaim = async function(user, cb) {
+    /* moving this out of this function (out of scope..)
     var err = exports.check_user(user);
     if(err) return cb(err);
+    */
     
     let groups = await db.mongo.Group.find({active: true, $or: [{members: user._id}, {admins: user._id}]});
     let gids = groups.map(group=>group.id);
-
-    //gids = [1, ...gids]; //inject the global id (TODO make this configurable)
 
     /* http://websec.io/2014/08/04/Securing-Requests-with-JWT.html
     iss: The issuer of the token
@@ -64,9 +61,9 @@ exports.createClaim = async function(user, cb) {
     */
 
     cb(null, {
+        //"iat": (Date.now())/1000, //this gets set automatically
         iss: config.auth.iss,
         exp: (Date.now() + config.auth.ttl)/1000,
-        //"iat": (Date.now())/1000, //this gets set automatically
         scopes: user.scopes,
         
         //can't use user.username which might not be set
@@ -107,7 +104,7 @@ function do_send_email_confirmation(url, user, cb) {
         //html:  ejs.render(html_template, params),
     }, function(err, info) {
         if(err) return cb(err);
-        if(info && info.response) logger.info("notification sent: "+info.response);
+        if(info && info.response) console.info("notification sent: "+info.response);
         cb();
     });
 }
@@ -134,7 +131,7 @@ exports.send_resetemail = function(url, user, cb) {
         text: "Hello!\n\nIf you have requested to reset your password, please visit "+fullurl+" to reset your password (using the same browser you've used to send the request",
     }, function(err, info) {
         if(err) return cb(err);
-        if(info && info.response) logger.info("notification sent: "+info.response);
+        if(info && info.response) console.info("notification sent: "+info.response);
         cb();
     });
 }
@@ -195,13 +192,20 @@ exports.check_password = function(user, password) {
     return bcrypt.compareSync(password, user.password_hash);
 }
 
-//inline it?
-exports.check_user = function(user) {
-    if(!user.active) return {message: "Account is disabled. Please contact the administrator.", code: "inactive"};
-    if(config.local && config.local.email_confirmation && user.email_confirmed !== true) {
-        return {message: "Email is not confirmed yet", path: "/confirm_email/"+user.sub};
+exports.checkUser = function(user, req) {
+    let error = null;
+    if(!user.active) 
+        error = {message: "Account is disabled. Please contact the administrator.", code: "inactive"};
+    if(config.local && config.local.email_confirmation && user.email_confirmed !== true) 
+        error = {message: "Email is not confirmed yet", path: "/confirm_email/"+user.sub, code: "un_confirmed"};
+
+    //record to failedlogin collection
+    if(error) {
+        const audit = new db.mongo.FailedLogin({user_id: user.id, code: error.code, headers: req.headers});
+        audit.save();
     }
-    return null;
+
+    return error;
 }
 
 exports.get_nextsub = async function() {

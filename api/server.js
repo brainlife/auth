@@ -37,13 +37,16 @@ app.use('/', require('./controllers'));
 app.use(expressWinston.errorLogger(config.logger.winston));
 app.use(function(err, req, res, next) {
     if(typeof err == "string") err = {message: err};
+
     if(!err.name || err.name != "UnauthorizedError") {
-        logger.error(err);
+        console.error(err);
     }
 
     if(err.stack) err.stack = "hidden"; //don't sent call stack to UI - for security reason
     res.status(err.status || 500);
     res.json(err);
+
+    console.error(err);
 });
 
 process.on('uncaughtException', function (err) {

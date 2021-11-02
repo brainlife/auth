@@ -3,16 +3,13 @@
 const express = require('express');
 const router = express.Router();
 const passport = require('passport');
-const winston = require('winston');
 const jwt = require('express-jwt');
 const async = require('async');
 
 //mine
 const config = require('../config');
-const logger = winston.createLogger(config.logger.winston);
 const common = require('../common');
 const db = require('../models');
-
 
 router.use('/profile', require('./profile'));
 
@@ -29,20 +26,35 @@ router.use('/profile', require('./profile'));
  * @apiGroup User
  *
  * @apiHeader {String} authorization    A valid JWT token (Bearer:)
- * @apiParam {Object} scopes    Desired scopes to intersect (you can remove certain scopes)
+ * @apiParam {Object} [scopes]    Desired scopes to intersect (you can remove certain scopes)
+ * @apiParam {Number[]} [gids]    Desired gids to intersect (you can remove certain gids)
+ * @apiParam {Boolean} [clearProfile]
+ *                              Set this to true if you don't need profile info 
  * @apiParam {String} [ttl]     time-to-live in milliseconds (if not set, it will be defaulted to server default)
  *
  * @apiSuccess {Object} jwt New JWT token
  */
-router.post('/refresh', jwt({secret: config.auth.public_key}), function(req, res, next) {
-    db.mongo.User.findOne({sub: req.user.sub, active: true}).then(user=>{
+router.post('/refresh', jwt({
+    secret: config.auth.public_key,
+    algorithms: [config.auth.sign_opt.algorithm],
+}), function(req, res, next) {
+    db.mongo.User.findOne({sub: req.user.sub}).then(user=>{
         if(!user) return next("Couldn't find any user with sub:"+req.user.sub);
-        
-        //intersect requested scopes
-        if(req.body.scopes) user.scopes = common.intersect_scopes(user.scopes, req.body.scopes);
+        const error = common.checkUser(user, req);
+        if(error) return next(error);
         common.createClaim(user, function(err, claim) {
             if(err) return next(err);
+            
+            //intersect scopes with requested scopes (restriction)
+            if(req.body.scopes) claim.scopes = common.intersect_scopes(claim.scopes, req.body.scopes);
+
+            //intersect gids with requested gids
+            if(req.body.gids) claim.gids = claim.gids.filter(id=>req.body.gids.includes(id));
+
+            if(req.body.clearProfile) delete claim.profile;
+
             if(req.body.ttl) claim.exp = (Date.now() + req.body.ttl)/1000;
+
             var jwt = common.signJwt(claim);
             common.publish("user.refresh."+user.sub, {username: user.username, exp: claim.exp});
             return res.json({jwt});
@@ -106,7 +118,10 @@ router.get('/health', function(req, res) {
  *         "iucas": "hayashis"
  *     }
  */
-router.get('/me', jwt({secret: config.auth.public_key}), function(req, res, next) {
+router.get('/me', jwt({
+    secret: config.auth.public_key,
+    algorithms: [config.auth.sign_opt.algorithm],
+}), function(req, res, next) {
     db.mongo.User.findOne({sub: req.user.sub}).then(function(user) {
         if(!user) return res.status(404).end();
         if(user.password_hash) user.password_hash = true;
@@ -128,7 +143,10 @@ router.get('/me', jwt({secret: config.auth.public_key}), function(req, res, next
  *     HTTP/1.1 200 OK
  *     [ 1,2,3 ] 
  */
-router.get('/users', jwt({secret: config.auth.public_key}), common.scope("admin"), function(req, res, next) {
+router.get('/users', jwt({
+    secret: config.auth.public_key,
+    algorithms: [config.auth.sign_opt.algorithm],
+}), common.scope("admin"), function(req, res, next) {
     var where = {};
     if(req.query.where) where = JSON.parse(req.query.find||req.query.where);
     db.mongo.User.find(where).select('sub profile username email_confirmed fullname email ext times scopes active').lean().then(users=>{
@@ -148,8 +166,11 @@ router.get('/users', jwt({secret: config.auth.public_key}), common.scope("admin"
  *     HTTP/1.1 200 OK
  *     [ 1,2,3 ] 
  */
-router.get('/user/groups/:id', jwt({secret: config.auth.public_key}), common.scope("admin"), function(req, res, next) {
-    db.mongo.User.findOne({sub: req.params.id, active: true}).then(async user=>{
+router.get('/user/groups/:id', jwt({
+    secret: config.auth.public_key,
+    algorithms: [config.auth.sign_opt.algorithm],
+}), common.scope("admin"), function(req, res, next) {
+    db.mongo.User.findOne({sub: req.params.id}).then(async user=>{
         if(!user) return res.status(404).end();
         try {
             let groups = await db.mongo.Group.find({$or: [{admins: user}, {members: user}]}, {id: 1});
@@ -164,7 +185,10 @@ router.get('/user/groups/:id', jwt({secret: config.auth.public_key}), common.sco
 //return detail from just one user - admin only 
 //users: (used by event service to query for user's email)
 //users: adminuser ui to pull user info
-router.get('/user/:id', jwt({secret: config.auth.public_key}), common.scope("admin"), (req, res, next)=>{
+router.get('/user/:id', jwt({
+    secret: config.auth.public_key,
+    algorithms: [config.auth.sign_opt.algorithm],
+}), common.scope("admin"), (req, res, next)=>{
     db.mongo.User.findOne({sub: req.params.id}).select('-password_hash -password_reset_token').then(user=>{
         res.json(user);
     });
@@ -184,24 +208,30 @@ router.get('/user/:id', jwt({secret: config.auth.public_key}), common.scope("adm
  *     HTTP/1.1 200 OK
  *     [ 1,2,3 ] 
  */
-router.get('/jwt/:id', jwt({secret: config.auth.public_key}), common.scope("admin"), function(req, res, next) {
-    db.mongo.User.findOne({sub: req.params.id, active: true}).then(user=>{
+router.get('/jwt/:id', jwt({
+    secret: config.auth.public_key,
+    algorithms: [config.auth.sign_opt.algorithm],
+}), common.scope("admin"), function(req, res, next) {
+    db.mongo.User.findOne({sub: req.params.id}).then(user=>{
         if(!user) return next("Couldn't find any user with sub:"+req.params.id);
-		common.createClaim(user, function(err, claim) {
-			if(err) return next(err);
+        const error = common.checkUser(user, req);
+        if(error) return next(error);
+        common.createClaim(user, function(err, claim) {
+            if(err) return next(err);
             if(req.query.claim) {
                 let override = JSON.parse(req.query.claim);
-                //logger.debug('claim override requested');
-                //logger.debug(override);
                 Object.assign(claim, override);
             }
-			res.json({jwt: common.signJwt(claim)});
-		});
+            res.json({jwt: common.signJwt(claim)});
+        });
     });
 });
 
 //update user info (admin only)
-router.put('/user/:id', jwt({secret: config.auth.public_key}), common.scope("admin"), function(req, res, next) {
+router.put('/user/:id', jwt({
+    secret: config.auth.public_key,
+    algorithms: [config.auth.sign_opt.algorithm],
+}), common.scope("admin"), function(req, res, next) {
     db.mongo.User.findOne({sub: req.params.id}).then(user=>{
         if(!user) return next("can't find user d:"+req.params.id);
         user.updateOne({$set: req.body}).then(()=>{
@@ -227,7 +257,10 @@ router.put('/user/:id', jwt({secret: config.auth.public_key}), common.scope("adm
  *     HTTP/1.1 200 OK
  *     [ 1,2,3 ] 
  */
-router.get('/groups', jwt({secret: config.auth.public_key}), async (req, res, next)=>{
+router.get('/groups', jwt({
+    secret: config.auth.public_key,
+    algorithms: [config.auth.sign_opt.algorithm],
+}), async (req, res, next)=>{
     var find = {};
     if(req.query.find) find = JSON.parse(req.query.find);
 
@@ -238,7 +271,8 @@ router.get('/groups', jwt({secret: config.auth.public_key}), async (req, res, ne
     if(common.has_scope(req, "admin")) {
         //return all groups for admin
         groups = await db.mongo.Group.find(find)
-            .lean().populate('admins members', 'email fullname username sub');
+            .lean()
+            .populate('admins members', 'email fullname username sub');
         groups.forEach(group=>{
             group.canedit = true;
         });
@@ -247,10 +281,10 @@ router.get('/groups', jwt({secret: config.auth.public_key}), async (req, res, ne
         //normal user only gets to see groups that they are admin/members
         let admin_groups = await db.mongo.Group.find({admins: user._id})
             .lean()
-            .populate('admins members', 'email fullname username');
+            .populate('admins members', 'email fullname username sub');
         let member_only_groups = await db.mongo.Group.find({admins: {$ne: user._id}, members: user._id})
             .lean()
-            .populate('admins members', 'email fullname username');
+            .populate('admins members', 'email fullname username sub');
         admin_groups.forEach(group=>{
             group.canedit = true;
         });
@@ -261,8 +295,10 @@ router.get('/groups', jwt({secret: config.auth.public_key}), async (req, res, ne
 
 //update group (super admin, or admin of the group can update)
 //admin/members should be a list of user subs (not _id)
-router.put('/group/:id', jwt({secret: config.auth.public_key}), function(req, res, next) {
-    logger.debug("updating group", req.params.id);
+router.put('/group/:id', jwt({
+    secret: config.auth.public_key,
+    algorithms: [config.auth.sign_opt.algorithm],
+}), function(req, res, next) {
     db.mongo.Group.findOne({id: req.params.id}).populate('admins').then(async group=>{
         if (!group) return next("can't find group id:"+req.params.id);
         
@@ -270,18 +306,16 @@ router.put('/group/:id', jwt({secret: config.auth.public_key}), function(req, re
         let isadmin = group.admins.find(contact=>contact.sub == req.user.sub);
         if(!isadmin && !common.has_scope(req, "admin")) return res.status(401).send("you can't update this group");
 
-        //logger.debug("user can update this group.. updating");
-
         //convert list of subs to list of users
         req.body.admins = await db.mongo.User.find({sub: {$in: req.body.admins}});
         req.body.members = await db.mongo.User.find({sub: {$in: req.body.members}});
 
         group.updateOne({$set: req.body}).then(()=>{
             common.publish("group.update."+group.id, req.body);
-            logger.debug("all done");
+            console.debug("all done");
             res.json({message: "Group updated successfully"});
         });
-    });
+    }).catch(next);
 });
 
 let g_next_gid = 1;
@@ -293,7 +327,10 @@ db.mongo.Group.findOne({}).sort({_id:-1}).then(last_record=>{
 
 //create new group (any user can create group?)
 //admin/members should be a list of user subs (not _id)
-router.post('/group', jwt({secret: config.auth.public_key}), async (req, res, next)=>{
+router.post('/group', jwt({
+    secret: config.auth.public_key,
+    algorithms: [config.auth.sign_opt.algorithm],
+}), async (req, res, next)=>{
 
     //TODO - there is concurrency issue with finding max gid v.s. using it for next one
     //another user could interupt between above and below code..
@@ -317,11 +354,17 @@ router.post('/group', jwt({secret: config.auth.public_key}), async (req, res, ne
 
 //return detail from just one group (open to all users)
 //DEPRECATED by with /groups.
-router.get('/group/:id', jwt({secret: config.auth.public_key}), function(req, res) {
-    db.mongo.Group.findOne({id: req.params.id}).lean().populate('admins members', 'email fullname username')
+router.get('/group/:id', jwt({
+    secret: config.auth.public_key,
+    algorithms: [config.auth.sign_opt.algorithm],
+}), function(req, res) {
+    db.mongo.Group.findOne({id: req.params.id}).lean().populate('admins members', 'email fullname username sub')
     .then(function(group) {
         res.json(group);
     });
 });
 
 module.exports = router;
+
+
+

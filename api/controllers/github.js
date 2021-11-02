@@ -21,7 +21,7 @@ passport.use(new GitHubStrategy({
     clientSecret: config.github.client_secret,
     callbackURL: config.github.callback_url,
 }, function(accessToken, refreshToken, profile, cb) {
-    db.mongo.User.findOne({'ext.github': profile.username, active: true}).then(function(user) {
+    db.mongo.User.findOne({'ext.github': profile.username}).then(function(user) {
         cb(null, user, profile);
     });
 }));
@@ -32,6 +32,7 @@ router.get('/signin', passport.authenticate('github'));
 //callback that handles both normal and association(if cookies.associate_jwt is set and valid)
 router.get('/callback', jwt({
     secret: config.auth.public_key,
+    algorithms: [config.auth.sign_opt.algorithm],
     credentialsRequired: false,
     getToken: function(req) {
         return req.cookies.associate_jwt;
@@ -53,9 +54,9 @@ router.get('/callback', jwt({
                     message: "Your github account is already associated to another account. Please signoff / login with your github account."
                 }];
                 res.cookie('messages', JSON.stringify(messages), {path: '/'});
-                return res.redirect('/auth/#!/settings/account');
+                return res.redirect(config.auth.settingsCallback);
             }
-            db.mongo.User.findOne({sub: req.user.sub, active: true}).then(function(user) {
+            db.mongo.User.findOne({sub: req.user.sub}).then(function(user) {
                 if(!user) throw new Error("couldn't find user record with sub:"+req.user.sub);
                 user.ext.github = profile.username;
                 user.save().then(function() {
@@ -64,7 +65,7 @@ router.get('/callback', jwt({
                         message: "Successfully associated your github account"
                     }];
                     res.cookie('messages', JSON.stringify(messages), {path: '/'});
-                    res.redirect('/auth/#!/settings/account');
+                    res.redirect(config.auth.settingsCallback);
                 });
             });
         } else {
@@ -74,18 +75,22 @@ router.get('/callback', jwt({
                 } else {
                     res.redirect('/auth/#!/signin?msg='+"Your github account is not yet registered. Please login using your username/password first, then associate your github account inside account settings.");
                 }
-            } else {
-                common.createClaim(user, function(err, claim) {
-                    if(err) return next(err);
-                    user.times.github_login = new Date();
-                    user.markModified('times');
-                    user.save().then(function() {
-                        common.publish("user.login."+user.sub, {type: "github", username: user.username, exp: claim.exp, headers: req.headers});
-                        let jwt = common.signJwt(claim);
-                        res.redirect('/auth/#!/success/'+jwt);
-                    });
-                });
+                return;
             }
+
+            const error = common.checkUser(user, req);
+            if(error) return next(error);
+            common.createClaim(user, function(err, claim) {
+                if(err) return next(err);
+                user.times.github_login = new Date();
+                user.reqHeaders = req.headers;
+                user.markModified('times');
+                user.save().then(function() {
+                    common.publish("user.login."+user.sub, {type: "github", username: user.username, exp: claim.exp, headers: req.headers});
+                    let jwt = common.signJwt(claim);
+                    res.redirect('/auth/#!/success/'+jwt);
+                });
+            });
         }
     })(req, res, next);
 });
@@ -109,8 +114,11 @@ function register_newuser(profile, res, next) {
 }
 
 //start github account association
-router.get('/associate/:jwt', jwt({secret: config.auth.public_key, getToken: function(req) { return req.params.jwt; }}), 
-function(req, res, next) {
+router.get('/associate/:jwt', jwt({
+    secret: config.auth.public_key, 
+    algorithms: [config.auth.sign_opt.algorithm],
+    getToken: function(req) { return req.params.jwt; }
+}), function(req, res, next) {
     res.cookie("associate_jwt", req.params.jwt, {
         //it's really overkill but .. why not? (maybe helps to hide from log?)
         httpOnly: true,
@@ -121,7 +129,10 @@ function(req, res, next) {
 });
 
 //should I refactor?
-router.put('/disconnect', jwt({secret: config.auth.public_key}), function(req, res, next) {
+router.put('/disconnect', jwt({
+    secret: config.auth.public_key,
+    algorithms: [config.auth.sign_opt.algorithm],
+}), function(req, res, next) {
     db.mongo.User.findOne({sub: req.user.sub}).then(function(user) {
         if(!user) return res.status(401).end();
         user.ext.github = null;
