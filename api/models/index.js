@@ -57,6 +57,7 @@ models.User = mongoose.model('User', {
 
     //last login time 
     times: mongoose.Schema.Types.Mixed,
+    failedCount : {type: Number},
     /*
     times: {
         github_login: Date,
@@ -85,8 +86,8 @@ models.Group = mongoose.model('Group', {
     name: String,
     desc: String,
 
-    admins: [ {type: mongoose.Schema.Types.ObjectId, ref: 'User', unique: true} ],
-    members: [ {type: mongoose.Schema.Types.ObjectId, ref: 'User', unique: true} ],
+    admins: [ {type: mongoose.Schema.Types.ObjectId, ref: 'User', unique: false} ],
+    members: [ {type: mongoose.Schema.Types.ObjectId, ref: 'User', unique: false} ],
 
     active: { type: Boolean, default: true },
 

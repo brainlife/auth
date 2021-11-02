@@ -238,7 +238,7 @@ router.get('/groups', jwt({secret: config.auth.public_key}), async (req, res, ne
     if(common.has_scope(req, "admin")) {
         //return all groups for admin
         groups = await db.mongo.Group.find(find)
-            .lean().populate('admins members', 'email fullname username');
+            .lean().populate('admins members', 'email fullname username sub');
         groups.forEach(group=>{
             group.canedit = true;
         });
