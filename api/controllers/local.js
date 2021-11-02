@@ -10,10 +10,18 @@ const config = require('../config');
 const logger = winston.createLogger(config.logger.winston);
 const common = require('../common');
 const db = require('../models');
+const redis = require('redis');
+
+const client = redis.createClient(config.redis);
+
+client.on('error',function(err) {
+    console.error(error);
+});
 
 passport.use(new passport_localst(
     function(username_or_email, password, done) {
         db.mongo.User.findOne({$or: [{"username": username_or_email}, {"email": username_or_email}]}).then(user=>{
+            const hourlater = new Date(new Date().getTime() + 3600*1000)
             if (!user) {
                 setTimeout(function() {
                     done(null, false, { message: 'Incorrect email or username', code: 'bad_username' });
@@ -26,6 +34,14 @@ passport.use(new passport_localst(
                         code: 'no_password' 
                     });
                 }
+                // if(user.failedCount >= 3 && hourlater > user.times.lastFailed) {
+                //     done(null, false, { message: 'Account Locked ! Try after an hour' });
+                // }
+                client.get("failCount."+user.username, (err,count)=>{
+                    // reply is null when the key is missing
+                    if(count && count >=3) done(null, false, { message: 'Account Locked ! Try after an hour' });
+                });
+
                 if(!common.check_password(user, password)) {
                     //delay returning to defend against password sweeping attack
                     setTimeout(function() {
@@ -33,6 +49,8 @@ passport.use(new passport_localst(
                     }, 2000);
                     return;
                 }
+                // user.failedCount = 0; we don't need it because redis will token will itself expire or we can delete it or set to zero
+                client.del('failCount.'+user.username);
                 done(null, user);
             }
         });
@@ -55,9 +73,18 @@ router.post('/auth', function(req, res, next) {
     passport.authenticate('local', function(err, user, info) {
         if (err) return next(err);
         if (!user) {
-            const audit = new db.mongo.FailedLogin({username: req.body.username, code: info.code, headers: req.headers});
-            audit.save();
             common.publish("user.login_fail", {type: "userpass", headers: req.headers, message: info.message, username: req.body.username});
+            client.get("failCount."+req.body.username, (err,count)=>{
+                // count is null when the key is missing
+                // setting to zero
+                if(!count) count = 0;
+                /*after three attempts it will be locked */
+                if(count <=3) {
+                    count = (count | 0) + 1;
+                    console.log("Setting count",count);
+                    client.set("failCount."+req.body.username, count, "EX", 3600);
+                }
+            });
             return next(info);
         }
 
