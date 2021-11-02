@@ -15,17 +15,14 @@ var common = require('../common');
 var db = require('../models');
 
 function finduserByDN(dn, done) {
-    db.mongo.User.findOne({'ext.x509dns': dn, active: true}).then(function(user) {
+    db.mongo.User.findOne({'ext.x509dns': dn}).then(function(user) {
         done(null, user);
     });
 }
 
 // this endpoint needs to be exposed via webserver that's requiring x509 DN
 // unlike /auth, this page will redirect back to #!/success/<jwt>
-router.get('/signin', /*jwt({secret: config.auth.public_key, credentialsRequired: false}),*/ function(req, res, next) {
-    //logger.debug(req.user);
-    //res.header("Access-Control-Allow-Headers", "X-Requested-With");
-    //return res.json({status: "ok", dn: req.headers[config.x509.dn_header], /*headers: req.headers*/});
+router.get('/signin', function(req, res, next) {
     var dn = req.headers[config.x509.dn_header];
     if(!dn) {
         console.dir(req.headers);
@@ -34,13 +31,16 @@ router.get('/signin', /*jwt({secret: config.auth.public_key, credentialsRequired
     finduserByDN(dn, function(err, user) {
         if(err) return next(err); 
         if(!user) return next("Your DN("+dn+") is not yet registered. Please Signup/Signin with your username/password first, then associate your x509 certificate under your account settings.");
-        
-        //all good. issue token
-        logger.debug("x509 authentication successful with "+dn);
+
+        const error = common.checkUser(user, req);
+        if(error) return next(error);
         common.createClaim(user, function(err, claim) {
             if(err) return next(err);
-            //user.time.x509_login:'+dn); //array time are todo
-            //user.markModified('times');
+            const idx = user.ext.x509dns.indexOf(dn);
+            if(!user.times.x509_login) user.times.x509_login = [];
+            user.times.x509_login[idx] = new Date();
+            user.markModified('times');
+            user.reqHeaders = req.headers;
             user.save().then(function() {
                 common.publish("user.login."+user.sub, {type: "x509", username: user.username, exp: claim.exp, headers: req.headers});
                 let jwt = common.signJwt(claim);
@@ -51,9 +51,11 @@ router.get('/signin', /*jwt({secret: config.auth.public_key, credentialsRequired
 });
 
 // this endpoint needs to be exposed via webserver that's requiring x509 DN
-router.get('/associate/:jwt', jwt({secret: config.auth.public_key, getToken: function(req) { return req.params.jwt; }}), 
-function(req, res, next) {
-//router.get('/connect', jwt({secret: config.auth.public_key}), function(req, res, next) {
+router.get('/associate/:jwt', jwt({
+    secret: config.auth.public_key, 
+    algorithms: [config.auth.sign_opt.algorithm],
+    getToken: function(req) { return req.params.jwt; }
+}), function(req, res, next) {
     var dn = req.headers[config.x509.dn_header];
     if(!dn) {
         console.dir(req.headers);
@@ -92,7 +94,10 @@ function(req, res, next) {
     });
 });
 
-router.put('/disconnect', jwt({secret: config.auth.public_key}), function(req, res, next) {
+router.put('/disconnect', jwt({
+    secret: config.auth.public_key,
+    algorithms: [config.auth.sign_opt.algorithm],
+}), function(req, res, next) {
     var dn = req.body.dn;
     logger.debug("disconnecting "+dn);
     db.User.findOne({sub: req.user.sub}).then(function(user) {

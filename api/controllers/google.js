@@ -22,7 +22,7 @@ passport.use(new GoogleStrategy({
     callbackURL: config.google.callback_url,
 }, function(accessToken, refreshToken, profile, cb) {
     console.dir(profile);
-    db.mongo.User.findOne({'ext.googleid': profile.id, active: true}).then(function(user) {
+    db.mongo.User.findOne({'ext.googleid': profile.id}).then(function(user) {
         cb(null, user, profile);
     });
 }));
@@ -61,6 +61,7 @@ router.get('/signin', passport.authenticate('google', {scope: ['profile']}));
 //callback that handles both normal and association(if cookies.associate_jwt is set and valid)
 router.get('/callback', jwt({
     secret: config.auth.public_key,
+    algorithms: [config.auth.sign_opt.algorithm],
     credentialsRequired: false,
     getToken: req=>req.cookies.associate_jwt,
 }), function(req, res, next) {
@@ -80,13 +81,13 @@ router.get('/callback', jwt({
                     message: "Your Google account is already associated to another account. Please signoff / login with your google account.",
                 }];
                 res.cookie('messages', JSON.stringify(messages), {path: '/'});
-                return res.redirect('/auth/#!/settings/account');
+                return res.redirect(config.auth.settingsCallback);
             }
-            db.mongo.User.findOne({sub: req.user.sub, active: true}).then(function(user) {
+            db.mongo.User.findOne({sub: req.user.sub}).then(function(user) {
                 if(!user) throw new Error("couldn't find user record with sub:"+req.user.sub);
                 user.ext.googleid = profile.id;
                 user.save().then(function() {
-                    res.redirect('/auth/#!/settings/account');
+                    res.redirect(config.auth.settingsCallback);
                 });
             });
         } else {
@@ -98,18 +99,22 @@ router.get('/callback', jwt({
                 } else {
                     res.redirect('/auth/#!/signin?msg='+"Your google account is not registered yet. Please login using your username/password first, then associate your google account inside account settings.");
                 }
-            } else {
-                common.createClaim(user, function(err, claim) {
-                    if(err) return next(err);
-                    user.times.google_login = new Date();
-                    user.markModified('times');
-                    user.save().then(function() {
-                        common.publish("user.login."+user.sub, {type: "google", username: user.username, exp: claim.exp, headers: req.headers});
-                        var jwt = common.signJwt(claim);
-                        res.redirect('/auth/#!/success/'+jwt);
-                    });
+                return;
+            } 
+
+            const error = common.checkUser(user, req);
+            if(error) return next(error);
+            common.createClaim(user, function(err, claim) {
+                if(err) return next(err);
+                user.times.google_login = new Date();
+                user.reqHeaders = req.headers;
+                user.markModified('times');
+                user.save().then(function() {
+                    common.publish("user.login."+user.sub, {type: "google", username: user.username, exp: claim.exp, headers: req.headers});
+                    var jwt = common.signJwt(claim);
+                    res.redirect('/auth/#!/success/'+jwt);
                 });
-            }
+            });
         }
     })(req, res, next);
 });
@@ -139,9 +144,11 @@ function register_newuser(profile, res, next) {
 }
 
 //start account association
-router.get('/associate/:jwt', jwt({secret: config.auth.public_key, 
-getToken: function(req) { return req.params.jwt; }}), 
-function(req, res, next) {
+router.get('/associate/:jwt', jwt({
+    secret: config.auth.public_key, 
+    algorithms: [config.auth.sign_opt.algorithm],
+    getToken: function(req) { return req.params.jwt; }
+}), function(req, res, next) {
     res.cookie("associate_jwt", req.params.jwt, {
         //it's really overkill .. but why not? (maybe helps to hide from log?)
         httpOnly: true,
@@ -153,7 +160,10 @@ function(req, res, next) {
 });
 
 //should I refactor?
-router.put('/disconnect', jwt({secret: config.auth.public_key}), function(req, res, next) {
+router.put('/disconnect', jwt({
+    secret: config.auth.public_key,
+    algorithms: [config.auth.sign_opt.algorithm],
+}), function(req, res, next) {
     db.mongo.User.findOne({sub: req.user.sub}).then(function(user) {
         if(!user) res.status(401).end();
         user.ext.googleid = null;

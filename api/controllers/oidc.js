@@ -59,7 +59,7 @@ const oidc_strat = new OAuth2Strategy({
     logger.debug("oidc loading userinfo ..", accessToken, profile);
     request.get({url: config.oidc.userinfo_url, qs: {access_token: accessToken}, json: true},  function(err, _res, profile) {
         if(err) return cb(err); 
-        db.mongo.User.findOne({"ext.openids": {$regex: '^'+profile.cert_subject_dn}, active: true}).then(function(user) {
+        db.mongo.User.findOne({"ext.openids": {$regex: '^'+profile.cert_subject_dn}}).then(function(user) {
             cb(null, user, profile);
         });
     });
@@ -88,9 +88,11 @@ function find_profile(profiles, sub) {
 }
 
 //this handles both normal callback from incommon and account association (if cookies.associate_jwt is set)
-router.get('/callback', 
-jwt({ secret: config.auth.public_key, credentialsRequired: false, getToken: req=>req.cookies.associate_jwt }),
-function(req, res, next) {
+router.get('/callback', jwt({ 
+    secret: config.auth.public_key, 
+    algorithms: [config.auth.sign_opt.algorithm],
+    credentialsRequired: false, 
+    getToken: req=>req.cookies.associate_jwt }), function(req, res, next) {
     passport.authenticate(oidc_strat.name, function(err, user, profile) {
         logger.debug("oidc callback", profile);
         if(err) {
@@ -109,9 +111,9 @@ function(req, res, next) {
                     message: "There is another account with the same OIDC ID registered. Please contact support."
                 }];
                 res.cookie('messages', JSON.stringify(messages), {path: '/'});
-                res.redirect('/auth/#!/settings/account');
+                res.redirect(config.auth.settingsCallback);
             } else {
-                db.mongo.User.findOne({sub: req.user.sub, active: true}).then(user=>{
+                db.mongo.User.findOne({sub: req.user.sub}).then(user=>{
                     if(!user) throw new Error("couldn't find user record with sub:"+req.user.sub);
                     var openids = user.ext.openids||[];
                     if(!~openids.indexOf(profile.cert_subject_dn)) openids.push(profile.cert_subject_dn);
@@ -122,7 +124,7 @@ function(req, res, next) {
                             message: "Successfully associated your OIDC account"
                         }];
                         res.cookie('messages', JSON.stringify(messages), {path: '/'});
-                        res.redirect('/auth/#!/settings/account');
+                        res.redirect(config.auth.settingsCallback);
                     });
                 });
             }
@@ -134,18 +136,27 @@ function(req, res, next) {
                 } else {
                     res.redirect('/auth/#!/signin?msg='+"Your InCommon account("+profile.cert_subject_dn+") is not yet registered. Please login using your username/password first, then associate your InCommon account inside the account settings.");
                 }
-            } else {
-                common.createClaim(user, function(err, claim) {
-                    if(err) return next(err);
-                    var jwt = common.signJwt(claim);
-                    //user.times.oidc_login = profile.sub; //TODO
-                    //user.markModified('times');
-                    user.save().then(function() {
-                        common.publish("user.login."+user.sub, {type: "oidc", username: user.username, exp: claim.exp, headers: req.headers});
-                        res.redirect('/auth/#!/success/'+jwt);
-                    });
+                return;
+            } 
+
+            const error = common.checkUser(user, req);
+            if(error) return next(error);
+            common.createClaim(user, function(err, claim) {
+                if(err) return next(err);
+                const jwt = common.signJwt(claim);
+
+                //we could have multiple openids so let's look for the idx
+                const idx = user.ext.openids.indexOf(profile.cert_subject_dn);
+                if(!user.times.oidc_login) user.times.oidc_login = [];
+                user.times.oidc_login[idx] = new Date();
+                user.markModified('times');
+
+                user.reqHeaders = req.headers;
+                user.save().then(function() {
+                    common.publish("user.login."+user.sub, {type: "oidc", username: user.username, exp: claim.exp, headers: req.headers});
+                    res.redirect('/auth/#!/success/'+jwt);
                 });
-            }            
+            });
         }
     })(req, res, next);
 });
@@ -177,8 +188,11 @@ function register_newuser(profile, res, next) {
 }
 
 //start oidc account association
-router.get('/associate/:jwt', jwt({secret: config.auth.public_key, getToken: req=>req.params.jwt}), 
-function(req, res, next) {
+router.get('/associate/:jwt', jwt({
+    secret: config.auth.public_key, 
+    algorithms: [config.auth.sign_opt.algorithm],
+    getToken: req=>req.params.jwt
+}), function(req, res, next) {
     res.cookie("associate_jwt", req.params.jwt, {
         //it's really overkill but .. why not? (maybe helps to hide from log?)
         httpOnly: true,
@@ -189,7 +203,10 @@ function(req, res, next) {
 });
 
 //should I refactor?
-router.put('/disconnect', jwt({secret: config.auth.public_key}), function(req, res, next) {
+router.put('/disconnect', jwt({
+    secret: config.auth.public_key,
+    algorithms: [config.auth.sign_opt.algorithm],
+}), function(req, res, next) {
     var dn = req.body.dn;
     db.mongo.User.findOne({sub: req.user.sub}).then(user=>{
         if(!user) res.status(401).end();

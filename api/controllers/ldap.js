@@ -37,7 +37,7 @@ passport.use(new passportldap(config.ldap,
         //local username/pass can be authenticated
         //TODO - this means IU user can *takeover* non-IU user.. eventually I might allow both
         //local and ldap authentication, but it will be very confusing to the user.
-        db.User.findOne({where: {$or: {ldap: ldapuser.cn, username: ldapuser.cn }, active: true}}).then(function(user) {
+        db.User.findOne({where: {$or: {ldap: ldapuser.cn, username: ldapuser.cn }}}).then(function(user) {
             if (!user) {
                 //first time(?) .. auto register
                 //TODO - need to handle username collision
@@ -75,6 +75,9 @@ router.post('/auth', function(req, res, next) {
     passport.authenticate('ldapauth', {session: false}, function(err, user, info) {
         if (err) return next(err);
         if (!user) return res.status(404).json(info);
+
+        const error = common.checkUser(user, req);
+        if(error) return next(error);
         common.createClaim(user, function(err, claim) {
             if(err) return next(err);
             var jwt = common.signJwt(claim);
