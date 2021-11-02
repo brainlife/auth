@@ -101,8 +101,8 @@ models.Group = mongoose.model('Group', {
     name: String,
     desc: String,
 
-    admins: [ {type: mongoose.Schema.Types.ObjectId, ref: 'User'} ],
-    members: [ {type: mongoose.Schema.Types.ObjectId, ref: 'User'} ],
+    admins: [ {type: mongoose.Schema.Types.ObjectId, ref: 'User', unique: false} ],
+    members: [ {type: mongoose.Schema.Types.ObjectId, ref: 'User', unique: false} ],
 
     active: { type: Boolean, default: true },
 

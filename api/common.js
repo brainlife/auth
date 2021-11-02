@@ -11,6 +11,20 @@ const redis = require('redis');
 
 const config = require('./config');
 const db = require('./models');
+const redis = require("redis");
+
+let redisCon;
+exports.connectRedis = (config)=>{
+    if(redisCon) return redisCon;
+    const con = redis.createClient(config.redis.port, config.redis.server);
+    con.on('error', console.error);
+    con.on('ready', ()=>{ console.log("connected to redis") });
+    return con;
+}
+
+exports.disconnectRedis = ()=>{
+    if(redisCon) return redisCon.end(true);
+}
 
 let amqp_conn;
 function get_amqp_connection(cb) {
