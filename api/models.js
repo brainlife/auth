@@ -11,11 +11,15 @@ if(config.mongoose_debug) mongoose.set("debug", true);
 const models = {};
 
 models.connection = mongoose.connect(config.mongodb, {
+    /*
     readPreference: 'nearest',
-    readConcern: 'majority', //prevents read to grab stale data from secondary
-    writeConcern: {
-	    w: 'majority', //isn't this the default?
+    readConcern: {
+        level: 'majority',//prevents read to grab stale data from secondary
     },
+    writeConcern: {
+        w: 'majority', //isn't this the default?
+    },
+    */
     useNewUrlParser: true,
     useUnifiedTopology: true,
 });
@@ -39,7 +43,7 @@ models.User = mongoose.model('User', {
         private: {type: mongoose.Schema.Types.Mixed, default: {}},
     
         //administrative profile for this user that only admin can set
-        admin: {type: mongoose.Schema.Types.Mixed, default: {}},
+        //admin: {type: mongoose.Schema.Types.Mixed, default: {}},
     },
 
     password_hash: String, //used by local auth

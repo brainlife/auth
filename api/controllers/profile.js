@@ -47,9 +47,11 @@ router.patch('/:sub?', jwt({
             if(req.body.profile.private) {
                 Object.assign(user.profile.private, req.body.profile.private);
             }
+            /*
             if(req.body.profile.admin && common.has_scope(req, "admin")) {
                 Object.assign(user.profile.admin, req.body.profile.admin);
             }
+            */
         }
         user.save().then(function() {
             common.publish("user.update."+user.sub, req.body);

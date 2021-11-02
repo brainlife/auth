@@ -7,6 +7,7 @@ const amqp = require('amqp');
 const os = require('os');
 const bcrypt = require('bcryptjs');
 const zxcvbn = require('zxcvbn');
+const redis = require('redis');
 
 const config = require('./config');
 const db = require('./models');
@@ -33,6 +34,17 @@ if(config.event) {
             auth_ex = ex;
         });
     });
+}
+
+//TODO - we might use redis in the future..
+let redisCon;
+exports.getRedisConnection = ()=>{
+    if(redisCon) return redisCon;
+    redisCon = redis.createClient();
+    return redisCon; 
+}
+exports.disconnectRedis = ()=>{
+    if(redisCon) redisCon.end(true);
 }
 
 exports.publish = (key, message, cb)=>{
