@@ -66,7 +66,6 @@ models.User = mongoose.model('User', {
 
     //last login time 
     times: mongoose.Schema.Types.Mixed,
-    failedCount : {type: Number},
     /*
     times: {
         github_login: Date,
