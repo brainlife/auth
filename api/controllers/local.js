@@ -34,7 +34,7 @@ passport.use(new passport_localst(
                         code: 'no_password' 
                     });
                 }
-                client.keys('auth.fail.'+user.username+'.*', function (err, fails) {
+                client.keys('auth.fail.'+user.username+'.*', (err, fails)=>{
                     if(err) return console.log(err);
                     if(fails.length >= 3) done(null, false, { message: 'Account Locked ! Try after an hour' });
                 });
@@ -46,11 +46,6 @@ passport.use(new passport_localst(
                     }, 2000);
                     return;
                 }
-                /* deleting previous keys*/
-                client.keys('auth.fail.'+user.username+'.*', function (err, fails) {
-                    if(err) return console.log(err);
-                    if(fails) fails.forEach(fail=>client.del(fail));
-                });
                 done(null, user);
             }
         });
