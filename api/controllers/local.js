@@ -34,12 +34,9 @@ passport.use(new passport_localst(
                         code: 'no_password' 
                     });
                 }
-                // if(user.failedCount >= 3 && hourlater > user.times.lastFailed) {
-                //     done(null, false, { message: 'Account Locked ! Try after an hour' });
-                // }
-                client.get("failCount."+user.username, (err,count)=>{
-                    // reply is null when the key is missing
-                    if(count && count >=3) done(null, false, { message: 'Account Locked ! Try after an hour' });
+                client.keys('auth.fail.'+user.username+'.*', (err, fails)=>{
+                    if(err) return console.log(err);
+                    if(fails.length >= 3) done(null, false, { message: 'Account Locked ! Try after an hour' });
                 });
 
                 if(!common.check_password(user, password)) {
@@ -49,8 +46,6 @@ passport.use(new passport_localst(
                     }, 2000);
                     return;
                 }
-                // user.failedCount = 0; we don't need it because redis will token will itself expire or we can delete it or set to zero
-                client.del('failCount.'+user.username);
                 done(null, user);
             }
         });
@@ -74,17 +69,7 @@ router.post('/auth', function(req, res, next) {
         if (err) return next(err);
         if (!user) {
             common.publish("user.login_fail", {type: "userpass", headers: req.headers, message: info.message, username: req.body.username});
-            client.get("failCount."+req.body.username, (err,count)=>{
-                // count is null when the key is missing
-                // setting to zero
-                if(!count) count = 0;
-                /*after three attempts it will be locked */
-                if(count <=3) {
-                    count = (count | 0) + 1;
-                    console.log("Setting count",count);
-                    client.set("failCount."+req.body.username, count, "EX", 3600);
-                }
-            });
+            client.set("auth.fail."+req.body.username+"."+(new Date().getTime()), "failedLogin", "EX", 3600);
             return next(info);
         }
 
