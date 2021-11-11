@@ -12,11 +12,9 @@ const common = require('../common');
 const db = require('../models');
 const redis = require('redis');
 
-const client = redis.createClient(config.redis);
-
-client.on('error',function(err) {
-    console.error(error);
-});
+const redisClient = redis.createClient(config.redis.port, config.redis.server);
+redisClient.on('error', console.error);
+redisClient.on('ready', ()=>{ console.log("connected to redis") });
 
 passport.use(new passport_localst(
     function(username_or_email, password, done) {
@@ -34,7 +32,7 @@ passport.use(new passport_localst(
                         code: 'no_password' 
                     });
                 }
-                client.keys('auth.fail.'+user.username+'.*', (err, fails)=>{
+                redisClient.keys('auth.fail.'+user.username+'.*', (err, fails)=>{
                     if(err) return console.log(err);
                     if(fails.length >= 3) done(null, false, { message: 'Account Locked ! Try after an hour' });
                 });
@@ -69,7 +67,7 @@ router.post('/auth', function(req, res, next) {
         if (err) return next(err);
         if (!user) {
             common.publish("user.login_fail", {type: "userpass", headers: req.headers, message: info.message, username: req.body.username});
-            client.set("auth.fail."+req.body.username+"."+(new Date().getTime()), "failedLogin", "EX", 3600);
+            redisClient.set("auth.fail."+req.body.username+"."+(new Date().getTime()), "failedLogin", "EX", 3600);
             return next(info);
         }
 
