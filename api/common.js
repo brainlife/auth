@@ -11,7 +11,6 @@ const redis = require('redis');
 
 const config = require('./config');
 const db = require('./models');
-const redis = require("redis");
 
 let redisCon;
 exports.connectRedis = (config)=>{
@@ -48,17 +47,6 @@ if(config.event) {
             auth_ex = ex;
         });
     });
-}
-
-//TODO - we might use redis in the future..
-let redisCon;
-exports.getRedisConnection = ()=>{
-    if(redisCon) return redisCon;
-    redisCon = redis.createClient();
-    return redisCon; 
-}
-exports.disconnectRedis = ()=>{
-    if(redisCon) redisCon.end(true);
 }
 
 exports.publish = (key, message, cb)=>{

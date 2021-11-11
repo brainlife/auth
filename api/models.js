@@ -60,29 +60,15 @@ models.User = mongoose.model('User', {
         github: { type: String, unique: true, sparse: true },
         facebook: { type: String, unique: true, sparse: true },
         orcid: { type: String, unique: true, sparse: true },
+        globus: { type: String, unique: true, sparse: true },
+        logingov: { type: String, unique: true, sparse: true }, //TODO
 
-        //x509dns: [ { type: String, unique: true, sparse: true } ], 
         x509dns: [ String ], //unique index breaks signup?
-        //["CN=Soichi Hayashi A35421,O=Indiana University,C=US,DC=cilogon,DC=org"]
         openids: [ String ],  //unique index breaks signup?
-        //openid connect cert_subject_dn ["/DC=org/DC=cilogon/C=US/O=Google/CN=Soichi Hayashi B30632"]
     },
 
     //last login time 
     times: mongoose.Schema.Types.Mixed,
-    /*
-    times: {
-        github_login: Date,
-        local_login: Date,
-        iucas_login: Date,
-        google_login: Date,
-        password_reset: Date,
-        orcid_login: Date,
-
-        x509_login: [Date], //should be in the same order as x509s
-        oidc_login: [Date], //should be in the same order as the openids
-    },
-    */
 
     //req.headers from last successful login (for auditing purpose)
     reqHeaders: mongoose.Schema.Types.Mixed,

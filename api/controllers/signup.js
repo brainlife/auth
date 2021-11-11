@@ -6,7 +6,6 @@ const async = require('async');
 const jwt = require('express-jwt');
 
 const config = require('../config');
-const logger = winston.createLogger(config.logger.winston);
 const db = require('../models');
 const common = require('../common');
 
@@ -56,8 +55,8 @@ async function register_newuser(req, done) {
             let raw_user = user.toObject();
             raw_user._profile = req.body.profile;
             raw_user.headers = req.headers;
-            logger.debug("publishing to "+user.sub);
-            logger.debug(raw_user);
+            console.debug("publishing to "+user.sub);
+            console.debug(raw_user);
             common.publish("user.create."+user.sub, raw_user);
             done(null, user);
         }).catch(err=>{
@@ -101,10 +100,11 @@ router.post('/', jwt({
         if(config.local.email_confirmation) {
             common.send_email_confirmation(req.headers.referer||config.local.url, user, function(err) {
                 if(err) {
-                    if(!req.user) {
+                    console.error(err);
+                    if(user) {
                         //if we fail to send email, we should unregister the user we just created
                         user.remove().then(()=>{
-                            logger.error("removed newly registred record - email failurer");
+                            console.error("removed newly registred record - email failurer");
                             res.status(500).json({message: "Failed to send confirmation email. Please make sure your email address is valid."});
                         });
                     } else {

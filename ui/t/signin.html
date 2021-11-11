@@ -24,6 +24,16 @@ body {
                 <img src="images/orcid.ico"/> ORCID
             </button>
         </div>
+        <div class="form-group" ng-if="appconf.show.globus">
+            <button type="button" class="btn btn-primary btn-block" ng-click="begin('globus')">
+                <img src="images/globus.png"/> Globus
+            </button>
+        </div>
+        <div class="form-group" ng-if="appconf.show.logingov">
+            <button type="button" class="btn btn-success btn-block" ng-click="begin('globus')">
+                <img src="images/logingov.png"/> Login.gov
+            </button>
+        </div>
         <div class="form-group" ng-if="appconf.show.github">
             <button type="button" class="btn btn-info btn-block" ng-click="begin('github')">
                 <i class="fa fa-github" style="font-size: 150%"></i> Github
@@ -64,7 +74,7 @@ body {
         <div ng-if="appconf.show.local || appconf.show.ldap">
             <form ng-submit="submit()" style="margin-top: 20px; padding: 10px; border-radius: 3px; box-shadow: 2px 2px 4px rgba(0,0,0,0.3); background-color: #f0f0f0;">
                 <div class="form-group" 
-                    ng-if="appconf.show.x509 || appconf.show.git || appconf.show.iucas || appconf.show.facebook || appconf.show.google || appconf.show.oidc || appconf.show.orcid">
+                    ng-if="appconf.show.x509 || appconf.show.git || appconf.show.iucas || appconf.show.facebook || appconf.show.google || appconf.show.oidc || appconf.show.orcid || appconfig.show.globus || appconfig.show.logingov">
                     <center style="opacity: 0.8">or <b>LOGIN</b> with email/username</center>
                 </div>
                 <div class="form-group">

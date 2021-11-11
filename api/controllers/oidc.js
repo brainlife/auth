@@ -134,7 +134,7 @@ router.get('/callback', jwt({
                 if(config.oidc.auto_register) {
                     register_newuser(profile, res, next);
                 } else {
-                    res.redirect('/auth/#!/signin?msg='+"Your InCommon account("+profile.cert_subject_dn+") is not yet registered. Please login using your username/password first, then associate your InCommon account inside the account settings.");
+                    res.redirect('/auth/#!/signin?msg='+"Your OIDC account("+profile.cert_subject_dn+") is not yet registered. Please login using your username/password first, then associate your InCommon account inside the account settings.");
                 }
                 return;
             } 
@@ -146,9 +146,9 @@ router.get('/callback', jwt({
                 const jwt = common.signJwt(claim);
 
                 //we could have multiple openids so let's look for the idx
-                const idx = user.ext.openids.indexOf(profile.cert_subject_dn);
-                if(!user.times.oidc_login) user.times.oidc_login = [];
-                user.times.oidc_login[idx] = new Date();
+                //const idx = user.ext.openids.indexOf(profile.cert_subject_dn);
+                //if(!user.times.oidc_login) user.times.oidc_login = [];
+                user.times['oidc_login:'+profile.cert_subject_dn] = new Date();
                 user.markModified('times');
 
                 user.reqHeaders = req.headers;
@@ -162,13 +162,6 @@ router.get('/callback', jwt({
 });
 
 function register_newuser(profile, res, next) {
-    //var u = clone(config.auth.default);
-
-    //email may not be set on some IdP(?)
-    //more importantly, it could collide with already existing account - let signup take care of this
-    //u.email = profile.email;
-    //u.email_confirmed = true; //let's trust InCommon
-    
     let ext = {
         openids: [profile.cert_subject_dn],
     }
