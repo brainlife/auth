@@ -165,6 +165,7 @@ router.get('/associate/:jwt', jwt({
     algorithms: [config.auth.sign_opt.algorithm],
     getToken: req=>req.params.jwt
 }), function(req, res, next) {
+    console.log("associating globus jwt");
     res.cookie("associate_jwt", req.params.jwt, {
         //it's really overkill but .. why not? (maybe helps to hide from log?)
         httpOnly: true,
