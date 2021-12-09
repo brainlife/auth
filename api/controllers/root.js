@@ -261,35 +261,59 @@ router.get('/groups', jwt({
     secret: config.auth.public_key,
     algorithms: [config.auth.sign_opt.algorithm],
 }), async (req, res, next)=>{
-    var find = {};
+    let find = {};
     if(req.query.find) find = JSON.parse(req.query.find);
 
-    let user = await db.mongo.User.findOne({sub: req.user.sub});
+    //admin/members are stored using user's mongod ID so we need to look up the id
+    const user = await db.mongo.User.findOne({sub: req.user.sub});
     if(!user) return next("can't find user sub:"+req.user.sub);
     
-    let groups;
     if(common.has_scope(req, "admin")) {
         //return all groups for admin
-        groups = await db.mongo.Group.find(find)
-            .lean()
+        const groups = await db.mongo.Group.find(find).lean()
             .populate('admins members', 'email fullname username sub');
+
+        //admin can edit all groups
         groups.forEach(group=>{
             group.canedit = true;
         });
         res.json(groups);
     } else {
-        //normal user only gets to see groups that they are admin/members
-        let admin_groups = await db.mongo.Group.find({admins: user._id})
-            .lean()
-            .populate('admins members', 'email fullname username sub');
-        let member_only_groups = await db.mongo.Group.find({admins: {$ne: user._id}, members: user._id})
-            .lean()
+        /*
+        const adminFind = {$and: [find, {admins: user._id}]};;
+        const memberFind = {$and: [find, {admins: {$ne: user._id}, members: user._id}]}; //TODO Why $ne admin?
+        let admin_groups = await db.mongo.Group.find(adminFind).lean()
             .populate('admins members', 'email fullname username sub');
         admin_groups.forEach(group=>{
             group.canedit = true;
         });
 
+        let member_only_groups = await db.mongo.Group.find(memberFind).lean()
+            .populate('admins members', 'email fullname username sub');
+
         res.json([...admin_groups, ...member_only_groups]);
+        */
+
+        const groups = await db.mongo.Group.find({
+            $and: [
+                //user provided query
+                find,
+
+                //normal user only gets to see groups that they are admin/members
+                {
+                    $or: [
+                        {admins: user._id},
+                        {members: user._id},
+                    ]
+                }
+            ],
+        }).lean().populate('admins members', 'email fullname username sub');
+
+        //if user is listed as admin, they can edit it
+        groups.forEach(group=>{
+            if(group.admins.includes(req.user.sub)) group.canedit = true;
+        });
+        res.json(groups);
     }
 });
 

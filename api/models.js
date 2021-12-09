@@ -25,6 +25,8 @@ models.connection = mongoose.connect(config.mongodb, {
 });
 
 models.User = mongoose.model('User', { 
+
+    //string is more generic.. we should eventually convert to use string sub
     sub: {type: Number, unique: true }, //numeric user id
 
     username: { type: String, unique: true },
@@ -98,6 +100,7 @@ models.Group = mongoose.model('Group', {
 //record recent login activity.. (TODO will be used to prevent password guessing attack)
 models.FailedLogin = mongoose.model('FailedLogin', { 
     username: String, //username or email used to attempt login (might not set if username is not used)
+
     user_id: {type: mongoose.Schema.Types.ObjectId, ref: 'User'}, //might not set
 
     headers: mongoose.Schema.Types.Mixed, //express req object containing ip/headers, etc.

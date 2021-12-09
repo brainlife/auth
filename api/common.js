@@ -61,8 +61,16 @@ exports.createClaim = async function(user, cb) {
     if(err) return cb(err);
     */
     
-    let groups = await db.mongo.Group.find({active: true, $or: [{members: user._id}, {admins: user._id}]});
-    let gids = groups.map(group=>group.id);
+    //let groups = await db.mongo.Group.find({active: true, $or: [{members: user._id}, {admins: user._id}]});
+    //let gids = groups.map(group=>group.id);
+
+    const adminGroups = await db.mongo.Group.find({active: true, admins: user._id});
+    const adminGids = adminGroups.map(group=>group.id);
+    const memberGroups = await db.mongo.Group.find({active: true, members: user._id});
+    const memberGids = memberGroups.map(group=>group.id);
+
+    const gids = [...adminGids, ...memberGids];
+    const dedupedGids = [...new Set(gids)];
 
     /* http://websec.io/2014/08/04/Securing-Requests-with-JWT.html
     iss: The issuer of the token
@@ -83,7 +91,12 @@ exports.createClaim = async function(user, cb) {
         //can't use user.username which might not be set
         sub: user.sub, 
 
-        gids, //TODO - toString() this also?
+        //deprecate this in favor of gidMembers, gidAdmins,
+        gids: dedupedGids, //number[]
+
+        //new gids lists..
+        adminGids: adminGids, //number[]
+        memberGids: memberGids, //number[[]
 
         //store a bit of important profile information in jwt..
         profile: { 
