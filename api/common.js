@@ -56,21 +56,21 @@ exports.publish = (key, message, cb)=>{
 }
 
 exports.createClaim = async function(user, cb) {
-    /* moving this out of this function (out of scope..)
-    var err = exports.check_user(user);
-    if(err) return cb(err);
-    */
-    
-    //let groups = await db.mongo.Group.find({active: true, $or: [{members: user._id}, {admins: user._id}]});
-    //let gids = groups.map(group=>group.id);
 
     const adminGroups = await db.mongo.Group.find({active: true, admins: user._id});
     const adminGids = adminGroups.map(group=>group.id);
     const memberGroups = await db.mongo.Group.find({active: true, members: user._id});
     const memberGids = memberGroups.map(group=>group.id);
 
+    /*
     const gids = [...adminGids, ...memberGids];
     const dedupedGids = [...new Set(gids)];
+    */
+
+    const gids = [...adminGids, null]; //null separates admin ids from member ids
+    memberGids.forEach(gid=>{
+        if(!gids.includes(gid)) gids.push(gid);
+    });
 
     /* http://websec.io/2014/08/04/Securing-Requests-with-JWT.html
     iss: The issuer of the token
@@ -87,16 +87,17 @@ exports.createClaim = async function(user, cb) {
         iss: config.auth.iss,
         exp: (Date.now() + config.auth.ttl)/1000,
         scopes: user.scopes,
-        
+
         //can't use user.username which might not be set
         sub: user.sub, 
 
-        //deprecate this in favor of gidMembers, gidAdmins,
-        gids: dedupedGids, //number[]
+        gids,
 
+        /* http header becomes too big with this
         //new gids lists..
         adminGids: adminGids, //number[]
         memberGids: memberGids, //number[[]
+        */
 
         //store a bit of important profile information in jwt..
         profile: { 
