@@ -67,7 +67,7 @@ exports.createClaim = async function(user, cb) {
     const dedupedGids = [...new Set(gids)];
     */
 
-    const gids = [...adminGids, null]; //null separates admin ids from member ids
+    const gids = [...adminGids, 0]; //0 separates admin ids from member ids. nobody should be a member of 0
     memberGids.forEach(gid=>{
         if(!gids.includes(gid)) gids.push(gid);
     });
