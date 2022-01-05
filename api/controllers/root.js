@@ -183,36 +183,39 @@ router.get('/users/query', jwt({
     .limit(+limit)
     .lean().exec((err,users)=> {
         if(err) return next(err);
-        let retUsers = users;
-        if(req.query.q) {
-            const queryTokens = req.query.q.toLowerCase().split(" ");
-            users.forEach(user => {
-                let tokens = [
-                    user.username,
-                    user.fullname,
-                    user.email,
-                ]
-                function addInfoTokens(u) {
-                    if(u.public && u.public.institution) tokens.push(u.public.institution);
-                    if(u.private && u.private.institution) tokens.push(u.private.institution);
-                    if(u.public && u.public.position) tokens.push(u.public.position);
-                    if(u.private && u.private.position) tokens.push(u.private.position);
-                }
-                addInfoTokens(user.profile);
-                tokens = tokens.filter(thing=>!!thing).map(token=>token.toLowerCase());
-                user._tokens = tokens.join(" ");
-            });
-            retUsers = users.filter(user=>{
-                let match = true;
-                queryTokens.forEach(token=>{
-                    if(!match) return;
-                    if(!user._tokens.includes(token)) match = false
+        db.mongo.User.countDocuments(find).exec((err,count)=>{
+            if(err) return next(err);
+            let retUsers = users;
+            if(req.query.q) {
+                const queryTokens = req.query.q.toLowerCase().split(" ");
+                users.forEach(user => {
+                    let tokens = [
+                        user.username,
+                        user.fullname,
+                        user.email,
+                    ]
+                    function addInfoTokens(u) {
+                        if(u.public && u.public.institution) tokens.push(u.public.institution);
+                        if(u.private && u.private.institution) tokens.push(u.private.institution);
+                        if(u.public && u.public.position) tokens.push(u.public.position);
+                        if(u.private && u.private.position) tokens.push(u.private.position);
+                    }
+                    addInfoTokens(user.profile);
+                    tokens = tokens.filter(thing=>!!thing).map(token=>token.toLowerCase());
+                    user._tokens = tokens.join(" ");
                 });
-                return match;
-            });
-            retUsers.forEach(user=> {delete user._tokens;});
-        }
-        res.json({"users": retUsers, "count": retUsers.length});
+                retUsers = users.filter(user=>{
+                    let match = true;
+                    queryTokens.forEach(token=>{
+                        if(!match) return;
+                        if(!user._tokens.includes(token)) match = false
+                    });
+                    return match;
+                });
+                retUsers.forEach(user=> {delete user._tokens;});
+            }
+            res.json({"users": retUsers, "count": count});
+        });
     });
 });
 
