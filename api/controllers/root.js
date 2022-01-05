@@ -213,7 +213,7 @@ router.get('/users/query', jwt({
             });
             retUsers.forEach(user=> {delete user._tokens;});
         }
-        res.json(retUsers);
+        res.json({"users": retUsers, "count": retUsers.length});
     });
 });
 
