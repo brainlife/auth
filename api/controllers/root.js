@@ -162,12 +162,11 @@ router.get('/users', jwt({
  * @apiGroup User
  *
  * @apiParam {String} q         Query to search for users
+ * @apiParam {Object} [find]    Optional Mongo find query
  * @apiParam {Number} [limit]   Optional Maximum number of records to return - defaults to 50
  * @apiParam {Number} [skip]    Optional Record offset for pagination
  * @apiHeader {String} authorization A valid JWT token "Bearer: xxxxx"
- * @apiSuccessExample {json} Success-Response:
- *     HTTP/1.1 200 OK
- *     [ 1,2,3 ] 
+ * @apiSuccessExample {Object} List of users (with skipped/limited) and total count
  */
 
 router.get('/users/query', jwt({
