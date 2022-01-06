@@ -149,75 +149,25 @@ router.get('/users', jwt({
 }), common.scope("admin"), function(req, res, next) {
     var where = {};
     if(req.query.where) where = JSON.parse(req.query.find||req.query.where);
-    db.mongo.User.find(where).select('sub profile username email_confirmed fullname email ext times scopes active').lean().then(users=>{
-        res.json(users);
-    });
-});
-
-/**
- * @api {get} /users/query
- * @apiName UserGroups
- * @apiDescription Query list of users
- *
- * @apiGroup User
- *
- * @apiParam {String} q         Query to search for users
- * @apiParam {Object} [find]    Optional Mongo find query
- * @apiParam {Number} [limit]   Optional Maximum number of records to return - defaults to 50
- * @apiParam {Number} [skip]    Optional Record offset for pagination
- * @apiHeader {String} authorization A valid JWT token "Bearer: xxxxx"
- * @apiSuccessExample {Object} List of users (with skipped/limited) and total count
- */
-
-router.get('/users/query', jwt({
-    secret: config.auth.public_key,
-    algorithms: [config.auth.sign_opt.algorithm],
-}), common.scope("admin"), function(req, res, next) {
-    let find = req.query.find || {};
+    // db.mongo.User.find(where).select('sub profile username email_confirmed fullname email ext times scopes active').lean().then(users=>{
+    //     res.json(users);
+    // });
     let limit = req.query.limit || 50;
     let skip = req.query.skip || 0;
-    let select = req.query.select || 'sub profile username email_confirmed fullname email ext times scopes active';
-    db.mongo.User.find(find)
+    let select = 'sub profile username email_confirmed fullname email ext times scopes active';
+    db.mongo.User.find(where)
     .select(select)
     .skip(+skip)
     .limit(+limit)
     .lean().exec((err,users)=> {
         if(err) return next(err);
-        db.mongo.User.countDocuments(find).exec((err,count)=>{
+        db.mongo.User.countDocuments(where).exec((err,count)=>{
             if(err) return next(err);
-            let retUsers = users;
-            if(req.query.q) {
-                const queryTokens = req.query.q.toLowerCase().split(" ");
-                users.forEach(user => {
-                    let tokens = [
-                        user.username,
-                        user.fullname,
-                        user.email,
-                    ]
-                    function addInfoTokens(u) {
-                        if(u.public && u.public.institution) tokens.push(u.public.institution);
-                        if(u.private && u.private.institution) tokens.push(u.private.institution);
-                        if(u.public && u.public.position) tokens.push(u.public.position);
-                        if(u.private && u.private.position) tokens.push(u.private.position);
-                    }
-                    addInfoTokens(user.profile);
-                    tokens = tokens.filter(thing=>!!thing).map(token=>token.toLowerCase());
-                    user._tokens = tokens.join(" ");
-                });
-                retUsers = users.filter(user=>{
-                    let match = true;
-                    queryTokens.forEach(token=>{
-                        if(!match) return;
-                        if(!user._tokens.includes(token)) match = false
-                    });
-                    return match;
-                });
-                retUsers.forEach(user=> {delete user._tokens;});
-            }
-            res.json({"users": retUsers, "count": count});
+            res.json({users,count});
         });
     });
 });
+
 
 /**
  * @api {get} /user/groups/:id Get list of group IDS that user is member/admin of
