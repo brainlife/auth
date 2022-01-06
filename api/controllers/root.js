@@ -147,7 +147,7 @@ router.get('/users', jwt({
     secret: config.auth.public_key,
     algorithms: [config.auth.sign_opt.algorithm],
 }), common.scope("admin"), function(req, res, next) {
-    var where = {};
+    let where = {};
     if(req.query.find||req.query.where) where = JSON.parse(req.query.find||req.query.where);
     let limit = req.query.limit || 50;
     let skip = req.query.skip || 0;
