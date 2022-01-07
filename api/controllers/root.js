@@ -151,7 +151,7 @@ router.get('/users', jwt({
     if(req.query.find||req.query.where) where = JSON.parse(req.query.find||req.query.where);
     let limit = req.query.limit || 50;
     let skip = req.query.skip || 0;
-    let select = 'sub profile username email_confirmed fullname email ext times scopes active';
+    const select = req.query.select || 'sub profile username email_confirmed fullname email ext times scopes active';
     db.mongo.User.find(where)
     .select(select)
     .skip(+skip)
