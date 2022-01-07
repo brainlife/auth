@@ -147,12 +147,24 @@ router.get('/users', jwt({
     secret: config.auth.public_key,
     algorithms: [config.auth.sign_opt.algorithm],
 }), common.scope("admin"), function(req, res, next) {
-    var where = {};
-    if(req.query.where) where = JSON.parse(req.query.find||req.query.where);
-    db.mongo.User.find(where).select('sub profile username email_confirmed fullname email ext times scopes active').lean().then(users=>{
-        res.json(users);
+    let where = {};
+    if(req.query.find||req.query.where) where = JSON.parse(req.query.find||req.query.where);
+    let limit = req.query.limit || 50;
+    let skip = req.query.skip || 0;
+    const select = req.query.select || 'sub profile username email_confirmed fullname email ext times scopes active';
+    db.mongo.User.find(where)
+    .select(select)
+    .skip(+skip)
+    .limit(+limit)
+    .lean().exec((err,users)=> {
+        if(err) return next(err);
+        db.mongo.User.countDocuments(where).exec((err,count)=>{
+            if(err) return next(err);
+            res.json({users,count});
+        });
     });
 });
+
 
 /**
  * @api {get} /user/groups/:id Get list of group IDS that user is member/admin of
