@@ -149,6 +149,7 @@ router.get('/users', jwt({
 }), common.scope("admin"), function(req, res, next) {
     let where = {};
     if(req.query.find||req.query.where) where = JSON.parse(req.query.find||req.query.where);
+    console.log(where);
     let limit = req.query.limit || 50;
     let skip = req.query.skip || 0;
     const select = req.query.select || 'sub profile username email_confirmed fullname email ext times scopes active';
@@ -273,7 +274,7 @@ router.get('/groups', jwt({
     secret: config.auth.public_key,
     algorithms: [config.auth.sign_opt.algorithm],
 }), async (req, res, next)=>{
-    var find = {};
+    let find = {};
     if(req.query.find) find = JSON.parse(req.query.find);
 
     let user = await db.mongo.User.findOne({sub: req.user.sub});
@@ -281,6 +282,27 @@ router.get('/groups', jwt({
     
     let groups;
     if(common.has_scope(req, "admin")) {
+
+        let tokens= "";
+        if(req.query.tokens) tokens = req.query.tokens;
+        console.log(tokens);
+        let userObjectIds;
+        if(tokens) {
+            /*find users matching search query*/
+            userObjectIds = await db.mongo.User.find({
+                    $or: [
+                        //need to use iLike with postgres..
+                        {fullname: {$regex: tokens, $options : 'i'}},
+                        {email: {$regex: tokens, $options : 'i'}},
+                        {username: {$regex: tokens, $options : 'i'}},
+                    ]
+            }).lean();
+            find = {$or: [
+                    {admins: { $in: userObjectIds}},
+                    {members: { $in: userObjectIds}},
+                    ]
+                }
+        }
         //return all groups for admin
         groups = await db.mongo.Group.find(find)
             .lean()
