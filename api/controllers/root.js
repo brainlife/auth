@@ -258,12 +258,12 @@ router.put('/user/:id', jwt({
 
 /**
  * @apiName UserGroups
- * @api {get} /jwt/:id      list all groups
- * @apiDescription          list all groups with basic info (available to all authenticated users) including inactive ones
+ * @api {get} /jwt/:id      query all groups
+ * @apiDescription          Query all groups with basic info (available to all authenticated users) including inactive ones
  * @apiGroup User
  *
  * @apiParam {Object} find  query - defaults to {}
- *
+ * @apiParam {String} token  Option search token string
  * @apiHeader {String}      authorization A valid JWT token "Bearer: xxxxx"
  *
  * @apiSuccessExample {json} Success-Response:
