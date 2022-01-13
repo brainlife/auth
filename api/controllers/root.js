@@ -280,9 +280,7 @@ router.get('/groups', jwt({
     let user = await db.mongo.User.findOne({sub: req.user.sub});
     if(!user) return next("can't find user sub:"+req.user.sub);
     
-    let groups;
     if(common.has_scope(req, "admin")) {
-
         let tokens= "";
         if(req.query.tokens) tokens = req.query.tokens;
         console.log(tokens);
@@ -297,20 +295,31 @@ router.get('/groups', jwt({
                         {username: {$regex: tokens, $options : 'i'}},
                     ]
             }).lean();
-            find = {$or: [
+            find = {
+                $or: [
                     {admins: { $in: userObjectIds}},
                     {members: { $in: userObjectIds}},
-                    ]
-                }
+                ]
+            };
         }
-        //return all groups for admin
-        groups = await db.mongo.Group.find(find)
-            .lean()
-            .populate('admins members', 'email fullname username sub');
-        groups.forEach(group=>{
-            group.canedit = true;
+        let limit = req.query.limit || 10;
+        let skip = req.query.skip || 0;
+        //return all groups for admin matching the query and their count
+        db.mongo.Group.find(find)
+        .skip(+skip)
+        .limit(+limit)
+        .lean()
+        .populate('admins members', 'email fullname username sub')
+        .exec((err, groups)=>{
+            if(err) return next(err);
+            db.mongo.Group.countDocuments(find).exec((err,count)=>{
+                if(err) return next(err);
+                groups.forEach(group=>{
+                    group.canedit = true;
+                });
+                res.json({groups,count});
+            });
         });
-        res.json(groups);
     } else {
         //normal user only gets to see groups that they are admin/members
         let admin_groups = await db.mongo.Group.find({admins: user._id})
