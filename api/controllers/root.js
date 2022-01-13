@@ -302,7 +302,7 @@ router.get('/groups', jwt({
                 ]
             };
         }
-        let limit = req.query.limit || 10;
+        let limit = req.query.limit || 50;
         let skip = req.query.skip || 0;
         //return all groups for admin matching the query and their count
         db.mongo.Group.find(find)
