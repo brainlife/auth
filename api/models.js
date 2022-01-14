@@ -11,16 +11,22 @@ if(config.mongoose_debug) mongoose.set("debug", true);
 const models = {};
 
 models.connection = mongoose.connect(config.mongodb, {
+    /*
     readPreference: 'nearest',
-    readConcern: 'majority', //prevents read to grab stale data from secondary
-    writeConcern: {
-	    w: 'majority', //isn't this the default?
+    readConcern: {
+        level: 'majority',//prevents read to grab stale data from secondary
     },
+    writeConcern: {
+        w: 'majority', //isn't this the default?
+    },
+    */
     useNewUrlParser: true,
     useUnifiedTopology: true,
 });
 
 models.User = mongoose.model('User', { 
+
+    //string is more generic.. we should eventually convert to use string sub
     sub: {type: Number, unique: true }, //numeric user id
 
     username: { type: String, unique: true },
@@ -39,7 +45,7 @@ models.User = mongoose.model('User', {
         private: {type: mongoose.Schema.Types.Mixed, default: {}},
     
         //administrative profile for this user that only admin can set
-        admin: {type: mongoose.Schema.Types.Mixed, default: {}},
+        //admin: {type: mongoose.Schema.Types.Mixed, default: {}},
     },
 
     password_hash: String, //used by local auth
@@ -56,29 +62,15 @@ models.User = mongoose.model('User', {
         github: { type: String, unique: true, sparse: true },
         facebook: { type: String, unique: true, sparse: true },
         orcid: { type: String, unique: true, sparse: true },
+        globus: { type: String, unique: true, sparse: true },
+        logingov: { type: String, unique: true, sparse: true }, //TODO
 
-        //x509dns: [ { type: String, unique: true, sparse: true } ], 
         x509dns: [ String ], //unique index breaks signup?
-        //["CN=Soichi Hayashi A35421,O=Indiana University,C=US,DC=cilogon,DC=org"]
         openids: [ String ],  //unique index breaks signup?
-        //openid connect cert_subject_dn ["/DC=org/DC=cilogon/C=US/O=Google/CN=Soichi Hayashi B30632"]
     },
 
     //last login time 
     times: mongoose.Schema.Types.Mixed,
-    /*
-    times: {
-        github_login: Date,
-        local_login: Date,
-        iucas_login: Date,
-        google_login: Date,
-        password_reset: Date,
-        orcid_login: Date,
-
-        x509_login: [Date], //should be in the same order as x509s
-        oidc_login: [Date], //should be in the same order as the openids
-    },
-    */
 
     //req.headers from last successful login (for auditing purpose)
     reqHeaders: mongoose.Schema.Types.Mixed,
@@ -108,6 +100,7 @@ models.Group = mongoose.model('Group', {
 //record recent login activity.. (TODO will be used to prevent password guessing attack)
 models.FailedLogin = mongoose.model('FailedLogin', { 
     username: String, //username or email used to attempt login (might not set if username is not used)
+
     user_id: {type: mongoose.Schema.Types.ObjectId, ref: 'User'}, //might not set
 
     headers: mongoose.Schema.Types.Mixed, //express req object containing ip/headers, etc.

@@ -7,10 +7,10 @@ const amqp = require('amqp');
 const os = require('os');
 const bcrypt = require('bcryptjs');
 const zxcvbn = require('zxcvbn');
+const redis = require('redis');
 
 const config = require('./config');
 const db = require('./models');
-const redis = require("redis");
 
 let redisCon;
 exports.connectRedis = (config)=>{
@@ -56,13 +56,21 @@ exports.publish = (key, message, cb)=>{
 }
 
 exports.createClaim = async function(user, cb) {
-    /* moving this out of this function (out of scope..)
-    var err = exports.check_user(user);
-    if(err) return cb(err);
+
+    const adminGroups = await db.mongo.Group.find({active: true, admins: user._id});
+    const adminGids = adminGroups.map(group=>group.id);
+    const memberGroups = await db.mongo.Group.find({active: true, members: user._id});
+    const memberGids = memberGroups.map(group=>group.id);
+
+    /*
+    const gids = [...adminGids, ...memberGids];
+    const dedupedGids = [...new Set(gids)];
     */
-    
-    let groups = await db.mongo.Group.find({active: true, $or: [{members: user._id}, {admins: user._id}]});
-    let gids = groups.map(group=>group.id);
+
+    const gids = [...adminGids, 0]; //0 separates admin ids from member ids. nobody should be a member of 0
+    memberGids.forEach(gid=>{
+        if(!gids.includes(gid)) gids.push(gid);
+    });
 
     /* http://websec.io/2014/08/04/Securing-Requests-with-JWT.html
     iss: The issuer of the token
@@ -79,11 +87,17 @@ exports.createClaim = async function(user, cb) {
         iss: config.auth.iss,
         exp: (Date.now() + config.auth.ttl)/1000,
         scopes: user.scopes,
-        
+
         //can't use user.username which might not be set
         sub: user.sub, 
 
-        gids, //TODO - toString() this also?
+        gids,
+
+        /* http header becomes too big with this
+        //new gids lists..
+        adminGids: adminGids, //number[]
+        memberGids: memberGids, //number[[]
+        */
 
         //store a bit of important profile information in jwt..
         profile: { 

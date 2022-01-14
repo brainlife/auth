@@ -24,7 +24,7 @@ const orcid_strat = new OAuth2Strategy({
     callbackURL: config.orcid.callback_url,
     scope: "/authenticate",
 }, function(accessToken, refreshToken, profile, _needed, cb) {
-    logger.debug("orcid loading userinfo ..", accessToken, refreshToken, profile);
+    console.debug("orcid loading userinfo ..", accessToken, refreshToken, profile);
     db.mongo.User.findOne({'ext.orcid': profile.orcid}).then(function(user) {
         cb(null, user, profile);
     });
@@ -43,14 +43,6 @@ router.get('/signin', function(req, res, next) {
     })(req, res, next);
 });
 
-function find_profile(profiles, sub) {
-    var idx = -1;
-    profiles.forEach(function(profile, x) {
-        if(profile.sub == sub) idx = x;
-    });
-    return idx;
-}
-
 //this handles both normal callback from incommon and account association (if cookies.associate_jwt is set)
 router.get('/callback', jwt({ 
     secret: config.auth.public_key, 
@@ -59,7 +51,7 @@ router.get('/callback', jwt({
     getToken: req=>req.cookies.associate_jwt 
 }), function(req, res, next) {
     passport.authenticate(orcid_strat.name, function(err, user, profile) {
-        logger.debug("orcid callback", profile);
+        console.debug("orcid callback", profile);
         if(err) {
             console.error(err);
             return res.redirect('/auth/#!/signin?msg='+"Failed to authenticate orcid");
@@ -97,7 +89,7 @@ router.get('/callback', jwt({
                 if(config.orcid.auto_register) {
                     register_newuser(profile, res, next);
                 } else {
-                    res.redirect('/auth/#!/signin?msg='+"Your InCommon account("+profile.sub+") is not yet registered. Please login using your username/password first, then associate your InCommon account inside the account settings.");
+                    res.redirect('/auth/#!/signin?msg='+"Your ORCID account("+profile.orcid+") is not yet registered. Please login using your username/password first, then associate your InCommon account inside the account settings.");
                 }
                 return;
             } 
@@ -145,7 +137,7 @@ async function register_newuser(profile, res, next) {
 
     var temp_jwt = common.signJwt({ exp: (Date.now() + config.auth.ttl)/1000, ext, _default })
     logger.info("signed temporary jwt token for orcid signup:"+temp_jwt)
-    logger.debug(JSON.stringify(profile, null, 4));
+    console.debug(JSON.stringify(profile, null, 4));
     res.redirect('/auth/#!/signup/'+temp_jwt);
 }
 
