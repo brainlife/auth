@@ -149,9 +149,8 @@ router.get('/users', jwt({
 }), common.scope("admin"), function(req, res, next) {
     let where = {};
     if(req.query.find||req.query.where) where = JSON.parse(req.query.find||req.query.where);
-    console.log(where);
-    let limit = req.query.limit || 50;
-    let skip = req.query.skip || 0;
+    const limit = req.query.limit || 50;
+    const skip = req.query.skip || 0;
     const select = req.query.select || 'sub profile username email_confirmed fullname email ext times scopes active';
     db.mongo.User.find(where)
     .select(select)
@@ -273,13 +272,13 @@ router.get('/groups', jwt({
     secret: config.auth.public_key,
     algorithms: [config.auth.sign_opt.algorithm],
 }), async (req, res, next)=>{
-    let user = await db.mongo.User.findOne({sub: req.user.sub});
+    const user = await db.mongo.User.findOne({sub: req.user.sub});
     if(!user) return next("can't find user sub:"+req.user.sub);
     let find = {};
     if(req.query.find) find = JSON.parse(req.query.find);
     if(common.has_scope(req, "admin")) {
-        let limit = req.query.limit || 50;
-        let skip = req.query.skip || 0;
+        const limit = req.query.limit || 50;
+        const skip = req.query.skip || 0;
         //return all groups for admin matching the query and their count
         db.mongo.Group.find(find)
         .skip(+skip)
