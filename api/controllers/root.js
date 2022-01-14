@@ -283,7 +283,6 @@ router.get('/groups', jwt({
     if(common.has_scope(req, "admin")) {
         let tokens= "";
         if(req.query.tokens) tokens = req.query.tokens;
-        console.log(tokens);
         let userObjectIds;
         if(tokens) {
             /*find users matching search query*/
