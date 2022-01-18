@@ -149,8 +149,8 @@ router.get('/users', jwt({
 }), common.scope("admin"), function(req, res, next) {
     let where = {};
     if(req.query.find||req.query.where) where = JSON.parse(req.query.find||req.query.where);
-    let limit = req.query.limit || 50;
-    let skip = req.query.skip || 0;
+    const limit = req.query.limit || 50;
+    const skip = req.query.skip || 0;
     const select = req.query.select || 'sub profile username email_confirmed fullname email ext times scopes active';
     db.mongo.User.find(where)
     .select(select)
@@ -257,12 +257,11 @@ router.put('/user/:id', jwt({
 
 /**
  * @apiName UserGroups
- * @api {get} /jwt/:id      list all groups
- * @apiDescription          list all groups with basic info (available to all authenticated users) including inactive ones
+ * @api {get} /jwt/:id      query all groups
+ * @apiDescription          Query all groups with basic info (available to all authenticated users) including inactive ones
  * @apiGroup User
  *
  * @apiParam {Object} find  query - defaults to {}
- *
  * @apiHeader {String}      authorization A valid JWT token "Bearer: xxxxx"
  *
  * @apiSuccessExample {json} Success-Response:
@@ -273,23 +272,29 @@ router.get('/groups', jwt({
     secret: config.auth.public_key,
     algorithms: [config.auth.sign_opt.algorithm],
 }), async (req, res, next)=>{
-    let find = {};
-    if(req.query.find) find = JSON.parse(req.query.find);
-
-    //admin/members are stored using user's mongod ID so we need to look up the id
     const user = await db.mongo.User.findOne({sub: req.user.sub});
     if(!user) return next("can't find user sub:"+req.user.sub);
-    
+    let find = {};
+    if(req.query.find) find = JSON.parse(req.query.find);
     if(common.has_scope(req, "admin")) {
-        //return all groups for admin
-        const groups = await db.mongo.Group.find(find).lean()
-            .populate('admins members', 'email fullname username sub');
-
-        //admin can edit all groups
-        groups.forEach(group=>{
-            group.canedit = true;
+        const limit = req.query.limit || 50;
+        const skip = req.query.skip || 0;
+        //return all groups for admin matching the query and their count
+        db.mongo.Group.find(find)
+        .skip(+skip)
+        .limit(+limit)
+        .lean()
+        .populate('admins members', 'email fullname username sub')
+        .exec((err, groups)=>{
+            if(err) return next(err);
+            db.mongo.Group.countDocuments(find).exec((err,count)=>{
+                if(err) return next(err);
+                groups.forEach(group=>{
+                    group.canedit = true;
+                });
+                res.json({groups,count});
+            });
         });
-        res.json(groups);
     } else {
         /*
         const adminFind = {$and: [find, {admins: user._id}]};;
