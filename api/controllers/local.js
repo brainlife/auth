@@ -186,7 +186,7 @@ router.post('/resetpass', function(req, res, next) {
 /**
  * @api {post} /local/unlockuser Unlock locked user accounts
  * @apiName LocalAuth
- * @apiDescription  password_reset_token.
+ * @apiDescription  This api will unlock any user account which is locked
  * @apiGroup Local
  *
  * @apiParam  * @apiParam {String} username Username or email address
