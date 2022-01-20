@@ -182,4 +182,33 @@ router.post('/resetpass', function(req, res, next) {
     }
 });
 
+
+/**
+ * @api {post} /local/unlockuser Unlock locked user accounts
+ * @apiName LocalAuth
+ * @apiDescription  password_reset_token.
+ * @apiGroup Local
+ *
+ * @apiParam  * @apiParam {String} username Username or email address
+ * @apiSuccess {Object} message Containing success message
+ */
+router.post('/unlockuser', function(req, res, next) {
+    if(req.body.email) {
+        const email = req.body.email;
+        db.mongo.User.findOne({email}).then(user=>{
+            if(!user) res.status(401).json({message: "No such user registered"});
+            /* check if user is locked */
+            redisClient.keys('auth.fail.'+user.username+'.*', (err, fails)=>{
+                if(err) return next(err);
+                if(!fails.length) next('Account already unlocked!');
+                for(const fail of fails) {
+                    console.log("removing", fail);
+                    redisClient.del(fail);
+                }
+                res.json({status: "ok", message: "Account Unlocked Successfully."});
+            });
+        })
+    }
+});
+
 module.exports = router;
