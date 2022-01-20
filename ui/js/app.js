@@ -164,7 +164,6 @@ app.factory('menu', function(appconf, $http, jwtHelper, $sce, toaster, $rootScop
     if(jwt) apply_jwt(jwt);
     else console.log("jwt not set..");
     function apply_jwt(jwt) {
-        console.log("applying jwt", jwt);
         try {
             var expdate = jwtHelper.getTokenExpirationDate(jwt);
         } catch (e) {
@@ -177,26 +176,11 @@ app.factory('menu', function(appconf, $http, jwtHelper, $sce, toaster, $rootScop
             localStorage.removeItem(appconf.jwt_id);
         } else {
             menu.user = jwtHelper.decodeToken(jwt);
-            /*
-            if(ttl < 3600*1000) {
-                //jwt expring in less than an hour! refresh!
-                console.log("jwt expiring in an hour.. refreshing first");
-                $http({
-                    url: appconf.auth_api+'/refresh',
-                    method: 'POST'
-                }).then(function(response) {
-                    var jwt = response.data.jwt;
-                    localStorage.setItem(appconf.jwt_id, jwt);
-                    menu.user = jwtHelper.decodeToken(jwt);
-                });
-            }
-            */
         }
     }
 
     //when jwt is updated, I need to re-apply it to update the menu
     $rootScope.$on('jwt_update', function(event, jwt) { 
-        console.log("jwt update event", jwt);
         apply_jwt(jwt); 
     });
 
