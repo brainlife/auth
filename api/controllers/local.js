@@ -195,7 +195,7 @@ router.post('/unlockuser/:id', jwt({
     secret: config.auth.public_key,
     algorithms: [config.auth.sign_opt.algorithm],
 }), common.scope("admin"), function(req, res, next) {
-    db.mongo.User.findOne({sub: req.params.id}).then(user=>{
+    db.mongo.User.findById(req.params.id).then(user=>{
         if(!user) res.status(401).json({message: "No such user registered"});
         /* check if user is locked */
         redisClient.keys('auth.fail.'+user.username+'.*', (err, fails)=>{
