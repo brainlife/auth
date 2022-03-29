@@ -27,8 +27,18 @@
  *    }
 **/
 
+function script(url, cb) {
+    var s = document.createElement('script');
+    s.type = 'text/javascript';
+    s.async = true;
+    s.src = url;
+    s.onload = cb;
+    var x = document.getElementsByTagName('head')[0];
+    x.appendChild(s);
+}
+
 angular.module( "ngAutocomplete", [])
-  .directive('ngAutocomplete', function() {
+  .directive('ngAutocomplete', function(appconf) {
     return {
       require: 'ngModel',
       scope: {
@@ -38,6 +48,15 @@ angular.module( "ngAutocomplete", [])
       },
 
       link: function(scope, element, attrs, controller) {
+            /*
+        console.dir(google);
+        google.load('places', '3', {
+            other_params: 'key=IzaSyD_DdEi4sKJWYq6zIxOtJ381CtzsB8hh5o',
+            callback: function(){
+                console.log("loaded places api");
+            }
+        });
+            */
 
         //options for autocomplete
         var opts
@@ -80,28 +99,28 @@ angular.module( "ngAutocomplete", [])
           }
         }
 
-        if (scope.gPlace == undefined) {
-          scope.gPlace = new google.maps.places.Autocomplete(element[0], {});
-        }
-        google.maps.event.addListener(scope.gPlace, 'place_changed', function() {
-          var result = scope.gPlace.getPlace();
-          if (result !== undefined) {
-            if (result.address_components !== undefined) {
-
-              scope.$apply(function() {
-
-                scope.details = result;
-
-                controller.$setViewValue(element.val());
-              });
+        script("https://maps.googleapis.com/maps/api/js?key="+appconf.googleApiKey+"&libraries=places", err=>{
+            if (scope.gPlace == undefined) {
+              scope.gPlace = new google.maps.places.Autocomplete(element[0], {});
             }
-            else {
-              if (watchEnter) {
-                getPlace(result)
+            google.maps.event.addListener(scope.gPlace, 'place_changed', function() {
+              var result = scope.gPlace.getPlace();
+              if (result !== undefined) {
+                if (result.address_components !== undefined) {
+
+                  scope.$apply(function() {
+                    scope.details = result;
+                    controller.$setViewValue(result.name);
+                    element.val(result.name);
+                  });
+                } else {
+                  if (watchEnter) {
+                    getPlace(result);
+                  }
+                }
               }
-            }
-          }
-        })
+            })
+        });
 
         //function to get retrieve the autocompletes first result using the AutocompleteService 
         var getPlace = function(result) {
@@ -127,15 +146,14 @@ angular.module( "ngAutocomplete", [])
 
                       if (placesServiceStatus == google.maps.GeocoderStatus.OK) {
                         scope.$apply(function() {
-
-                          controller.$setViewValue(detailsResult.formatted_address);
-                          element.val(detailsResult.formatted_address);
+                          controller.$setViewValue(detailsResult.name);
+                          element.val(detailsResult.name);
 
                           scope.details = detailsResult;
 
                           //on focusout the value reverts, need to set it again.
                           var watchFocusOut = element.on('focusout', function(event) {
-                            element.val(detailsResult.formatted_address);
+                            element.val(detailsResult.name);
                             element.unbind('focusout')
                           })
 
