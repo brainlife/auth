@@ -77,6 +77,7 @@ router.post('/auth', function(req, res, next) {
             if(err) return next(err);
             if(req.body.ttl) claim.exp = (Date.now() + req.body.ttl)/1000;
             var jwt = common.signJwt(claim);
+            if(!user.times) user.times = {}; //could be empty first
             user.times.local_login = new Date();
             user.reqHeaders = req.headers;
             user.markModified('times');
@@ -107,6 +108,7 @@ router.put('/setpass', jwt({
             common.hash_password(req.body.password, (err, hash)=>{
                 if(err) return next(err);
                 user.password_hash = hash;
+                if(!user.times) user.times = {}; //could be empty first
                 user.times.password_reset = new Date();
                 user.save().then(()=>{
                     common.publish("user.setpass."+user.sub, {username: user.username});
@@ -171,6 +173,7 @@ router.post('/resetpass', function(req, res, next) {
                     user.password_hash = hash;
                     user.password_reset_token = null;
                     user.password_reset_cookie = null;
+                    if(!user.times) user.times = {}; //could be empty first
                     user.times.password_reset = new Date();
                     user.markModified('times');
                     user.save().then(function() {
