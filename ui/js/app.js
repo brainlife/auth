@@ -12,6 +12,7 @@ var app = angular.module('app', [
     'sca-shared',
     'ui.gravatar',
     'ui.select',
+    'ngAutocomplete'
 ]);
 
 //http://wijmo.com/easy-form-validation-in-angularjs/
