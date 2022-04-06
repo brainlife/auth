@@ -48,6 +48,8 @@ models.User = mongoose.model('User', {
         //admin: {type: mongoose.Schema.Types.Mixed, default: {}},
     },
 
+    geocode: mongoose.Schema.Types.Mixed, 
+
     password_hash: String, //used by local auth
 
     //used to reset password (via email?)
