@@ -126,4 +126,6 @@ angular.module('app.config', [])
         },
     },
 
+    googleApiKey: "AIzaSyD_DdEi4sKJWYq6zIxOtJ381CtzsB8hh5o",
+
 });

@@ -3,25 +3,14 @@
 
 const async = require('async');
 const fs = require('fs');
-let db = require('../api/models');
+const db = require('../api/models');
 const NodeGeocoder = require('node-geocoder');
-
 const config = require('../api/config');
 
-const options = {
-    provider: 'google',
-    apiKey: config.geocode.apiKey, 
-}
+const cache = require(config.auth.geocode.cacheFile);
+const geocoder = NodeGeocoder(config.auth.geocode.options);
 
-const cache_filename = "geocode_cache.json";
-const cache = require(__dirname+'/'+cache_filename);
-
-const geocoder = NodeGeocoder(options);
-
-const select = 'profile fullname active'
-
-
-db.mongo.User.find({}).select(select).then(users=>{
+db.mongo.User.find({}).select('profile fullname active').then(users=>{
     async.eachSeries(users, (user,next_user)=>{
         if(!user.active) {
             console.log("not active",user);
@@ -39,10 +28,10 @@ db.mongo.User.find({}).select(select).then(users=>{
             user.save();
             next_user();
         });
-        // next_user();
     }, err=>{
         if(err) console.error(err);
         console.log("all done");
+        db.disconnect();
     });
 });
 
@@ -55,18 +44,22 @@ async function lookupAddress(inst, cb) {
     }
 
     console.log("no cache.. looking up from google");
-    
     geocoder.geocode(inst).then(res=>{
         console.dir(res,inst);
         if(!res[0]) return cb("failed to lookup");
         if(res[0].extra.confidence < 0.9) return cb("low confidence");
+        /*
         cache[inst] = {
             lat: res[0].latitude,
             lng: res[0].longitude,
             country: res[0].country,
             countryCode: res[0].countryCode
         };
-        fs.writeFileSync(__dirname+"/"+cache_filename, JSON.stringify(cache, null, 4));
+        */
+        cache[inst] = res[0];
+        fs.writeFileSync(config.auth.geocode.cacheFile, JSON.stringify(cache, null, 4));
         cb(null, cache[inst]);
     });
 }
+
+
