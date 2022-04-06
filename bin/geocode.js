@@ -1,15 +1,12 @@
 #!/usr/bin/env node
 "use strict";
 
-const axios = require('axios');
 const async = require('async');
 const fs = require('fs');
 let db = require('../api/models');
-let common = require('../api/common');
 const NodeGeocoder = require('node-geocoder');
 
 const config = require('../api/config');
-const { ConnectionStates } = require('mongoose');
 
 const options = {
     provider: 'google',
@@ -22,10 +19,8 @@ const cache = require(__dirname+'/'+cache_filename);
 const geocoder = NodeGeocoder(options);
 
 const select = 'profile fullname active'
-const find = {};
 
-/* cache the instituition it is geocoding, if another user with same instituition, 
-we could use from cache */
+
 db.mongo.User.find({}).select(select).then(users=>{
     async.eachSeries(users, (user,next_user)=>{
         if(!user.active) {
