@@ -21,11 +21,11 @@ db.mongo.User.find({}).select('profile fullname active').then(users=>{
             return next_user();
         }
         const inst = user.profile.public.institution;
-        lookupAddress(inst, (err,info)=>{
+        lookupAddress(inst, async (err,info)=>{
             if(err) console.error(err);
             else user.geocode = info; 
-            user.markModified("geocode");
-            user.save();
+            user.markModified("geocode"); //is this needed?
+            await user.save();
             next_user();
         });
     }, err=>{
