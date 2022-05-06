@@ -14,7 +14,7 @@ const common = require('../common');
 const db = require('../models');
 
 //fields that are safe to include in public profile api
-let safe_fields = ["sub", "fullname", "email", "username", "active", "profile.public", "times.register"];
+let safe_fields = ["sub", "fullname", "email", "username", "active", "profile.public"/*, "times.register" - collide with times*/];
 
 /**
  * @apiGroup Profile
@@ -161,7 +161,7 @@ router.get('/userlocs', async (req, res, next)=>{
  * @apiGroup Profile
  * @api {get} /profile/:sub?    Get user profile
  * @apiDescription              Get user's private profile. Admin can specify optional :sub to retrieve
- *                              other user's provate profile
+ *                              other user's private profile
  *
  * @apiHeader {String}          Authorization A valid JWT token "Bearer: xxxxx"
  *
@@ -169,9 +169,8 @@ router.get('/userlocs', async (req, res, next)=>{
 router.get("/:sub?", jwt({secret: config.auth.public_key,algorithms: [config.auth.sign_opt.algorithm],}), 
 function(req, res, next) {
     let sub = req.user.sub;
-    console.log("auth/profile requested", sub);
     if(common.has_scope(req, "admin") && req.params.sub) sub = req.params.sub;
-    let select = [...safe_fields, "profile"];
+    let select = [...safe_fields, "profile.private"];
     db.mongo.User.findOne({sub, active: true}).select(select).lean().then(user=>{
         res.json(user);
     }).catch(next);

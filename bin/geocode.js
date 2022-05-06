@@ -30,24 +30,35 @@ db.mongo.User.find({}).select('profile fullname active').then(users=>{
         });
     }, err=>{
         if(err) console.error(err);
-        console.log("all done");
-        db.disconnect();
+        console.log("all done.. saving cache");
+        fs.writeFileSync(config.auth.geocode.cacheFile, JSON.stringify(cache, null, 4));
+        process.exit(0);
     });
 });
 
 async function lookupAddress(inst, cb) {
+
     if(!inst) return cb("no inst");
+
+    const linst = inst.toLowerCase().trim();
+
     //try the cache first
-    if(cache[inst]) {
+    if(cache[linst] === undefined) {
         console.log("using cache");
-        return cb(null, cache[inst]);
+        return cb(null, cache[linst]);
     }
 
-    console.log("no cache.. looking up from google");
-    geocoder.geocode(inst).then(res=>{
-        console.dir(res,inst);
-        if(!res[0]) return cb("failed to lookup");
-        if(res[0].extra.confidence < 0.9) return cb("low confidence");
+    console.log(linst, "cache miss.. looking up from google");
+    geocoder.geocode(linst).then(res=>{
+        if(!res[0]) {
+            cache[linst] = null;
+            return cb("failed to lookup");
+        }
+        if(res[0].extra.confidence < 0.9) {
+            cache[linst] = null;
+            return cb("low confidence");
+        }
+        console.dir(res);
         /*
         cache[inst] = {
             lat: res[0].latitude,
@@ -56,9 +67,8 @@ async function lookupAddress(inst, cb) {
             countryCode: res[0].countryCode
         };
         */
-        cache[inst] = res[0];
-        fs.writeFileSync(config.auth.geocode.cacheFile, JSON.stringify(cache, null, 4));
-        cb(null, cache[inst]);
+        cache[linst] = res[0];
+        cb(null, cache[linst]);
     });
 }
 
