@@ -12,5 +12,6 @@ nohup*.out
 **/*.log
 debug
 coverage
-docker/config
+docker/config/api/auth.key
+docker/config/api/auth.pub
 docker/db

@@ -1,20 +1,5 @@
-FROM node:10
+FROM node:16
 
-MAINTAINER Soichi Hayashi <hayashis@iu.edu>
-
-RUN apt-get update && apt install -y vim
-
-#for legacy ui
-RUN npm install http-server -g
-EXPOSE 80
-
-#    npm install pm2 -g && \
-#    pm2 install pm2-logrotate
-
-COPY . /app
-RUN cd /app && npm install --production
-RUN cd /app/ui && npm install --production
-EXPOSE 8080
-
-#CMD [ "/app/docker/start.sh" ]
-
+COPY . /apps/auth
+WORKDIR /apps/auth/api
+RUN npm install

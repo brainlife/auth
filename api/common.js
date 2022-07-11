@@ -15,7 +15,7 @@ const db = require('./models');
 let redisCon;
 exports.connectRedis = (config)=>{
     if(redisCon) return redisCon;
-    const con = redis.createClient(config.redis.port, config.redis.server);
+    const con = redis.createClient(config);
     con.on('error', console.error);
     con.on('ready', ()=>{ console.log("connected to redis") });
     return con;
@@ -28,6 +28,7 @@ exports.disconnectRedis = ()=>{
 let amqp_conn;
 function get_amqp_connection(cb) {
     if(amqp_conn) return cb(null, amqp_conn); //already connected
+    console.debug("connecting to amqp");
     amqp_conn = amqp.createConnection(config.event.amqp, {reconnectBackoffTime: 1000*10});
     amqp_conn.once("ready", ()=>{
         console.debug("connected to amqp");

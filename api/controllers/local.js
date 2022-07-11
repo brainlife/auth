@@ -12,7 +12,7 @@ const common = require('../common');
 const db = require('../models');
 const redis = require('redis');
 
-const redisClient = redis.createClient(config.redis.port, config.redis.server);
+const redisClient = redis.createClient(config.redis);
 redisClient.on('error', console.error);
 redisClient.on('ready', ()=>{ console.log("connected to redis") });
 
