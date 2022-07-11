@@ -11,22 +11,27 @@ let winston = require('winston');
 let jwt = require('jsonwebtoken');
 let fs = require('fs');
 let _ = require('underscore');
+const mongoose = require('mongoose');
 
 let config = require('../api/config');
+delete config.event;  // Hack to not connect to rabbitmq @TODO rework this
+
 let logger = winston.createLogger(config.logger.winston);
 let db = require('../api/models');
 let common = require('../api/common');
 
 switch(argv._[0]) {
-case "modscope": modscope(); break;
-case "listuser": listuser(); break;
-case "issue": issue(); break;
-case "setpass": setpass(); break;
-case "useradd": useradd(); break;
-case "userdel": userdel(); break;
-default:
-    console.log(fs.readFileSync(__dirname+"/usage.txt", {encoding: "utf8"})); 
+    case "modscope": modscope(); break;
+    case "listuser": listuser(); break;
+    case "issue": issue(); break;
+    case "setpass": setpass(); break;
+    case "useradd": useradd(); break;
+    case "userdel": userdel(); break;
+    default:
+        console.log(fs.readFileSync(__dirname + "/usage.txt", {encoding: "utf8"})); 
 }
+
+mongoose.disconnect();
 
 function listuser() {
     db.mongo.User.find({}).then(function(users) {
