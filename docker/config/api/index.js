@@ -104,10 +104,10 @@ if (GOOGLE_CLIENT_ID && GOOGLE_CLIENT_SECRET) {
 
 if (GITHUB_CLIENT_ID && GITHUB_CLIENT_SECRET) {
     exports.github = {
-    auto_register: true,
-    client_id: GITHUB_CLIENT_ID,
-    client_secret: GITHUB_CLIENT_SECRET,
-    callback_url: `${AUTH_API_URL}/github/callback`,
+        auto_register: true,
+        client_id: GITHUB_CLIENT_ID,
+        client_secret: GITHUB_CLIENT_SECRET,
+        callback_url: `${AUTH_API_URL}/github/callback`,
     };
 }
 
