@@ -1,9 +1,9 @@
 #!/bin/bash
 
-if [ ! -f auth.key ]; then
-    openssl genrsa -out auth.key 2048
-    chmod 600 auth.key
+if [ ! -f config/auth.key ]; then
+    openssl genrsa -out config/auth.key 2048
+    chmod 600 config/auth.key
 fi
-if [ ! -f auth.pub ]; then
-    openssl rsa -in auth.key -pubout > auth.pub
+if [ ! -f config/auth.pub ]; then
+    openssl rsa -in config/auth.key -pubout > config/auth.pub
 fi

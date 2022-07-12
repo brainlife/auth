@@ -4,7 +4,7 @@
   "main": "./auth.js",
   "scripts": {
     "start": "node ./auth.js",
-    "dev": "ls ././config/ensure_key.sh && nodemon",
+    "dev": "./config/ensure_key.sh && nodemon",
     "test": "mocha --reporter spec",
     "apidoc": "apidoc -i . -o docs/apidoc/",
     "cover": "node_modules/istanbul/lib/cli.js cover node_modules/mocha/bin/_mocha -- -R spec test/*.js",
