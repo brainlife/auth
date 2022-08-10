@@ -5,6 +5,7 @@ api/config/auth.*
 api/config/*.password
 api/config/index.js
 api/config/index.js.sample
+api/config/index.js.old
 api/config/*.jwt
 api/config/github.access_token
 ui/config.js

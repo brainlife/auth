@@ -5,15 +5,11 @@ const path = require('path');
 const express = require('express');
 const cookieParser = require('cookie-parser'); //google auth uses this
 const bodyParser = require('body-parser');
-//const Sequelize = require('sequelize');
 const passport = require('passport');
-const winston = require('winston');
-const expressWinston = require('express-winston');
 const cors = require('cors');
 const nocache = require('nocache');
 
 const config = require('./config');
-const logger = winston.createLogger(config.logger.winston);
 const db = require('./models');
 //const migration = require('./migration');
 
@@ -27,14 +23,12 @@ app.use(cors());
 app.use(nocache());
 app.use(bodyParser.json()); //parse application/json
 app.use(bodyParser.urlencoded({extended: false})); //parse application/x-www-form-urlencoded //TODO - do we need this?
-app.use(expressWinston.logger(config.logger.winston)); 
 app.use(cookieParser());
 app.use(passport.initialize());//needed for express-based application
 
 app.use('/', require('./controllers'));
 
 //error handling
-app.use(expressWinston.errorLogger(config.logger.winston));
 app.use(function(err, req, res, next) {
     if(typeof err == "string") err = {message: err};
 
@@ -51,14 +45,14 @@ app.use(function(err, req, res, next) {
 
 process.on('uncaughtException', function (err) {
     //TODO report this to somewhere!
-    logger.error((new Date).toUTCString() + ' uncaughtException:', err.message)
-    logger.error(err.stack)
+    console.error((new Date).toUTCString() + ' uncaughtException:', err.message)
+    console.error(err.stack)
 })
 
 exports.app = app;
 exports.start = function(cb) {
     db.mongo.connection.then(()=>{
-        logger.debug("db connected");
+        console.debug("db connected");
         var port = process.env.PORT || config.express.port || '8080';
         var host = process.env.HOST || config.express.host || 'localhost';
         app.listen(port, host, function(err) {

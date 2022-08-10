@@ -3,15 +3,12 @@
 const express = require('express');
 const router = express.Router();
 const request = require('request-promise');
-const winston = require('winston');
 const jwt = require('express-jwt');
 const clone = require('clone');
 const passport = require('passport');
 const OAuth2Strategy = require('passport-oauth2').Strategy;
 
-//mine
 const config = require('../config');
-const logger = winston.createLogger(config.logger.winston);
 
 const common = require('../common');
 const db = require('../models');
@@ -58,7 +55,7 @@ router.get('/callback', jwt({
         }
         if(req.user) {
             //logged in via associate_jwt..
-            logger.info("handling orcid association");
+            console.info("handling orcid association");
             res.clearCookie('associate_jwt');
             if(user) {
                 //SUB is already registered to another account..
@@ -84,7 +81,7 @@ router.get('/callback', jwt({
                 });
             }
         } else {
-            logger.info("handling orcid callback");
+            console.info("handling orcid callback");
             if(!user) {
                 if(config.orcid.auto_register) {
                     register_newuser(profile, res, next);
@@ -136,7 +133,7 @@ async function register_newuser(profile, res, next) {
     }
 
     var temp_jwt = common.signJwt({ exp: (Date.now() + config.auth.ttl)/1000, ext, _default })
-    logger.info("signed temporary jwt token for orcid signup:"+temp_jwt)
+    console.info("signed temporary jwt token for orcid signup:"+temp_jwt)
     console.debug(JSON.stringify(profile, null, 4));
     res.redirect('/auth/#!/signup/'+temp_jwt);
 }
