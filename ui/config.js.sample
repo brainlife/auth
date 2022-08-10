@@ -63,7 +63,7 @@ angular.module('app.config', [])
             {
                 id: "institution", //id used to store the profile in session storage
                 name: "Institution",
-                autocomplete: true
+                autocomplete: true,
                 desc: "Name of your institution/lab that you are part of.",
                 rows: 1, //textarea row size
                 required: true,
@@ -126,6 +126,5 @@ angular.module('app.config', [])
         },
     },
 
-    googleApiKey: "AIzaSyD_DdEi4sKJWYq6zIxOtJ381CtzsB8hh5o",
-
+    googleApiKey: "AIzaSyD_DdEi4sKJWYq6zIxOtJ381CtzsB8hh5o"
 });

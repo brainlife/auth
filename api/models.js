@@ -40,10 +40,10 @@ models.User = mongoose.model('User', {
     profile: {
         //any other private profile info that user can set
         public: {type: mongoose.Schema.Types.Mixed, default: {}},
-    
+
         //any other private profile info that user can set
         private: {type: mongoose.Schema.Types.Mixed, default: {}},
-    
+
         //administrative profile for this user that only admin can set
         //admin: {type: mongoose.Schema.Types.Mixed, default: {}},
     },
@@ -55,7 +55,7 @@ models.User = mongoose.model('User', {
     //used to reset password (via email?)
     password_reset_token: String, 
     password_reset_cookie: String, //cookie token allowed to do reset
-    
+
     //for 3rd party login
     ext: {
         iucas: { type: String, unique: true, sparse: true },

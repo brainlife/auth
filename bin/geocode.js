@@ -43,7 +43,7 @@ async function lookupAddress(inst, cb) {
     const linst = inst.toLowerCase().trim();
 
     //try the cache first
-    if(cache[linst] === undefined) {
+    if(cache[linst] !== undefined) {
         console.log("using cache");
         return cb(null, cache[linst]);
     }

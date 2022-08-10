@@ -68,7 +68,10 @@ router.post('/auth', function(req, res, next) {
         if (!user) {
             common.publish("user.login_fail", {type: "userpass", headers: req.headers, message: info.message, username: req.body.username});
             redisClient.set("auth.fail."+req.body.username+"."+(new Date().getTime()), "failedLogin", "EX", 3600);
-            return next(info);
+
+            const err = new Error(info);
+            err.status = 403;
+            return next(err);
         }
 
         const error = common.checkUser(user, req);
