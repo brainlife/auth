@@ -3,16 +3,13 @@
 const express = require('express');
 const router = express.Router();
 const request = require('request');
-const winston = require('winston');
 const jwt = require('express-jwt');
 const clone = require('clone');
 const passport = require('passport');
 const OAuth2Strategy = require('passport-oauth2').Strategy;
 const xml2js = require('xml2js');
 
-//mine
 const config = require('../config');
-const logger = winston.createLogger(config.logger.winston);
 
 const common = require('../common');
 const db = require('../models');
@@ -56,7 +53,7 @@ const oidc_strat = new OAuth2Strategy({
 }, function(accessToken, refreshToken, profile, cb) {
 
     //cilogon doesn't set profile.. I need to make another call to fetch the info
-    logger.debug("oidc loading userinfo ..", accessToken, profile);
+    console.debug("oidc loading userinfo ..", accessToken, profile);
     request.get({url: config.oidc.userinfo_url, qs: {access_token: accessToken}, json: true},  function(err, _res, profile) {
         if(err) return cb(err); 
         db.mongo.User.findOne({"ext.openids": {$regex: '^'+profile.cert_subject_dn}}).then(function(user) {
@@ -72,7 +69,7 @@ OAuth2Strategy.prototype.authorizationParams = function(options) {
     return { selected_idp: options.idp }
 }
 router.get('/signin', function(req, res, next) {
-    logger.debug("oidc signin commencing");
+    console.debug("oidc signin commencing");
     passport.authenticate(oidc_strat.name, {
         //this will be used by my authorizationParams() and selected_idp will be injected to authorized url
         idp: req.query.idp
@@ -94,14 +91,14 @@ router.get('/callback', jwt({
     credentialsRequired: false, 
     getToken: req=>req.cookies.associate_jwt }), function(req, res, next) {
     passport.authenticate(oidc_strat.name, function(err, user, profile) {
-        logger.debug("oidc callback", profile);
+        console.debug("oidc callback", profile);
         if(err) {
             console.error(err);
             return res.redirect('/auth/#!/signin?msg='+"Failed to authenticate oidc");
         }
         if(req.user) {
             //logged in via associate_jwt..
-            logger.info("handling oidc association");
+            console.info("handling oidc association");
             res.clearCookie('associate_jwt');
             if(user) {
                 //SUB is already registered to another account..
@@ -129,7 +126,7 @@ router.get('/callback', jwt({
                 });
             }
         } else {
-            logger.info("handling oidc callback");
+            console.info("handling oidc callback");
             if(!user) {
                 if(config.oidc.auto_register) {
                     register_newuser(profile, res, next);
@@ -176,7 +173,7 @@ function register_newuser(profile, res, next) {
     }
 
     var temp_jwt = common.signJwt({ exp: (Date.now() + config.auth.ttl)/1000, ext, _default })
-    logger.info("signed temporary jwt token for oidc signup:", temp_jwt);
+    console.info("signed temporary jwt token for oidc signup:", temp_jwt);
     res.redirect('/auth/#!/signup/'+temp_jwt);
 }
 
@@ -208,7 +205,7 @@ router.put('/disconnect', jwt({
         if(~pos) openids.splice(pos, 1);
         user.ext.openids = openids;
         user.save().then(function() {
-            logger.debug(user.toString());
+            console.debug(user.toString());
             res.json({message: "Successfully disconnected an OIDC account", user: user});
         });    
     });
@@ -221,7 +218,7 @@ router.get('/idp', function(req, res, next) {
     var query = req.query.q;
     if(!query) return next("no query");
     if(query) query = query.toLowerCase();
-    logger.debug(req.params);
+    console.debug(req.params);
     var idps = [];
     cache_idps.forEach(function(idp) {
         var match = false;

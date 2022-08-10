@@ -3,11 +3,9 @@ const express = require('express');
 const router = express.Router();
 const passport = require('passport');
 const passport_localst = require('passport-local').Strategy;
-const winston = require('winston');
 const jwt = require('express-jwt');
 
 const config = require('../config');
-const logger = winston.createLogger(config.logger.winston);
 const common = require('../common');
 const db = require('../models');
 const redis = require('redis');
@@ -98,7 +96,7 @@ router.put('/setpass', jwt({
     algorithms: [config.auth.sign_opt.algorithm],
 }), function(req, res, next) {
     db.mongo.User.findOne({sub: req.user.sub}).then(user=>{
-        logger.debug("setting password for sub:"+req.user.sub);
+        console.debug("setting password for sub:"+req.user.sub);
         if(user) {
             if(user.password_hash) {
                 if(!common.check_password(user, req.body.password_old)) {
@@ -119,7 +117,7 @@ router.put('/setpass', jwt({
                 });
             });
         } else {       
-            logger.info("failed to find user with sub:"+req.user.sub);
+            console.info("failed to find user with sub:"+req.user.sub);
             res.status(404).end();
         }
     });

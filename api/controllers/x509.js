@@ -1,15 +1,11 @@
 //NOT TESTED SINCE sequelize to mongo update
 
-//contrib
 var express = require('express');
 var router = express.Router();
 var request = require('request');
-var winston = require('winston');
 var jwt = require('express-jwt');
 
-//mine
 var config = require('../config');
-var logger = winston.createLogger(config.logger.winston);
 
 var common = require('../common');
 var db = require('../models');
@@ -65,7 +61,7 @@ router.get('/associate/:jwt', jwt({
         if(err) return next(err); 
         if(!user) {
             //associate(req.user, dn, res);
-            logger.info("associating user with x509 DN "+dn);
+            console.info("associating user with x509 DN "+dn);
             db.mongo.User.findOne({sub: req.user.sub}).then(function(user) {
                 if(!user) return next("couldn't find user record with jwt.sub:"+req.user.sub);
                 var dns = user.ext.x509dns;
@@ -99,7 +95,7 @@ router.put('/disconnect', jwt({
     algorithms: [config.auth.sign_opt.algorithm],
 }), function(req, res, next) {
     var dn = req.body.dn;
-    logger.debug("disconnecting "+dn);
+    console.debug("disconnecting "+dn);
     db.User.findOne({sub: req.user.sub}).then(function(user) {
         if(!user) res.status(401).end();
         var dns = user.ext.x509dns;

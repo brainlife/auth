@@ -3,7 +3,6 @@
 var express = require('express');
 var router = express.Router();
 var request = require('request');
-var winston = require('winston');
 var jwt = require('express-jwt');
 var clone = require('clone');
 var passport = require('passport');
@@ -11,7 +10,6 @@ var GitHubStrategy = require('passport-facebook').Strategy;
 
 //mine
 var config = require('../config');
-var logger = winston.createLogger(config.logger.winston);
 
 var common = require('../common');
 var db = require('../models');

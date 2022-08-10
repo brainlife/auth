@@ -3,15 +3,12 @@
 const express = require('express');
 const router = express.Router();
 const request = require('request');
-const winston = require('winston');
 const jwt = require('express-jwt');
 const clone = require('clone');
 const passport = require('passport');
 const GitHubStrategy = require('passport-github').Strategy;
 
-//mine
 const config = require('../config');
-const logger = winston.createLogger(config.logger.winston);
 
 const common = require('../common');
 const db = require('../models');

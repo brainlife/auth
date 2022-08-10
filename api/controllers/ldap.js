@@ -1,16 +1,12 @@
 
-//contrib
 var express = require('express');
 var router = express.Router();
 var passport = require('passport');
 var passportldap = require('passport-ldapauth');
-var winston = require('winston');
 var jwt = require('express-jwt');
 var clone = require('clone');
 
-//mine
 var config = require('../config');
-var logger = winston.createLogger(config.logger.winston);
 var common = require('../common');
 var db = require('../models');
 
@@ -23,8 +19,7 @@ function registerUser(ldapuser, cb) {
     u.email_confirmed = true; //let's trust IU
     u.fullname = ldapuser.givenName+" "+ldapuser.sn;
     var user = db.User.build(u);
-    logger.info("registering user through first time ldap auth - ldap.cn:"+u.username);
-    //logger.info(user);
+    console.info("registering user through first time ldap auth - ldap.cn:"+u.username);
     user.save().then(function() {
         cb(null, user);
     });
@@ -32,7 +27,7 @@ function registerUser(ldapuser, cb) {
 
 passport.use(new passportldap(config.ldap,
     function(ldapuser, done) {
-        logger.info("handling ldap auth post processing");
+        console.info("handling ldap auth post processing");
         //look for ldap field, but also look for username (for now) so that users who registered with 
         //local username/pass can be authenticated
         //TODO - this means IU user can *takeover* non-IU user.. eventually I might allow both
@@ -47,7 +42,7 @@ passport.use(new passportldap(config.ldap,
                     //if user is matched using username, and ldap is empty, populate ldap so that 
                     //user will be matched with ldap next time .. 
                     //eventually I should make username matching optional or completely drop it..
-                    logger.warn("user account matched via username but ldap was empty - setting ldap account:"+ldapuser.cn);
+                    console.warn("user account matched via username but ldap was empty - setting ldap account:"+ldapuser.cn);
                     user.ldap = ldapuser.cn;
                     user.save().then(function() {
                         done(null, user);
