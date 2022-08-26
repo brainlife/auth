@@ -19,7 +19,7 @@
     "express": "^4.17.1",
     "express-jwt": "^6.1.0",
     "jsonwebtoken": "^8.5.1",
-    "mongoose": "^6.0.12",
+    "mongoose": "^6.4.6",
     "nocache": "^3.0",
     "node-geocoder": "^4.0.0",
     "node-uuid": "^1.4.8",
