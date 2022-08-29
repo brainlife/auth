@@ -48,15 +48,6 @@ angular.module( "ngAutocomplete", [])
       },
 
       link: function(scope, element, attrs, controller) {
-            /*
-        console.dir(google);
-        google.load('places', '3', {
-            other_params: 'key=IzaSyD_DdEi4sKJWYq6zIxOtJ381CtzsB8hh5o',
-            callback: function(){
-                console.log("loaded places api");
-            }
-        });
-            */
 
         //options for autocomplete
         var opts
@@ -100,6 +91,7 @@ angular.module( "ngAutocomplete", [])
         }
 
         script("https://maps.googleapis.com/maps/api/js?key="+appconf.googleApiKey+"&libraries=places", err=>{
+            if(err) throw err;
             if (scope.gPlace == undefined) {
               scope.gPlace = new google.maps.places.Autocomplete(element[0], {});
             }

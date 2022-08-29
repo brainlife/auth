@@ -10,13 +10,9 @@ const common = require('../common');
 const db = require('../models');
 const redis = require('redis');
 
-const redisClient = redis.createClient(config.redis.port, config.redis.server);
-redisClient.on('error', console.error);
-redisClient.on('ready', ()=>{ console.log("connected to redis") });
-
 passport.use(new passport_localst(
     function(username_or_email, password, done) {
-        db.mongo.User.findOne({$or: [{"username": username_or_email}, {"email": username_or_email}]}).then(user=>{
+        db.mongo.User.findOne({$or: [{"username": username_or_email}, {"email": username_or_email}]}).then(async user=>{
             const hourlater = new Date(new Date().getTime() + 3600*1000)
             if (!user) {
                 setTimeout(function() {
@@ -30,10 +26,8 @@ passport.use(new passport_localst(
                         code: 'no_password' 
                     });
                 }
-                redisClient.keys('auth.fail.'+user.username+'.*', (err, fails)=>{
-                    if(err) return console.log(err);
-                    if(fails.length >= 3) done(null, false, { message: 'Account Locked ! Try after an hour' });
-                });
+                const fails = await common.redisClient.hVals('auth.fail.'+user.username+'.*');
+                if(fails.length >= 3) done(null, false, { message: 'Account Locked ! Try after an hour' });
 
                 if(!common.check_password(user, password)) {
                     //delay returning to defend against password sweeping attack
@@ -61,15 +55,17 @@ passport.use(new passport_localst(
  * @apiSuccess {Object} jwt JWT token
  */
 router.post('/auth', function(req, res, next) {
-    passport.authenticate('local', function(err, user, info) {
+    passport.authenticate('local', async function(err, user, info) {
         if (err) return next(err);
         if (!user) {
             common.publish("user.login_fail", {type: "userpass", headers: req.headers, message: info.message, username: req.body.username});
-            redisClient.set("auth.fail."+req.body.username+"."+(new Date().getTime()), "failedLogin", "EX", 3600);
+            await common.redisClient.set("auth.fail."+req.body.username+"."+(new Date().getTime()), "failedLogin", {EX: 3600});
 
-            const err = new Error(info);
-            err.status = 403;
-            return next(err);
+            //dump number of times this user failed recently
+            const fails = await common.redisClient.keys('auth.fail.'+req.body.username+'.*');
+            console.dir(fails);
+
+            return next({status: 403, message: info.message});
         }
 
         const error = common.checkUser(user, req);
@@ -199,18 +195,17 @@ router.post('/unlockuser/:id', jwt({
     secret: config.auth.public_key,
     algorithms: [config.auth.sign_opt.algorithm],
 }), common.scope("admin"), function(req, res, next) {
-    db.mongo.User.findById(req.params.id).then(user=>{
+    db.mongo.User.findById(req.params.id).then(async user=>{
         if(!user) res.status(401).json({message: "No such user registered"});
-        /* check if user is locked */
-        redisClient.keys('auth.fail.'+user.username+'.*', (err, fails)=>{
-            if(err) return next(err);
-            if(!fails.length) return next('Account already unlocked!');
-            for(const fail of fails) {
-                console.log("removing", fail);
-                redisClient.del(fail);
-            }
-            res.json({status: "ok", message: "Account Unlocked Successfully."});
-        });
+
+        // check if user is locked 
+        const fails = await common.redisClient.keys('auth.fail.'+user.username+'.*');
+        if(!fails.length) return next('Account already unlocked!');
+        for(const fail of fails) {
+            console.log("removing", fail);
+            await common.redisClient.del(fail);
+        }
+        res.json({status: "ok", message: "Account Unlocked Successfully."});
     });
 });
 

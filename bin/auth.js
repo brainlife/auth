@@ -7,13 +7,10 @@
 //
 
 let argv = require('optimist').argv;
-let winston = require('winston');
 let jwt = require('jsonwebtoken');
 let fs = require('fs');
-let _ = require('underscore');
 
 let config = require('../api/config');
-let logger = winston.createLogger(config.logger.winston);
 let db = require('../api/models');
 let common = require('../api/common');
 
@@ -25,32 +22,38 @@ case "setpass": setpass(); break;
 case "useradd": useradd(); break;
 case "userdel": userdel(); break;
 default:
-    console.log(fs.readFileSync(__dirname+"/usage.txt", {encoding: "utf8"})); 
+    console.log(fs.readFileSync(__dirname+"/usage.txt", {encoding: "utf8"}));
 }
 
 function listuser() {
-    db.mongo.User.find({}).then(function(users) {
-        console.dir(users);
-    }); 
+    db.init(err=>{
+        if(err) throw err;
+        db.mongo.User.find({}).then(function(users) {
+            console.dir(users);
+            db.disconnect();
+        });
+    });
 }
 
 function issue() {
     if((!argv.scopes || argv.sub === undefined) && !argv.username) {
-        logger.error("./auth.js issue --username <userrname>");
-        logger.error("./auth.js issue --scopes '{common: [\"user\"]}' --sub 'my_service' [--exp 1514764800]  [--out token.jwt] [--key test.key]");
+        console.error("./auth.js issue --username <userrname>");
+        console.error("./auth.js issue --scopes '{common: [\"user\"]}' --sub 'my_service' [--exp 1514764800]  [--out token.jwt] [--key test.key]");
         process.exit(1);
     }
 
     if(argv.username) {
         //load claim from user table
-        db.mongo.User.findOne({$or: [
-            {sub: argv.id}, 
-            {username: argv.username}, 
-        ]}).then(user=>{
-            console.log(argv.username);
-            common.createClaim(user, (err, claim)=>{ 
-                if(err) throw err;
-                issue(claim);
+        db.init(err=>{
+            db.mongo.User.findOne({$or: [
+                {sub: argv.id}, 
+                {username: argv.username}, 
+            ]}).then(user=>{
+                db.disconnect();
+                common.createClaim(user, (err, claim)=>{ 
+                    if(err) throw err;
+                    issue(claim);
+                });
             });
         });
     } else {
@@ -80,7 +83,7 @@ function issue() {
             claim.exp = (d+argv.ttl*3600*24)/1000;
         }
         if(argv.key) {
-            console.log("using specified private key");
+            console.debug("using specified private key");
             config.auth.private_key = fs.readFileSync(argv.key);
         }
         var token = jwt.sign(claim, config.auth.private_key, config.auth.sign_opt);
@@ -89,12 +92,12 @@ function issue() {
         } else {
             console.log(token);
         }
-    } 
+    }
 }
 
 function modscope() {
     if(!argv.username && !argv.id) {
-        logger.error("please specify --username <username> (or --id <userid>) --set/add/del '{{common: [\"user\", \"admin\"]}}'");
+        console.error("please specify --username <username> (or --id <userid>) --set/add/del '{{common: [\"user\", \"admin\"]}}'");
         process.exit(1);
     }
 
@@ -104,7 +107,6 @@ function modscope() {
                 if(!~base.indexOf(item)) base.push(item);
             });
         } else if(typeof sub == 'string') {
-            console.log("adding", sub);
             if(!~base.indexOf(sub)) base.push(sub);
         } else if(typeof sub == 'object') {
             for(var k in sub) {
@@ -129,100 +131,119 @@ function modscope() {
         return base;
     }
 
-    db.mongo.User.findOne({$or: [
-            {sub: argv.id}, 
-            {username: argv.username}, 
-    ]}).then(function(user) {
-        if(!user) return logger.error("can't find user:"+argv.username);
-        if(argv.set) {
-            user.scopes = JSON.parse(argv.set);
-        }
-        if(argv.add) {
-            user.scopes = add(_.clone(user.scopes), JSON.parse(argv.add));
-        }
-        if(argv.del) {
-            user.scopes = del(_.clone(user.scopes), JSON.parse(argv.del));
-        }
-        user.save().then(function() {
-            logger.info(user.scopes);
-            logger.info("successfully updated user scope. user must re-login for it to take effect)");
-        }).catch(function(err) {
-            logger.error(err);
-        });
-    })
+    db.init(err=>{
+        if(err) throw err;
+        db.mongo.User.findOne({$or: [
+                {sub: argv.id}, 
+                {username: argv.username}, 
+        ]}).then(function(user) {
+            if(!user) return console.error("can't find user:"+argv.username);
+            if(argv.set) {
+                user.scopes = JSON.parse(argv.set);
+            }
+            if(argv.add) {
+                user.scopes = add(_.clone(user.scopes), JSON.parse(argv.add));
+            }
+            if(argv.del) {
+                user.scopes = del(_.clone(user.scopes), JSON.parse(argv.del));
+            }
+            user.save().then(function() {
+                console.info(user.scopes);
+                console.info("successfully updated user scope. user must re-login for it to take effect)");
+                db.disconnect();
+            }).catch(function(err) {
+                console.error(err);
+                db.disconnect();
+            });
+        })
+    });
 }
 
 function setpass() {
     if(!argv.username && !argv.id) {
-        logger.error("please specify --username <username> or --id <userid>");
+        console.error("please specify --username <username> or --id <userid>");
         process.exit(1);
     }
     if(!argv.password) {
-        logger.error("please specify --password <password>");
+        console.error("please specify --password <password>");
         process.exit(1);
     }
 
-    db.mongo.User.findOne({$or: [
-        {sub: argv.id}, 
-        {username: argv.username}, 
-    ]}).then(function(user) {
-        if(!user) return logger.error("can't find user:"+argv.username);
-        user.setPassword(argv.password, function(err) {
-            if(err) throw err;
-            user.save().then(function() {
-                logger.log("successfully updated password");
-            }).catch(function(err) {
-                logger.error(err);
+    db.init(err=>{
+        if(err) throw err;
+        db.mongo.User.findOne({$or: [
+            {sub: argv.id}, 
+            {username: argv.username}, 
+        ]}).then(function(user) {
+            if(!user) return console.error("can't find user:"+argv.username);
+            user.setPassword(argv.password, function(err) {
+                if(err) throw err;
+                user.save().then(function() {
+                    console.log("successfully updated password");
+                    db.disconnect();
+                }).catch(function(err) {
+                    console.error(err);
+                    db.disconnect();
+                });
             });
-        });
-    })
+        })
+    });
 }
 
 function useradd() {
     if(!argv.username) {
-        logger.error("please specify --username <username>");
+        console.error("please specify --username <username>");
         process.exit(1);
     }
     if(!argv.fullname) {
-        logger.error("please specify --fullname <fullname>");
+        console.error("please specify --fullname <fullname>");
         process.exit(1);
     }
     if(!argv.email) {
-        logger.error("please specify --email <fullname>");
+        console.error("please specify --email <fullname>");
         process.exit(1);
     }
 
-    var user = db.mongo.User.build(
-        //extend from default
-        Object.assign({
-            username: argv.username,
-            fullname: argv.fullname,
-            email: argv.email,
-            email_confirmed: true,
-        }, config.auth.default)
-    );
-    user.save().then(function(_user) {
-        if(!_user) return logger.error("couldn't register new user");
-        logger.info("successfully created a user");
-        if(argv.password) setpass();
-        else logger.info("you might want to reset password / setscope");
+    db.init(err=>{
+        if(err) throw err;
+        var user = db.mongo.User.build(
+            //extend from default
+            Object.assign({
+                username: argv.username,
+                fullname: argv.fullname,
+                email: argv.email,
+                email_confirmed: true,
+            }, config.auth.default)
+        );
+        user.save().then(function(_user) {
+            if(!_user) return console.error("couldn't register new user");
+            console.info("successfully created a user");
+            if(argv.password) setpass();
+            else console.info("you might want to reset password / setscope");
+            db.disconnect();
+        });
     });
 }
 
 function userdel() {
     if(!argv.username && !argv.id) {
-        logger.error("please specify --username <username> or --id <userid>");
+        console.error("please specify --username <username> or --id <userid>");
         process.exit(1);
     }
 
-    db.mongo.User.findOne({$or: [
-        {sub: argv.id}, 
-        {username: argv.username}, 
-    ]}).then(user=>{
-        if(!user) return logger.error("no such user");
-        db.mongo.Group.update({members: user}, {$pull : { members: user }}, {multi: true});
-        db.mongo.Group.update({admins: user}, {$pull : { admins: user }}, {multi: true});
-        user.remove(); //TODO - should I just mark as inactive?
+    db.init(err=>{
+        if(err) throw err;
+        db.mongo.User.findOne({$or: [
+            {sub: argv.id}, 
+            {username: argv.username}, 
+        ]}).then(user=>{
+            if(!user) return console.error("no such user");
+            db.mongo.Group.update({members: user}, {$pull : { members: user }}, {multi: true});
+            db.mongo.Group.update({admins: user}, {$pull : { admins: user }}, {multi: true});
+            user.remove(); //TODO - should I just mark as inactive?
+
+            db.disconnect();
+        });
     });
 }
 

@@ -10,30 +10,33 @@ const config = require('../api/config');
 const cache = require(config.auth.geocode.cacheFile);
 const geocoder = NodeGeocoder(config.auth.geocode.options);
 
-db.mongo.User.find({}).select('profile fullname active').then(users=>{
-    async.eachSeries(users, (user,next_user)=>{
-        if(!user.active) {
-            console.log("not active",user);
-            return next_user();
-        }
-        if(!user.profile.public) {
-            console.log("no public profile",user);
-            return next_user();
-        }
-        const inst = user.profile.public.institution;
-        lookupAddress(inst, async (err,info)=>{
+db.init(err=>{
+    db.mongo.User.find({}).select('profile fullname active').then(users=>{
+        async.eachSeries(users, (user,next_user)=>{
+            if(!user.active) {
+                console.log("not active",user);
+                return next_user();
+            }
+            if(!user.profile.public) {
+                console.log("no public profile",user);
+                return next_user();
+            }
+            const inst = user.profile.public.institution;
+            lookupAddress(inst, async (err,info)=>{
+                if(err) console.error(err);
+                else user.geocode = info; 
+                user.markModified("geocode"); //is this needed?
+                await user.save();
+                next_user();
+            });
+        }, err=>{
             if(err) console.error(err);
-            else user.geocode = info; 
-            user.markModified("geocode"); //is this needed?
-            await user.save();
-            next_user();
+            console.log("all done.. saving cache");
+            fs.writeFileSync(config.auth.geocode.cacheFile, JSON.stringify(cache, null, 4));
+            process.exit(0);
         });
-    }, err=>{
-        if(err) console.error(err);
-        console.log("all done.. saving cache");
-        fs.writeFileSync(config.auth.geocode.cacheFile, JSON.stringify(cache, null, 4));
-        process.exit(0);
     });
+
 });
 
 async function lookupAddress(inst, cb) {

@@ -11,6 +11,7 @@ const nocache = require('nocache');
 
 const config = require('./config');
 const db = require('./models');
+const common = require('./common');
 
 //prevent startup if config is old
 if(config.auth.default_scopes) {
@@ -30,16 +31,19 @@ app.use('/', require('./controllers'));
 //error handling
 app.use(function(err, req, res, next) {
     if(typeof err == "string") err = {message: err};
+    if(err instanceof Error) err = {message: err.toString()};
 
-    if(!err.name || err.name != "UnauthorizedError") {
-        console.error(err);
+    console.error(err);
+
+    if(err.name) switch(err.name) {
+    case "UnauthorizedError":
+        console.log(req.headers); //dump headers for debugging purpose..
+        break;
     }
-
     if(err.stack) err.stack = "hidden"; //don't sent call stack to UI - for security reason
     res.status(err.status || 500);
     res.json(err);
 
-    console.error(err);
 });
 
 process.on('uncaughtException', function (err) {
@@ -50,14 +54,29 @@ process.on('uncaughtException', function (err) {
 
 exports.app = app;
 exports.start = function(cb) {
-    db.mongo.connection.then(()=>{
-        console.debug("db connected");
-        var port = process.env.PORT || config.express.port || '8080';
-        var host = process.env.HOST || config.express.host || 'localhost';
-        app.listen(port, host, function(err) {
-            if(err) return cb(err);
-            console.log("Express server listening on %s:%d", host,port);
-            cb(null);
+
+    db.init(err=>{
+        if(err) throw err;
+        console.debug("connected to db");
+
+        common.connectRedis(err=>{
+            if(err) throw err;
+            console.log("connected to redis");
+
+            common.connectAMQP(err=>{
+                if(err) throw err;
+                console.debug("connected to amqp");
+
+                var port = process.env.PORT || config.express.port || '8080';
+                var host = process.env.HOST || config.express.host || 'localhost';
+
+                app.listen(port, host, function(err) {
+                    if(err) return cb(err);
+
+                    console.log("Express server listening on %s:%d", host, port);
+                    cb(null);
+                });
+            });
         });
     });
 }

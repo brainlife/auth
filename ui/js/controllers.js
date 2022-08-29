@@ -148,7 +148,7 @@ function($scope, $route, toaster, $http, $routeParams, scaMessage, $location, $r
         if(user._default.email) $scope.form.email = user._default.email;
         if(user._default.fullname) $scope.form.fullname = user._default.fullname;
         if(user._default.institution) $scope.form.profile.public.institution = user._default.institution;
-        
+
         //localStorage.setItem($scope.appconf.jwt_id, $routeParams.jwt);
         postconfig.headers =  {
             'Authorization': 'Bearer '+$routeParams.jwt
@@ -161,7 +161,6 @@ function($scope, $route, toaster, $http, $routeParams, scaMessage, $location, $r
 
     $scope.aup = $sce.trustAsResourceUrl($scope.appconf.aup);
     $scope.privacy = $sce.trustAsResourceUrl($scope.appconf.privacy);
-    //$scope.aup = "##hello";
 
     $scope.submit = async function() {
         //new registration (or do registration complete with temp jwt)

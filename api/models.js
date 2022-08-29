@@ -4,25 +4,18 @@ const config = require('./config');
 
 if(config.mongoose_debug) mongoose.set("debug", true);
 
-///////////////////////////////////////////////////////////////////////////////////////////////////
-//
-// mongoose
-//
-const models = {};
+exports.init = (cb)=>{
+    mongoose.connect(config.mongodb, {
+        useNewUrlParser: true,
+        useUnifiedTopology: true,
+    }, cb);
+}
 
-models.connection = mongoose.connect(config.mongodb, {
-    /*
-    readPreference: 'nearest',
-    readConcern: {
-        level: 'majority',//prevents read to grab stale data from secondary
-    },
-    writeConcern: {
-        w: 'majority', //isn't this the default?
-    },
-    */
-    useNewUrlParser: true,
-    useUnifiedTopology: true,
-});
+exports.disconnect = function(cb) {
+    mongoose.disconnect(cb);
+}
+
+const models = {};
 
 models.User = mongoose.model('User', { 
 
@@ -119,7 +112,4 @@ models.FailedLogin = mongoose.model('FailedLogin', {
 });
 
 module.exports.mongo = models;
-
-//const kitty = new Cat({ name: 'Zildjian' });
-//kitty.save().then(() => console.log('meow'));
 

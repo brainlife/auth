@@ -12,42 +12,42 @@ const redis = require('redis');
 const config = require('./config');
 const db = require('./models');
 
-let redisCon;
-exports.connectRedis = (config)=>{
-    if(redisCon) return redisCon;
-    const con = redis.createClient(config.redis.port, config.redis.server);
-    con.on('error', console.error);
-    con.on('ready', ()=>{ console.log("connected to redis") });
-    return con;
-}
-
-exports.disconnectRedis = ()=>{
-    if(redisCon) return redisCon.end(true);
+exports.redisClient = redis.createClient(config.redis);
+exports.redisClient.on('error', console.error);
+exports.connectRedis = async function(cb) {
+    console.log("connecting to redis");
+    await exports.redisClient.connect();
+    if(cb) cb(); //for client using cb
 }
 
 let amqp_conn;
-function get_amqp_connection(cb) {
-    if(amqp_conn) return cb(null, amqp_conn); //already connected
-    amqp_conn = amqp.createConnection(config.event.amqp, {reconnectBackoffTime: 1000*10});
-    amqp_conn.once("ready", ()=>{
-        console.debug("connected to amqp");
-        cb(null, amqp_conn);
-    });
-    amqp_conn.on("error", err=>{
-        console.error(err);
-    });
-}
-
 let auth_ex;
-if(config.event) {
+exports.connectAMQP = function(cb) {
+
+    if(!config.event) return cb();
+
     get_amqp_connection((err, conn)=>{
         if(err) throw err;
         console.debug("creating auth amqp exchange");
         conn.exchange("auth", {autoDelete: false, durable: true, type: 'topic', confirm: true}, (ex)=>{
             auth_ex = ex;
+            cb();
         });
     });
+
+    function get_amqp_connection(cb) {
+        if(amqp_conn) return cb(null, amqp_conn); //already connected
+        amqp_conn = amqp.createConnection(config.event.amqp, {reconnectBackoffTime: 1000*10});
+        amqp_conn.once("ready", ()=>{
+            console.debug("connected to amqp");
+            cb(null, amqp_conn);
+        });
+        amqp_conn.on("error", err=>{
+            console.error(err);
+        });
+    }
 }
+
 
 exports.publish = (key, message, cb)=>{
     message.timestamp = (new Date().getTime())/1000; //it's crazy that amqp doesn't set this?
