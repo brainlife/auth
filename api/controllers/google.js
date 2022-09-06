@@ -17,7 +17,7 @@ passport.use(new GoogleStrategy({
     clientSecret: config.google.client_secret,
     callbackURL: config.google.callback_url,
 }, function(accessToken, refreshToken, profile, cb) {
-    console.dir(profile);
+    //console.dir(profile);
     db.mongo.User.findOne({'ext.googleid': profile.id}).then(function(user) {
         cb(null, user, profile);
     });
@@ -88,7 +88,7 @@ router.get('/callback', jwt({
             });
         } else {
             //normal sign in
-            logger.debug("handling normal signin");
+            console.debug("handling normal signin");
             if(!user) {
                 if(config.google.auto_register) {
                     register_newuser(profile, res, next);
@@ -135,7 +135,7 @@ function register_newuser(profile, res, next) {
     }
 
     var temp_jwt = common.signJwt({ exp: (Date.now() + config.auth.ttl)/1000, ext, _default})
-    logger.info("signed temporary jwt token for google signup:"+temp_jwt);
+    console.info("signed temporary jwt token for google signup:"+temp_jwt);
     res.redirect('/auth/#!/signup/'+temp_jwt);
 }
 

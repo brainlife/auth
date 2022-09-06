@@ -37,7 +37,6 @@ router.get('/callback', jwt({
 }), function(req, res, next) {
     console.log("github signin /callback called ");
     passport.authenticate('github', /*{failureRedirect: '/auth/error'},*/ function(err, user, profile) {
-        //logger.debug("github callback", JSON.stringify(profile, null, 4));
         if(err) {
             console.error(err);
             return res.redirect('/auth/#!/signin?msg='+"Failed to authenticate");
@@ -106,7 +105,7 @@ function register_newuser(profile, res, next) {
 
     if(profile.email && profile.emails.length > 0) user.email = profile.emails[0].value;
     var temp_jwt = common.signJwt({ exp: (Date.now() + config.auth.ttl)/1000, ext, _default})
-    logger.info("signed temporary jwt token for github signup:"+temp_jwt);
+    console.info("signed temporary jwt token for github signup:"+temp_jwt);
     res.redirect('/auth/#!/signup/'+temp_jwt);
 }
 
