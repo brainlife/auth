@@ -3,7 +3,6 @@ ui/bower_components
 node_modules
 api/config/auth.*
 api/config/*.password
-api/config/index.js
 api/config/index.js.sample
 api/config/index.js.old
 api/config/*.jwt
