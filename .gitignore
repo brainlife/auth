@@ -3,12 +3,9 @@ ui/bower_components
 node_modules
 api/config/auth.*
 api/config/*.password
-<<<<<<< HEAD
-api/config/index.js.sample
-api/config/index.js.old
-=======
->>>>>>> d03e94ec000667a3de0b2e8557a8ec8933e1bb7e
+api/config/index.js
 api/config/*.jwt
+ui/config.js
 api/config/github.access_token
 nohup*.out
 **/*.log
