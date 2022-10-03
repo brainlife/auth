@@ -3,7 +3,9 @@ ui/bower_components
 node_modules
 api/config/auth.*
 api/config/*.password
+api/config/index.js
 api/config/*.jwt
+ui/config.js
 api/config/github.access_token
 nohup*.out
 **/*.log
