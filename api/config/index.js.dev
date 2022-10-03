@@ -48,7 +48,7 @@ exports.auth = {
     */
 };
 
-exports.redis = { url: "redis://brainlife_redis_1" }
+exports.redis = { url: "redis://brainlife_redis" }
 
 //used by profile/poscount api to group variuos positions entered by users into
 //distinct position groups using regex..
@@ -68,7 +68,7 @@ exports.positionGroups = {
 
 exports.event = {
     amqp: {
-        url: "amqp://guest:guest@brainlife_rabbitmq_1:5672/brainlife"
+        url: "amqp://guest:guest@brainlife_rabbitmq:5672/brainlife"
     },
 }
 
@@ -100,7 +100,7 @@ exports.local = {
     */
 };
 
-exports.mongodb = "mongodb://brainlife_mongodb_1/auth";
+exports.mongodb = "mongodb://brainlife_mongodb/auth";
 exports.mongoose_debug = true;
 
 exports.express = {

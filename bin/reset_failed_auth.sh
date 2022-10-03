@@ -1,6 +1,6 @@
 #!/bin/bash
 
-docker exec -i -w /app/api brainlife_auth-api_1 node <<EOF
+docker exec -i -w /app/api brainlife_auth-api node <<EOF
 
 const fs = require('fs');
 const jwt = require('jsonwebtoken');
