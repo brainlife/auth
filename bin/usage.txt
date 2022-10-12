@@ -29,4 +29,3 @@ Usage:
 
 * remove user
 ./auth.js userdel --username hayashis [or --id 123]
-

@@ -15,14 +15,14 @@ let db = require('../api/models');
 let common = require('../api/common');
 
 switch(argv._[0]) {
-case "modscope": modscope(); break;
-case "listuser": listuser(); break;
-case "issue": issue(); break;
-case "setpass": setpass(); break;
-case "useradd": useradd(); break;
-case "userdel": userdel(); break;
-default:
-    console.log(fs.readFileSync(__dirname+"/usage.txt", {encoding: "utf8"}));
+    case "modscope": modscope(); break;
+    case "listuser": listuser(); break;
+    case "issue": issue(); break;
+    case "setpass": setpass(); break;
+    case "useradd": useradd(); break;
+    case "userdel": userdel(); break;
+    default:
+        console.log(fs.readFileSync(__dirname + "/usage.txt"));
 }
 
 function listuser() {
@@ -170,23 +170,38 @@ function setpass() {
     }
 
     db.init(err=>{
-        if(err) throw err;
+        if (err) throw err;
         db.mongo.User.findOne({$or: [
             {sub: argv.id}, 
             {username: argv.username}, 
-        ]}).then(function(user) {
-            if(!user) return console.error("can't find user:"+argv.username);
-            user.setPassword(argv.password, function(err) {
-                if(err) throw err;
-                user.save().then(function() {
-                    console.log("successfully updated password");
+        ]})
+            .then(function(user) {
+                if (!user) {
                     db.disconnect();
-                }).catch(function(err) {
-                    console.error(err);
-                    db.disconnect();
+                    return console.error("User not found: " + argv.username);
+                }
+                console.log(user);
+                common.hash_password(argv.password, (err, hash) => {
+                    if (err) throw err;
+                    user.password_hash = hash;
+                    if (!user.times)
+                        user.times = {}; //could be empty first
+                    user.times.password_reset = new Date();
+                    user.save()
+                        .then(()=>{
+                            console.log("Successfully updated password");
+                            db.disconnect();
+                        })
+                        .catch(function(err) {
+                            console.error(err);
+                            db.disconnect();
+                        });
                 });
+            })
+            .catch(function(err) {
+                console.error(err);
+                db.disconnect();
             });
-        })
     });
 }
 
