@@ -188,17 +188,17 @@ exports.intersect_scopes = function(o1, o2) {
     return intersect;
 }
 
-exports.hash_password = function(password, cb) {
-    //check for password strength.. 
-    //intentionally left minimalistic (UI should impose stronger restriction)
-    var strength = zxcvbn(password);
+
+exports.hash_password= async function(password) {
+    let strength = await zxcvbn(password);
     //0 # too guessable: risky password. (guesses < 10^3)
     //1 # very guessable: protection from throttled online attacks. (guesses < 10^6)
     //2 # somewhat guessable: protection from unthrottled online attacks. (guesses < 10^8)
     //3 # safely unguessable: moderate protection from offline slow-hash scenario. (guesses < 10^10)
     //4 # very unguessable: strong protection from offline slow-hash scenario. (guesses >= 10^10)
     if(strength.score == 0) {
-        return cb({message: strength.feedback.warning+" - "+strength.feedback.suggestions.toString()});
+        throw new Error(strength.feedback.warning + " - " + strength.feedback.suggestions.toString() + 
+        ". Please choose a stronger password and try again.");
     }
 
     /* cost of computation https://www.npmjs.com/package/bcrypt
@@ -207,12 +207,13 @@ exports.hash_password = function(password, cb) {
     * rounds=25: ~1 hour/hash
     * rounds=31: 2-3 days/hash
     */
-    bcrypt.genSalt(10, function(err, salt) {
-        bcrypt.hash(password, salt, function(err, hash) {
-            if(err) return cb(err);
-            cb(null, hash);
-        });
-    });
+    try {
+        let salt = await bcrypt.genSalt(10);
+        let hash = await bcrypt.hash(password, salt);
+        return hash;
+    } catch (err) {
+        throw new Error("An error occurred while hashing the password. Please try again later.");
+    }
 }
 
 exports.check_password = function(user, password) {
