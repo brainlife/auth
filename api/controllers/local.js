@@ -146,6 +146,7 @@ router.post('/resetpass', async (req, res, next) => {
         //initiate password reset
         const email = req.body.email;
         try{
+            const user = await db.mongo.User.findOne({email});
             if(!user) return res.status(404).json({message: "No such email registered"});
             //we need 2 tokens - 1 to confirm user, and 1 to match the browser (cookie)
             user.password_reset_token = Math.random().toString(36).substr(2);
