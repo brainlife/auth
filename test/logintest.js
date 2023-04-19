@@ -25,7 +25,7 @@ describe('Signup API', () => {
     db.disconnect(done());
   });
 
-  afterEach((done)=>{
+  afterEach((done) => {
     //  Clear test database after test case
     db.mongo.User.deleteMany({}, (err) => {
       if (err) return done(err);
@@ -53,7 +53,7 @@ describe('Signup API', () => {
         .expect(500)
         .end((err, res) => {
           if (err) return done(err);
-          assert.equal(res.body.message, 
+          assert.equal(res.body.message,
             'The username you chose is already registered. If it is yours, please try signing in, or register with a different username.');
           done();
         });
@@ -72,76 +72,72 @@ describe('Signup API', () => {
       .expect(500)
       .end((err, res) => {
         if (err) return done(err);
-        assert.equal(res.body.message,errorMessage)
+        assert.equal(res.body.message, errorMessage)
         done();
       });
   });
 
   it('Testing /setpass - should return error for top 10 common password', async () => {
     const response = await request(app)
-    .post('/signup')
-    .send({
-      username: 'testuser',
-      password: 'securepassword',
-      email: 'testuser@example.com',
-    });
-  
-  assert.strictEqual(response.status, 200);
-  assert.ok(response.body.jwt);
-  assert.ok(response.body.sub);
+      .post('/signup')
+      .send({
+        username: 'testuser',
+        password: 'securepassword',
+        email: 'testuser@example.com',
+      });
 
-  console.log(response.body.jwt);
+    assert.strictEqual(response.status, 200);
+    assert.ok(response.body.jwt);
+    assert.ok(response.body.sub);
 
-  let user = {
-    sub: response.body.sub
-  }
-  const setpassResponse = await request(app)
-    .put('/local/setpass')
-    .set('Authorization', `Bearer ${response.body.jwt}`)
-    .send({
-      password_old: 'securepassword', // current password
-      password: 'passwordLatest', // new password
-    })
-    .set('Content-Type', 'application/json')
-    .set('Accept', 'application/json')
-    .set('user.sub', response.body.sub);
+    console.log(response.body.jwt);
+    const setpassResponse = await request(app)
+      .put('/local/setpass')
+      .set('Authorization', `Bearer ${response.body.jwt}`)
+      .send({
+        password_old: 'securepassword', // current password
+        password: 'passwordLatest', // new password
+      })
+      .set('Content-Type', 'application/json')
+      .set('Accept', 'application/json')
+      .set('user.sub', response.body.sub);
 
-  assert.strictEqual(setpassResponse.status, 200);
-  assert.strictEqual(setpassResponse.body.status, 'ok');
-  assert.strictEqual(setpassResponse.body.message, 'Password reset successfully.');
+    assert.strictEqual(setpassResponse.status, 200);
+    assert.strictEqual(setpassResponse.body.status, 'ok');
+    assert.strictEqual(setpassResponse.body.message, 'Password reset successfully.');
   });
 
   it('Testing /setpass ', async () => {
     const response = await request(app)
-    .post('/signup')
-    .send({
-      username: 'testuser',
-      password: 'securepassword',
-      email: 'testuser@example.com',
-    });
-  
-  assert.strictEqual(response.status, 200);
-  assert.ok(response.body.jwt);
-  assert.ok(response.body.sub);
+      .post('/signup')
+      .send({
+        username: 'testuser',
+        password: 'securepassword',
+        email: 'testuser@example.com',
+      });
 
-  console.log(response.body.jwt);
+    assert.strictEqual(response.status, 200);
+    assert.ok(response.body.jwt);
+    assert.ok(response.body.sub);
 
-  let user = {
-    sub: response.body.sub
-  }
-  const setpassResponse = await request(app)
-    .put('/local/setpass')
-    .set('Authorization', `Bearer ${response.body.jwt}`)
-    .send({
-      password_old: 'securepassword', // current password
-      password: 'password', // new password
-    })
-    .set('Content-Type', 'application/json')
-    .set('Accept', 'application/json')
-    .set('user.sub', response.body.sub);
+    console.log(response.body.jwt);
 
-  assert.strictEqual(setpassResponse.status, 500);
-  assert.strictEqual(setpassResponse.body.message, errorMessage);
+    let user = {
+      sub: response.body.sub
+    }
+    const setpassResponse = await request(app)
+      .put('/local/setpass')
+      .set('Authorization', `Bearer ${response.body.jwt}`)
+      .send({
+        password_old: 'securepassword', // current password
+        password: 'password', // new password
+      })
+      .set('Content-Type', 'application/json')
+      .set('Accept', 'application/json')
+      .set('user.sub', response.body.sub);
+
+    assert.strictEqual(setpassResponse.status, 500);
+    assert.strictEqual(setpassResponse.body.message, errorMessage);
   });
-  
+
 });
