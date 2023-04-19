@@ -48,7 +48,7 @@ async function register_newuser(req, done) {
 
     try {
         let hash = await common.hash_password(req.body.password);
-        u.pasword_hash = hash;
+        u.password_hash = hash;
         let user = new db.mongo.User(u);
         await user.save();
         let raw_user = user.toObject();
