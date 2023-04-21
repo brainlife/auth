@@ -54,7 +54,7 @@ describe('Signup API', () => {
     assert.strictEqual(response.body.message,
       'The username you chose is already registered. If it is yours, please try signing in, or register with a different username.');
   });
-  
+
   it('should return error for common password', async () => {
     // Make a POST request to signup API with a new username and email
     const response = await request(app)
@@ -81,7 +81,6 @@ describe('Signup API', () => {
     assert.ok(response.body.jwt);
     assert.ok(response.body.sub);
 
-    console.log(response.body.jwt);
     const setpassResponse = await request(app)
       .put('/local/setpass')
       .set('Authorization', `Bearer ${response.body.jwt}`)
@@ -110,8 +109,6 @@ describe('Signup API', () => {
     assert.strictEqual(response.status, 200);
     assert.ok(response.body.jwt);
     assert.ok(response.body.sub);
-
-    console.log(response.body.jwt);
 
     let user = {
       sub: response.body.sub
