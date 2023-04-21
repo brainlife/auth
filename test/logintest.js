@@ -33,48 +33,39 @@ describe('Signup API', () => {
     done();
   })
 
-  it('should return error when username already exists', (done) => {
+  it('should return error when username already exists', async () => {
     // Create a test user with a username test username
-    let testUser = {
+    const testUser = {
       username: 'testuser',
       email: 'testuser@example.com',
       password: 'password!@123',
     };
-    db.mongo.User.create(testUser, (err, user) => {
-      if (err) return done(err);
-      // Make a POST request to signup API with the same username
-      request(app)
-        .post('/signup')
-        .send({
-          username: 'testuser',
-          email: 'newuser@example.com',
-          password: 'Testpassword',
-        })
-        .expect(500)
-        .end((err, res) => {
-          if (err) return done(err);
-          assert.equal(res.body.message,
-            'The username you chose is already registered. If it is yours, please try signing in, or register with a different username.');
-          done();
-        });
-    });
+    // Save the test user to database
+    const user = await db.mongo.User.create(testUser);
+    // Make a POST request to signup API with the same username
+    const response = await request(app)
+      .post('/signup')
+      .send({
+        username: testUser.username,
+        email: testUser.email,
+        password: testUser.password,
+      });
+    assert.strictEqual(response.status, 500);
+    assert.strictEqual(response.body.message,
+      'The username you chose is already registered. If it is yours, please try signing in, or register with a different username.');
   });
-
-  it('should return error for common password', (done) => {
+  
+  it('should return error for common password', async () => {
     // Make a POST request to signup API with a new username and email
-    request(app)
+    const response = await request(app)
       .post('/signup')
       .send({
         username: 'newuser',
         email: 'newuser@example.com',
         password: 'password',
-      })
-      .expect(500)
-      .end((err, res) => {
-        if (err) return done(err);
-        assert.equal(res.body.message, errorMessage)
-        done();
       });
+    assert.strictEqual(response.status, 500);
+    assert.strictEqual(response.body.message, errorMessage);
   });
 
   it('Testing /setpass - should return error for top 10 common password', async () => {

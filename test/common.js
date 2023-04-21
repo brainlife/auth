@@ -66,7 +66,6 @@ describe("hash_password function",function(){
           await common.hash_password(password);
           assert.fail('Expected an error to be thrown');
         } catch (error) {
-          console.error(error);
           assert.match(error.message, /This is a top-10 common password - Add another word or two\. Uncommon words are better\./);
         }
     });

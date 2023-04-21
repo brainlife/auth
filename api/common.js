@@ -190,7 +190,7 @@ exports.intersect_scopes = function(o1, o2) {
 
 
 exports.hash_password= async function(password) {
-    let strength = await zxcvbn(password);
+    const strength = await zxcvbn(password);
     //0 # too guessable: risky password. (guesses < 10^3)
     //1 # very guessable: protection from throttled online attacks. (guesses < 10^6)
     //2 # somewhat guessable: protection from unthrottled online attacks. (guesses < 10^8)
@@ -208,8 +208,8 @@ exports.hash_password= async function(password) {
     * rounds=31: 2-3 days/hash
     */
     try {
-        let salt = await bcrypt.genSalt(10);
-        let hash = await bcrypt.hash(password, salt);
+        const salt = await bcrypt.genSalt(10);
+        const hash = await bcrypt.hash(password, salt);
         return hash;
     } catch (err) {
         throw new Error("An error occurred while hashing the password. Please try again later.");
