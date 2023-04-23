@@ -11,8 +11,9 @@ describe('Signup API', () => {
   before((done) => {
     // Connect to test database
     db.init(() => {
-      // Clear test database
-      dbConnection = db.init(config.mongodb_test, done);
+      // use config.mongodb as test database and change it if env is not test
+      const dbString = process.env.NODE_ENV == "test" ? config.mongodb_test : config.mongodb;
+      dbConnection = db.init(dbString, done);
       db.mongo.User.deleteMany({}, (err) => {
         if (err) return done(err);
         done();

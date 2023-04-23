@@ -29,7 +29,7 @@ passport.use(new passport_localst(
                 const fails = await common.redisClient.hVals('auth.fail.'+user.username+'.*');
                 if(fails.length >= 3) done(null, false, { message: 'Account Locked ! Try after an hour' });
 
-                if(!common.check_password(user, password)) {
+                if(!common.check_password(user.password_hash, password)) {
                     //delay returning to defend against password sweeping attack
                     setTimeout(function() {
                         done(null, false, { message: 'Incorrect user/password', code: 'bad_password' });
@@ -96,7 +96,7 @@ router.put('/setpass', jwt({
         console.debug("setting password for sub"+req.user.sub);
         if(user) {
             if(user.password_hash) {
-                if(!common.check_password(user,req.body.password_old)) {
+                if(!common.check_password(user.password_hash,req.body.password_old)) {
                     common.publish("user.setpass_fail"+user.sub,{username: user.username,
                     message:"wrong current pass"});
                     return setTimeout(function(){

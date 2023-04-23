@@ -216,9 +216,8 @@ exports.hash_password= async function(password) {
     }
 }
 
-exports.check_password = function(user, password) {
-    if(!user.password_hash) return false; //no password, no go
-    return bcrypt.compareSync(password, user.password_hash);
+exports.check_password = function(userPassword, password) {
+    return bcrypt.compareSync(password, userPassword);
 }
 
 exports.checkUser = function(user, req) {
