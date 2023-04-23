@@ -53,8 +53,8 @@ describe("common", function() {
     });
 });
 
-describe("hash_password function",function(){
-    it('should has a password and return the password', async function(){
+describe("testing hash_password function",function(){
+    it('the function should return the hash of the password if the strength > 0', async function(){
         const password = 'testingPassword@987654';
         const hash = await common.hash_password(password);
         assert.ok(hash);
