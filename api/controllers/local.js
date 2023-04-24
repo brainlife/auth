@@ -164,7 +164,7 @@ router.post('/resetpass', async (req, res, next) => {
         if(!token || !password) return next("missing parameters");
         try {
             const user = await db.mongo.User.findOne({password_reset_token: token, password_reset_cookie: cookie});
-            if(!user) return next("Couldn't find the token provided");
+            if(!user) return next("The provided token was not found.");
             const hashedPassword = await common.hash_password(password);
             user.password_hash = hashedPassword;
             user.password_reset_token = null;
