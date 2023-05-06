@@ -34,55 +34,86 @@ router.use('/profile', require('./profile'));
  *
  * @apiSuccess {Object} jwt New JWT token
  */
+//refactoring with async-await - authored by: Apurva
 router.post('/refresh', jwt({
     secret: config.auth.public_key,
     algorithms: [config.auth.sign_opt.algorithm],
-}), function(req, res, next) {
-    db.mongo.User.findOne({sub: req.user.sub}).then(user=>{
-        if(!user) return next("Couldn't find any user with sub:"+req.user.sub);
+}), async function(req, res, next) {
+    try {
+        const user = await db.mongo.User.findOne({sub: req.user.sub});
+        if (!user) {
+            return next("Couldn't find any user with sub:" + req.user.sub);
+        }
         const error = common.checkUser(user, req);
-        if(error) return next(error);
-        common.createClaim(user, function(err, claim) {
-            if(err) return next(err);
-            
-            //intersect scopes with requested scopes (restriction)
-            if(req.body.scopes) claim.scopes = common.intersect_scopes(claim.scopes, req.body.scopes);
-
-            //intersect gids with requested gids
-            if(req.body.gids) claim.gids = claim.gids.filter(id=>req.body.gids.includes(id));
-
-            if(req.body.clearProfile) delete claim.profile;
-
-            if(req.body.ttl) claim.exp = (Date.now() + req.body.ttl)/1000;
-
-            var jwt = common.signJwt(claim);
-            common.publish("user.refresh."+user.sub, {username: user.username, exp: claim.exp});
-            return res.json({jwt});
+        if (error) {
+            return next(error);
+        }
+        const claim = await new Promise((resolve, reject) => {
+            common.createClaim(user, (err, claim) => {
+                if (err) {
+                    reject(err);
+                } else {
+                    resolve(claim);
+                }
+            });
         });
-    });
+        if (req.body.scopes) {
+            claim.scopes = common.intersect_scopes(claim.scopes, req.body.scopes);
+        }
+        if (req.body.gids) {
+            claim.gids = claim.gids.filter(id => req.body.gids.includes(id));
+        }
+        if (req.body.clearProfile) {
+            delete claim.profile;
+        }
+        if (req.body.ttl) {
+            claim.exp = (Date.now() + req.body.ttl) / 1000;
+        }
+        const jwt = common.signJwt(claim);
+        common.publish("user.refresh." + user.sub, {username: user.username, exp: claim.exp});
+        res.json({jwt});
+    } catch (err) {
+        next(err);
+    }
 });
 
 //TODO this API send any user email with URL provided by an user - which is a major security risk
 //I should use configured URL for referer
-router.post('/send_email_confirmation', (req, res, next)=>{ 
-    db.mongo.User.findOne({sub: req.body.sub}).then(user=>{
-        if(!user) return next("Couldn't find any user with sub:"+req.body.sub);
-        if(user.email_confirmed) return next("Email already confirmed.");
-        if(!req.headers.referer) return next("referer not set.. can't send confirmation");
-        common.send_email_confirmation(req.headers.referer, user, err=>{
-            if(err) return next(err);
-            res.json({message: 'Sent confirmation email with subject: '+config.local.email_confirmation.subject});
-        });
-    });
+//refactoring with async-await - authored by: Apurva
+router.post('/send_email_confirmation', async (req, res, next) => { 
+    try {
+        const user = await db.mongo.User.findOne({sub: req.body.sub});
+        if (!user) {
+            return next("Couldn't find any user with sub:" + req.body.sub);
+        }
+        if (user.email_confirmed) {
+            return next("Email already confirmed.");
+        }
+        if (!req.headers.referer) {
+            return next("referer not set.. can't send confirmation");
+        }
+        await common.send_email_confirmation(req.headers.referer, user);
+        res.json({message: 'Sent confirmation email with subject: ' + config.local.email_confirmation.subject});
+    } catch (err) {
+        next(err);
+    }
 });
 
-router.post('/confirm_email', async (req, res, next)=>{
-    let user = await db.mongo.User.findOne({email_confirmation_token: req.body.token});
-    if(!user) return next("Couldn't find any user with token:"+req.body.token);
-    if(user.email_confirmed) return next("Email already confirmed.");
-    user.update({$set: {email_confirmed: true, 'times.confirm_email': new Date()}}).then(()=>{
-        res.json({message: "Email address confirmed! Please re-login."});
-    });
+//refactoring with async-await - authored by: Apurva
+router.post('/confirm_email', async (req, res, next) => {
+    try {
+        let user = await db.mongo.User.findOne({ email_confirmation_token: req.body.token });
+        if (!user) {
+            return next("Couldn't find any user with token:" + req.body.token);
+        }
+        if (user.email_confirmed) {
+            return next("Email already confirmed.");
+        }
+        await user.updateOne({ $set: { email_confirmed: true, 'times.confirm_email': new Date() } });
+        res.json({ message: "Email address confirmed! Please re-login." });
+    } catch (err) {
+        next(err);
+    }
 });
 
 /**
@@ -118,15 +149,23 @@ router.get('/health', function(req, res) {
  *         "iucas": "hayashis"
  *     }
  */
+//refactoring with async-await - authored by: Apurva
 router.get('/me', jwt({
     secret: config.auth.public_key,
     algorithms: [config.auth.sign_opt.algorithm],
-}), function(req, res, next) {
-    db.mongo.User.findOne({sub: req.user.sub}).then(function(user) {
-        if(!user) return res.status(404).end();
-        if(user.password_hash) user.password_hash = true;
+}), async function(req, res, next) {
+    try {
+        const user = await db.mongo.User.findOne({sub: req.user.sub});
+        if (!user) {
+            return res.status(404).end();
+        }
+        if (user.password_hash) {
+            user.password_hash = true;
+        }
         res.json(user);
-    });
+    } catch (err) {
+        next(err);
+    }
 });
 
 /**
@@ -143,26 +182,27 @@ router.get('/me', jwt({
  *     HTTP/1.1 200 OK
  *     [ 1,2,3 ] 
  */
+//refactoring with async-await - authored by: Apurva
 router.get('/users', jwt({
     secret: config.auth.public_key,
     algorithms: [config.auth.sign_opt.algorithm],
-}), common.scope("admin"), function(req, res, next) {
-    let where = {};
-    if(req.query.find||req.query.where) where = JSON.parse(req.query.find||req.query.where);
-    const limit = req.query.limit || 50;
-    const skip = req.query.skip || 0;
-    const select = req.query.select || 'sub profile username email_confirmed fullname email ext times scopes active';
-    db.mongo.User.find(where)
-    .select(select)
-    .skip(+skip)
-    .limit(+limit)
-    .lean().exec((err,users)=> {
-        if(err) return next(err);
-        db.mongo.User.countDocuments(where).exec((err,count)=>{
-            if(err) return next(err);
-            res.json({users,count});
-        });
-    });
+}), common.scope("admin"), async (req, res, next) => {
+    try {
+        let where = {};
+        if(req.query.find || req.query.where) where = JSON.parse(req.query.find || req.query.where);
+        const limit = req.query.limit || 50;
+        const skip = req.query.skip || 0;
+        const select = req.query.select || 'sub profile username email_confirmed fullname email ext times scopes active';
+        const users = await db.mongo.User.find(where)
+            .select(select)
+            .skip(+skip)
+            .limit(+limit)
+            .lean();
+        const count = await db.mongo.User.countDocuments(where);
+        res.json({ users, count });
+    } catch (err) {
+        next(err);
+    }
 });
 
 
