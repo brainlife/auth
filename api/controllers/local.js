@@ -29,7 +29,7 @@ passport.use(new passport_localst(
                 const fails = await common.redisClient.hVals('auth.fail.'+user.username+'.*');
                 if(fails.length >= 3) done(null, false, { message: 'Account Locked ! Try after an hour' });
 
-                if(!common.check_password(user, password)) {
+                if(!common.check_password(user.password_hash, password)) {
                     //delay returning to defend against password sweeping attack
                     setTimeout(function() {
                         done(null, false, { message: 'Incorrect user/password', code: 'bad_password' });
@@ -90,33 +90,35 @@ router.post('/auth', function(req, res, next) {
 router.put('/setpass', jwt({
     secret: config.auth.public_key,
     algorithms: [config.auth.sign_opt.algorithm],
-}), function(req, res, next) {
-    db.mongo.User.findOne({sub: req.user.sub}).then(user=>{
-        console.debug("setting password for sub:"+req.user.sub);
+}), async function(req, res, next) {
+    try {
+        const user = await db.mongo.User.findOne({sub: req.user.sub});
+        console.debug("setting password for sub"+req.user.sub);
         if(user) {
             if(user.password_hash) {
-                if(!common.check_password(user, req.body.password_old)) {
-                    common.publish("user.setpass_fail."+user.sub, {username: user.username, message: "wrong current pass"});
-                    return setTimeout(function() {
-                        next("Wrong current password");
-                    }, 2000);
+                if(!common.check_password(user.password_hash,req.body.password_old)) {
+                    common.publish("user.setpass_fail"+user.sub,{username: user.username,
+                    message:"wrong current pass"});
+                    return setTimeout(function(){
+                        next("Wrong current password")
+                    },2000);
                 }
             }
-            common.hash_password(req.body.password, (err, hash)=>{
-                if(err) return next(err);
-                user.password_hash = hash;
-                if(!user.times) user.times = {}; //could be empty first
-                user.times.password_reset = new Date();
-                user.save().then(()=>{
-                    common.publish("user.setpass."+user.sub, {username: user.username});
-                    res.json({status: "ok", message: "Password reset successfully."});
-                });
-            });
-        } else {       
+            const hash = await common.hash_password(req.body.password);
+            user.password_hash = hash;
+            if(!user.times) user.times = {}; //could be empty first
+            user.times.password_reset = new Date();
+            await user.save();
+            common.publish("user.setpass."+user.sub, {username: user.username});
+            res.json({status: "ok", message: "Password reset successfully."});
+        } else {
             console.info("failed to find user with sub:"+req.user.sub);
             res.status(404).end();
         }
-    });
+
+    }catch(err) {
+        next(err);
+    }
 });
 
 /**
@@ -139,46 +141,40 @@ router.put('/setpass', jwt({
  *
  * @apiSuccess {Object} message Containing success message
  */
-router.post('/resetpass', function(req, res, next) {
+router.post('/resetpass', async (req, res, next) => {
     if(req.body.email)  {
         //initiate password reset
-        var email = req.body.email;
-        db.mongo.User.findOne({email}).then(user=>{
+        const email = req.body.email;
+        try{
+            const user = await db.mongo.User.findOne({email});
             if(!user) return res.status(404).json({message: "No such email registered"});
             //we need 2 tokens - 1 to confirm user, and 1 to match the browser (cookie)
             user.password_reset_token = Math.random().toString(36).substr(2);
             user.password_reset_cookie = Math.random().toString(36).substr(2);
-            common.send_resetemail(req.headers.referer||config.local.url, user, function(err) {
-                if(err) return next(err);
-                user.save().then(function() {
-                    res.cookie('password_reset', user.password_reset_cookie, {httpOnly: true, secure: true}); //should be default to session cookie
-                    res.json({message: "Reset token sent"});
-                });
-            });
-
-        }).catch(next);
+            await common.send_resetemail(req.headers.referer||config.local.url, user);
+            await user.save();
+            res.cookie('password_reset', user.password_reset_cookie, {httpOnly: true, secure: true}); //should be default to session cookie
+            res.json({message: "Reset token sent"});
+        } catch(err) {return next(err); }
     } else {
         //fulfull password reset
         var token = req.body.token;
         var password = req.body.password;
         var cookie = req.cookies.password_reset;
         if(!token || !password) return next("missing parameters");
-        db.mongo.User.findOne({password_reset_token: token, password_reset_cookie: cookie}).then(user=>{
-            if(user) {
-                common.hash_password(password, (err, hash)=>{
-                    if(err) return next(err);
-                    user.password_hash = hash;
-                    user.password_reset_token = null;
-                    user.password_reset_cookie = null;
-                    if(!user.times) user.times = {}; //could be empty first
-                    user.times.password_reset = new Date();
-                    user.markModified('times');
-                    user.save().then(function() {
-                        res.json({status: "ok", message: "Password reset successfully."});
-                    });
-                });
-            } else return next("Couldn't find the token provided.");
-        });
+        try {
+            const user = await db.mongo.User.findOne({password_reset_token: token, password_reset_cookie: cookie});
+            if(!user) return next("The provided token was not found.");
+            const hashedPassword = await common.hash_password(password);
+            user.password_hash = hashedPassword;
+            user.password_reset_token = null;
+            user.password_reset_cookie = null;
+            if(!user.times) user.times = {}; //could be empty first
+            user.times.password_reset = new Date();
+            user.markModified('times');
+            await user.save()
+            res.json({status: "ok", message: "Password reset successfully."});
+        } catch (err) { return next(err); }
     }
 });
 

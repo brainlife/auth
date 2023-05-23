@@ -46,22 +46,21 @@ async function register_newuser(req, done) {
     //containing github ID for example. We can apply that info here
     if(req.user && req.user.ext) u.ext = req.user.ext;
 
-    common.hash_password(req.body.password, async (err, hash)=>{
-        if(err) return done(err);
+    try {
+        let hash = await common.hash_password(req.body.password);
         u.password_hash = hash;
         let user = new db.mongo.User(u);
-        user.save().then(user=>{
-            let raw_user = user.toObject();
-            raw_user._profile = req.body.profile;
-            raw_user.headers = req.headers;
-            console.debug("publishing to "+user.sub);
-            console.debug(raw_user);
-            common.publish("user.create."+user.sub, raw_user);
-            done(null, user);
-        }).catch(err=>{
-            done(err.toString());
-        });
-    });
+        await user.save();
+        let raw_user = user.toObject();
+        raw_user._profile = req.body.profile;
+        raw_user.headers = req.headers;
+        console.debug("publishing to "+user.sub);
+        console.debug(raw_user);
+        common.publish("user.create."+user.sub, raw_user);
+        done(null, user);
+    } catch(err) {
+        done(err.toString());
+    }
 }
 
 /**

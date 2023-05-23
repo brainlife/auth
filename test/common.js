@@ -53,4 +53,21 @@ describe("common", function() {
     });
 });
 
+describe("testing hash_password function",function(){
+    it('the function should return the hash of the password if the strength > 0', async function(){
+        const password = 'testingPassword@987654';
+        const hash = await common.hash_password(password);
+        assert.ok(hash);
+    });
 
+    it('should throw an error for a guessable password', async function(){
+        const password = 'password';
+        try {
+          await common.hash_password(password);
+          assert.fail('Expected an error to be thrown');
+        } catch (error) {
+          assert.match(error.message, /This is a top-10 common password - Add another word or two\. Uncommon words are better\./);
+        }
+    });
+         
+});

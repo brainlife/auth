@@ -159,7 +159,7 @@ function modscope() {
     });
 }
 
-function setpass() {
+async function setpass() {
     if(!argv.username && !argv.id) {
         console.error("please specify --username <username> or --id <userid>");
         process.exit(1);
@@ -169,40 +169,30 @@ function setpass() {
         process.exit(1);
     }
 
-    db.init(err=>{
-        if (err) throw err;
-        db.mongo.User.findOne({$or: [
-            {sub: argv.id}, 
-            {username: argv.username}, 
-        ]})
-            .then(function(user) {
-                if (!user) {
-                    db.disconnect();
-                    return console.error("User not found: " + argv.username);
-                }
-                console.log(user);
-                common.hash_password(argv.password, (err, hash) => {
-                    if (err) throw err;
-                    user.password_hash = hash;
-                    if (!user.times)
-                        user.times = {}; //could be empty first
-                    user.times.password_reset = new Date();
-                    user.save()
-                        .then(()=>{
-                            console.log("Successfully updated password");
-                            db.disconnect();
-                        })
-                        .catch(function(err) {
-                            console.error(err);
-                            db.disconnect();
-                        });
-                });
-            })
-            .catch(function(err) {
-                console.error(err);
-                db.disconnect();
-            });
-    });
+    try {
+        await db.init();
+        const user = await db.mongo.User.findOne({$or: [
+            {sub: argv.id},
+            {username: argv.username},
+        ]});
+        if(!user) {
+            console.error("User not found: "+argv.username);
+            await db.disconnect();
+            return;
+        }
+        const hash = await common.hash_password(argv.password);
+        user.password_hash = hash;
+        if (!user.times)
+            user.times = {}; //could be empty first
+        user.times.password_reset = new Date();
+        await user.save();
+        console.log("Successfully updated password");
+        await db.disconnect();
+        console.log(user);   
+    } catch(err) {
+        console.error(err);
+        await db.disconnect();
+    }
 }
 
 function useradd() {
