@@ -1,0 +1,93 @@
+import { ClientProxy } from "@nestjs/microservices";
+import { Observable } from "rxjs";
+import * as jwt from 'jsonwebtoken';
+import { send } from "process";
+import * as bcrypt from "bcryptjs";
+import zxcvbn from "zxcvbn-typescript";
+import * as nodemailer from "nodemailer";
+import { uuid } from 'uuidv4';
+
+
+export async function publishToQueue(client:ClientProxy, key: string, message: String)  {
+    // check if client is connected
+    return client.emit(key, message);
+}
+
+
+
+export function signJWT(payload: object) {
+    
+    if (!process.env.JWT_SECRET || !process.env.JWT_ALGORITHM) {
+        throw new Error('Required JWT environment variables are not set');
+    }
+    
+    const options = {
+        algorithm: (process.env.JWT_ALGORITHM as jwt.Algorithm), // add the assertion here
+        // add other options as required
+    };
+    return jwt.sign(payload, process.env.JWT_SECRET, options);
+}
+
+export function hashPassword(password: string): any {
+    // check if password is strong enough
+    const strength = zxcvbn(password);
+
+    if (strength.score == 0) {
+        // return this object {message: strength.feedback.warning+" - "+strength.feedback.suggestions.toString()}
+        return {message: strength.feedback.warning+" - "+strength.feedback.suggestions.toString()};
+    }
+    const salt = bcrypt.genSaltSync(10);
+    return bcrypt.hashSync(password, salt); // hash the password
+}
+
+export function checkPassword(password: string, hash: string) {
+    return bcrypt.compareSync(password, hash); // compare the password
+}
+
+export function createmailTransport() {
+    // create reusable transporter object using the default SMTP transport
+    return nodemailer.createTransport({
+        host: process.env.EMAIL_HOST,
+        port: parseInt(process.env.EMAIL_PORT as string),
+        secure: false, // true for 465, false for other ports
+        // auth: {
+        //     user: process.env.EMAIL_USER, // generated ethereal user
+        //     pass: process.env.EMAIL_PASS, // generated ethereal password
+        // },
+    });
+}
+
+export async function sendEmail(to: string, from:string, subject: string, text: string) {
+    // send mail with defined transport object
+    return await createmailTransport().sendMail({
+        from: from, // sender address
+        to: to, // list of receivers
+        subject: subject, // Subject line
+        text: text, // plain text body
+    }).then((info: any) => {
+        console.log("email sent", info);
+    }).catch((err: any) => {
+        console.log("failed to send email", err);
+    });
+}
+
+export async function sendEmailConfirmation(url:String, user: any) {
+    if(!user.email_confirmation_token) {
+        user.email_confirmation_token = uuid();
+        await user.save();
+    } 
+    let text = "Hello!\n\nIf you have created a new account, please visit the following URL to confirm your email address.\n\n";
+    text+= url+"#!/confirm_email/"+user.sub+"/"+user.email_confirmation_token;
+
+    console.log("sending email.. to", user.email);
+        
+    await sendEmail(user.email, process.env.EMAIL_CONFIRM_FROM, process.env.EMAIL_CONFIRM_SUBJECT, text);
+}
+
+export async function sendPasswordReset(url:String, user: any) {
+    const fullurl = url+"#!/reset_password/"+user.sub+"/"+user.password_reset_token;
+    const text = "Hello!\n\nIf you have requested to reset your password, please visit the following URL to reset your password.\n\n";
+
+    sendEmail(user.email, process.env.PASSWORD_RESET_FROM, process.env.PASSWORD_RESET_SUBJECT, text+fullurl);
+}
+
