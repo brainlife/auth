@@ -19,17 +19,17 @@ export class UserController {
 
     @Get(':sub')
     findOne(@Param('sub') sub: number) {
-        return this.userService.findOne(sub);
+        return this.userService.findOnebySub(sub);
     }
 
     @Put(':sub')
     update(@Param('sub') sub: number, @Body() updateUserDto: UpdateUserDto) {
-        return this.userService.update(sub, updateUserDto);
+        return this.userService.updatebySub(sub, updateUserDto);
     }
 
     @Delete(':sub')
     remove(@Param('sub') sub: number) {
-        return this.userService.remove(sub);
+        return this.userService.removebySub(sub);
     }
 
 }

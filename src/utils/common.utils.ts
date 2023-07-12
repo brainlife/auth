@@ -7,13 +7,11 @@ import zxcvbn from "zxcvbn-typescript";
 import * as nodemailer from "nodemailer";
 import { uuid } from 'uuidv4';
 
+import { UserService } from "src/users/user.service";
 
 export async function publishToQueue(client:ClientProxy, key: string, message: String)  {
-    // check if client is connected
-    return client.emit(key, message);
+    return client.emit(key, message)
 }
-
-
 
 export function signJWT(payload: object) {
     
@@ -57,7 +55,7 @@ export function createmailTransport() {
     });
 }
 
-export async function sendEmail(to: string, from:string, subject: string, text: string) {
+export async function sendEmail(to: string, from:string, subject: string, text: string): Promise<any> {
     // send mail with defined transport object
     return await createmailTransport().sendMail({
         from: from, // sender address
@@ -66,28 +64,32 @@ export async function sendEmail(to: string, from:string, subject: string, text: 
         text: text, // plain text body
     }).then((info: any) => {
         console.log("email sent", info);
-    }).catch((err: any) => {
+        return info;
+    }).catch((err: Error) => {
         console.log("failed to send email", err);
+        return err;
     });
 }
 
-export async function sendEmailConfirmation(url:String, user: any) {
+export async function sendEmailConfirmation(user) {
     if(!user.email_confirmation_token) {
         user.email_confirmation_token = uuid();
         await user.save();
     } 
+    const url = process.env.URL_REFERRER || "http://localhost:8000";
     let text = "Hello!\n\nIf you have created a new account, please visit the following URL to confirm your email address.\n\n";
     text+= url+"#!/confirm_email/"+user.sub+"/"+user.email_confirmation_token;
 
     console.log("sending email.. to", user.email);
         
-    await sendEmail(user.email, process.env.EMAIL_CONFIRM_FROM, process.env.EMAIL_CONFIRM_SUBJECT, text);
+    return await sendEmail(user.email, process.env.EMAIL_CONFIRM_FROM, process.env.EMAIL_CONFIRM_SUBJECT, text);
 }
 
-export async function sendPasswordReset(url:String, user: any) {
+export async function sendPasswordReset(user: any) {
+    const url = process.env.URL_REFERRER || "http://localhost:8000";
     const fullurl = url+"#!/reset_password/"+user.sub+"/"+user.password_reset_token;
     const text = "Hello!\n\nIf you have requested to reset your password, please visit the following URL to reset your password.\n\n";
 
-    sendEmail(user.email, process.env.PASSWORD_RESET_FROM, process.env.PASSWORD_RESET_SUBJECT, text+fullurl);
+   return sendEmail(user.email, process.env.PASSWORD_RESET_FROM, process.env.PASSWORD_RESET_SUBJECT, text+fullurl);
 }
 

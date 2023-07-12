@@ -1,7 +1,7 @@
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import { Transport, Client } from '@nestjs/microservices';
-
+import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
 import { OnModuleInit } from '@nestjs/common';
 import * as dotenv from 'dotenv';
 
@@ -23,11 +23,20 @@ async function bootstrap() {
       queueOptions: { durable: false },
     },
   })
-  
+
   dotenv.config();
 
+  const config = new DocumentBuilder()
+    .setTitle('Cats example')
+    .setDescription('The cats API description')
+    .setVersion('1.0')
+    .addTag('cats')
+    .build();
+  const document = SwaggerModule.createDocument(app, config);
+  SwaggerModule.setup('api', app, document);
+
   await app.startAllMicroservices();
-  await app.listen(9000);
+  await app.listen(8000);
 }
 
 bootstrap().then().catch(err => console.error(err));

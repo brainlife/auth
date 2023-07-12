@@ -100,4 +100,8 @@ export class User {
 
 }
 
+export class DefaultScopes {
+    
+}
+
 export const UserSchema = SchemaFactory.createForClass(User);

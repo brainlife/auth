@@ -6,7 +6,6 @@ import { MongooseModule } from '@nestjs/mongoose';
 import { UserSchema } from './schema/user.schema';
 import { UserModule } from './users/user.module';
 
-import { SignupController } from './controller/signup.controller';
 import { ClientsModule, Transport } from '@nestjs/microservices';
 
 @Module({
@@ -28,9 +27,10 @@ import { ClientsModule, Transport } from '@nestjs/microservices';
         transport: Transport.RMQ,
         options: {
           urls: ['amqp://guest:guest@brainlife_rabbitmq:5672/brainlife'],
+          queue: 'queue-name',
           queueOptions: {
             autoDelete: false, durable: true, type: 'topic', confirm: true}
-          },
+          }
       }
     ]),
   ], 
