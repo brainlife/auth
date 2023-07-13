@@ -1,95 +1,168 @@
-import { ClientProxy } from "@nestjs/microservices";
-import { Observable } from "rxjs";
+import { Observable } from 'rxjs';
 import * as jwt from 'jsonwebtoken';
-import { send } from "process";
-import * as bcrypt from "bcryptjs";
-import zxcvbn from "zxcvbn-typescript";
-import * as nodemailer from "nodemailer";
+import { send } from 'process';
+import * as bcrypt from 'bcryptjs';
+import zxcvbn from 'zxcvbn-typescript';
+import * as nodemailer from 'nodemailer';
 import { uuid } from 'uuidv4';
+import { Message } from 'src/schema/message';
 
-import { UserService } from "src/users/user.service";
+import { UserService } from 'src/users/user.service';
+import {
+  ClientOptions,
+  ClientProxy,
+  ClientProxyFactory,
+  Transport,
+} from '@nestjs/microservices';
 
-export async function publishToQueue(client:ClientProxy, key: string, message: String)  {
-    return client.emit(key, message)
+class QueuePublisher {
+  private static instance: QueuePublisher;
+  private client: ClientProxy;
+
+  private constructor() {
+    const clientOptions: ClientOptions = {
+      transport: Transport.RMQ,
+      options: {
+        urls: ['amqp://guest:guest@localhost:5672/brainlife?heartbeat=30'],
+        queue: 'user-messages',
+        queueOptions: {
+          durable: false,
+        },
+      },
+    };
+
+    this.client = ClientProxyFactory.create(clientOptions);
+    this.client.connect().catch(console.error);
+  }
+
+  public static getInstance(): QueuePublisher {
+    if (!QueuePublisher.instance) {
+      QueuePublisher.instance = new QueuePublisher();
+    }
+    return QueuePublisher.instance;
+  }
+
+  public async publishToQueue(key: string, message: string): Promise<void> {
+    this.client.emit<any>(key, new Message(message)).subscribe({
+      next: () => console.log(key, message),
+      error: (err) => console.error(err),
+    });
+  }
 }
 
+export const queuePublisher = QueuePublisher.getInstance();
+
+// export const client = await ClientProxyFactory.create(clientOptions).connect();
+
+// export async function publishToQueue(key: string, message: String)  {
+
+//     client.emit<any>(key, new Message(message)).subscribe((result) => {
+//         console.log(key, message)
+//     });
+// }
+
 export function signJWT(payload: object) {
-    
-    if (!process.env.JWT_SECRET || !process.env.JWT_ALGORITHM) {
-        throw new Error('Required JWT environment variables are not set');
-    }
-    
-    const options = {
-        algorithm: (process.env.JWT_ALGORITHM as jwt.Algorithm), // add the assertion here
-        // add other options as required
-    };
-    return jwt.sign(payload, process.env.JWT_SECRET, options);
+  if (!process.env.JWT_SECRET || !process.env.JWT_ALGORITHM) {
+    throw new Error('Required JWT environment variables are not set');
+  }
+
+  const options = {
+    algorithm: process.env.JWT_ALGORITHM as jwt.Algorithm, // add the assertion here
+    // add other options as required
+  };
+  return jwt.sign(payload, process.env.JWT_SECRET, options);
 }
 
 export function hashPassword(password: string): any {
-    // check if password is strong enough
-    const strength = zxcvbn(password);
+  // check if password is strong enough
+  const strength = zxcvbn(password);
 
-    if (strength.score == 0) {
-        // return this object {message: strength.feedback.warning+" - "+strength.feedback.suggestions.toString()}
-        return {message: strength.feedback.warning+" - "+strength.feedback.suggestions.toString()};
-    }
-    const salt = bcrypt.genSaltSync(10);
-    return bcrypt.hashSync(password, salt); // hash the password
+  if (strength.score == 0) {
+    // return this object {message: strength.feedback.warning+" - "+strength.feedback.suggestions.toString()}
+    return {
+      message:
+        strength.feedback.warning +
+        ' - ' +
+        strength.feedback.suggestions.toString(),
+    };
+  }
+  const salt = bcrypt.genSaltSync(10);
+  return bcrypt.hashSync(password, salt); // hash the password
 }
 
 export function checkPassword(password: string, hash: string) {
-    return bcrypt.compareSync(password, hash); // compare the password
+  return bcrypt.compareSync(password, hash); // compare the password
 }
 
 export function createmailTransport() {
-    // create reusable transporter object using the default SMTP transport
-    return nodemailer.createTransport({
-        host: process.env.EMAIL_HOST,
-        port: parseInt(process.env.EMAIL_PORT as string),
-        secure: false, // true for 465, false for other ports
-        // auth: {
-        //     user: process.env.EMAIL_USER, // generated ethereal user
-        //     pass: process.env.EMAIL_PASS, // generated ethereal password
-        // },
-    });
+  // create reusable transporter object using the default SMTP transport
+  return nodemailer.createTransport({
+    host: process.env.EMAIL_HOST,
+    port: parseInt(process.env.EMAIL_PORT as string),
+    secure: false, // true for 465, false for other ports
+    // auth: {
+    //     user: process.env.EMAIL_USER, // generated ethereal user
+    //     pass: process.env.EMAIL_PASS, // generated ethereal password
+    // },
+  });
 }
 
-export async function sendEmail(to: string, from:string, subject: string, text: string): Promise<any> {
-    // send mail with defined transport object
-    return await createmailTransport().sendMail({
-        from: from, // sender address
-        to: to, // list of receivers
-        subject: subject, // Subject line
-        text: text, // plain text body
-    }).then((info: any) => {
-        console.log("email sent", info);
-        return info;
-    }).catch((err: Error) => {
-        console.log("failed to send email", err);
-        return err;
+export async function sendEmail(
+  to: string,
+  from: string,
+  subject: string,
+  text: string,
+): Promise<any> {
+  // send mail with defined transport object
+  return await createmailTransport()
+    .sendMail({
+      from: from, // sender address
+      to: to, // list of receivers
+      subject: subject, // Subject line
+      text: text, // plain text body
+    })
+    .then((info: any) => {
+      console.log('email sent', info);
+      return info;
+    })
+    .catch((err: Error) => {
+      console.log('failed to send email', err);
+      return err;
     });
 }
 
 export async function sendEmailConfirmation(user) {
-    if(!user.email_confirmation_token) {
-        user.email_confirmation_token = uuid();
-        await user.save();
-    } 
-    const url = process.env.URL_REFERRER || "http://localhost:8000";
-    let text = "Hello!\n\nIf you have created a new account, please visit the following URL to confirm your email address.\n\n";
-    text+= url+"#!/confirm_email/"+user.sub+"/"+user.email_confirmation_token;
+  if (!user.email_confirmation_token) {
+    user.email_confirmation_token = uuid();
+    await user.save();
+  }
+  const url = process.env.URL_REFERRER || 'http://localhost:8000';
+  let text =
+    'Hello!\n\nIf you have created a new account, please visit the following URL to confirm your email address.\n\n';
+  text +=
+    url + '#!/confirm_email/' + user.sub + '/' + user.email_confirmation_token;
 
-    console.log("sending email.. to", user.email);
-        
-    return await sendEmail(user.email, process.env.EMAIL_CONFIRM_FROM, process.env.EMAIL_CONFIRM_SUBJECT, text);
+  console.log('sending email.. to', user.email);
+
+  return await sendEmail(
+    user.email,
+    process.env.EMAIL_CONFIRM_FROM,
+    process.env.EMAIL_CONFIRM_SUBJECT,
+    text,
+  );
 }
 
 export async function sendPasswordReset(user: any) {
-    const url = process.env.URL_REFERRER || "http://localhost:8000";
-    const fullurl = url+"#!/reset_password/"+user.sub+"/"+user.password_reset_token;
-    const text = "Hello!\n\nIf you have requested to reset your password, please visit the following URL to reset your password.\n\n";
+  const url = process.env.URL_REFERRER || 'http://localhost:8000';
+  const fullurl =
+    url + '#!/reset_password/' + user.sub + '/' + user.password_reset_token;
+  const text =
+    'Hello!\n\nIf you have requested to reset your password, please visit the following URL to reset your password.\n\n';
 
-   return sendEmail(user.email, process.env.PASSWORD_RESET_FROM, process.env.PASSWORD_RESET_SUBJECT, text+fullurl);
+  return sendEmail(
+    user.email,
+    process.env.PASSWORD_RESET_FROM,
+    process.env.PASSWORD_RESET_SUBJECT,
+    text + fullurl,
+  );
 }
-

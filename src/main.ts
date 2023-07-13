@@ -13,24 +13,24 @@ async function bootstrap() {
       host: 'localhost',
       port: 6379,
     },
-  })
-  
-  app.connectMicroservice({
-    transport: Transport.RMQ,
-    options: {
-      urls: ['amqp://guest:guest@localhost:5672/brainlife'],
-      queue: 'queue-name',
-      queueOptions: { durable: false },
-    },
-  })
+  });
+
+  // app.connectMicroservice({
+  //   transport: Transport.RMQ,
+  //   options: {
+  //     urls: ['amqp://guest:guest@localhost:5672/brainlife'],
+  //     queue: 'user-messages',
+  //     queueOptions: { durable: false },
+  //   },
+  // })
 
   dotenv.config();
 
   const config = new DocumentBuilder()
-    .setTitle('Cats example')
-    .setDescription('The cats API description')
+    .setTitle('AUTH API')
+    .setDescription('The AUTH API description')
     .setVersion('1.0')
-    .addTag('cats')
+    .addTag('auth')
     .build();
   const document = SwaggerModule.createDocument(app, config);
   SwaggerModule.setup('api', app, document);
@@ -39,7 +39,6 @@ async function bootstrap() {
   await app.listen(8000);
 }
 
-bootstrap().then().catch(err => console.error(err));
-
-
-
+bootstrap()
+  .then()
+  .catch((err) => console.error(err));
