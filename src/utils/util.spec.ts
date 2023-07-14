@@ -1,15 +1,10 @@
-import { Test, TestingModule } from '@nestjs/testing';
-import { AppController } from '../app.controller';
-import { AppService } from '../app.service';
 import {
   signJWT,
   hashPassword,
   checkPassword,
   createmailTransport,
-  sendEmail,
 } from './common.utils';
 import * as jwt from 'jsonwebtoken';
-import * as nodemailer from 'nodemailer';
 
 describe('UtilTests', () => {
   describe('signJWT', () => {

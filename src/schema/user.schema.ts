@@ -59,7 +59,7 @@ export class User {
   email: string;
 
   @Prop()
-  email_confrimed: boolean;
+  email_confirmed: boolean;
 
   @Prop()
   email_confirmation_token: string;

@@ -1,13 +1,10 @@
-import { Observable } from 'rxjs';
 import * as jwt from 'jsonwebtoken';
-import { send } from 'process';
 import * as bcrypt from 'bcryptjs';
 import zxcvbn from 'zxcvbn-typescript';
 import * as nodemailer from 'nodemailer';
 import { uuid } from 'uuidv4';
 import { Message } from 'src/schema/message';
 
-import { UserService } from 'src/users/user.service';
 import {
   ClientOptions,
   ClientProxy,
@@ -51,17 +48,15 @@ class QueuePublisher {
 }
 
 export const authDefault = {
-  "ext": {
-    "x509dns": [],
-    "openids": []
+  ext: {
+    x509dns: [],
+    openids: [],
   },
-  "scopes": {
-    "brainlife": [
-      "user"
-    ]
+  scopes: {
+    brainlife: ['user'],
   },
-  "email_confirmed": false,
-}
+  email_confirmed: false,
+};
 
 export const queuePublisher = QueuePublisher.getInstance();
 

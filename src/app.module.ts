@@ -3,11 +3,9 @@ import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { ConfigModule } from '@nestjs/config';
 import { MongooseModule } from '@nestjs/mongoose';
-import { UserSchema } from './schema/user.schema';
 import { UserModule } from './users/user.module';
 
 import { ClientsModule, Transport } from '@nestjs/microservices';
-import { SignupController } from './controller/signup.controller';
 
 @Module({
   imports: [

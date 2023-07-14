@@ -3,24 +3,19 @@ import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import { CreateUserDto } from '../dto/create-user.dto';
 import { UpdateUserDto } from '../dto/update-user.dto';
-import { HttpErrorByCode } from '@nestjs/common/utils/http-error-by-code.util';
 import { HttpException, HttpStatus } from '@nestjs/common';
-import { uuid } from 'uuidv4';
 
 import { Inject } from '@nestjs/common';
 
 import { User, UserDocument } from '../schema/user.schema';
-import { commandOptions } from 'redis';
 import {
   hashPassword,
   queuePublisher,
   sendEmailConfirmation,
   signJWT,
-  authDefault
+  authDefault,
 } from '../utils/common.utils';
-import { ClientProxy, ClientRMQ } from '@nestjs/microservices';
-import e from 'express';
-import { Message } from '../schema/message';
+import { ClientRMQ } from '@nestjs/microservices';
 
 @Injectable()
 export class UserService {
@@ -56,10 +51,10 @@ export class UserService {
       profile,
       ...authDefault,
       times: { register: new Date() },
-    }).save()
+    }).save();
 
-    console.log("User created", User);
-    
+    console.log('User created', User);
+
     queuePublisher.publishToQueue(
       'user.create.' + sub,
       User.toJSON().toString(),
@@ -67,18 +62,20 @@ export class UserService {
 
     if (process.env.EMAIL_ENABLED == 'true') {
       console.log('sending email confirmation');
+      // send email confirmation and check for errors
       await sendEmailConfirmation(User).catch((e) => {
+        console.log('email confirmation error', e);
         if (User) {
           this.removebySub(sub);
           console.error('removed newly registred record - email failurer');
           throw new HttpException(
             'Failed to send confirmation email. Please make sure your email address is valid',
-            HttpStatus.BAD_REQUEST,
+            HttpStatus.INTERNAL_SERVER_ERROR,
           );
         } else {
           throw new HttpException(
             'Failed to send confirmation email. Please make sure your email address is valid',
-            HttpStatus.BAD_REQUEST,
+            HttpStatus.INTERNAL_SERVER_ERROR,
           );
         }
       });
@@ -109,6 +106,10 @@ export class UserService {
 
   async findByUsername(username: string): Promise<User> {
     return this.userModel.findOne({ username: username }).exec();
+  }
+
+  async findOne(query: any): Promise<User> {
+    return this.userModel.findOne(query).exec();
   }
 
   async updatebyID(

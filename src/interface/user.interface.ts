@@ -1,5 +1,3 @@
-import { Document } from 'mongodb';
-
 export class User {
   sub: number;
   username: string;
