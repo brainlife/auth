@@ -28,3 +28,5 @@ export class Group extends Document {
 }
 
 export const GroupSchema = SchemaFactory.createForClass(Group);
+
+export type GroupDocument = Group & Document;

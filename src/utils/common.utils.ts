@@ -165,3 +165,7 @@ export async function sendPasswordReset(user: any) {
     text + fullurl,
   );
 }
+
+export async function createClaim(user: any) {
+  
+}
