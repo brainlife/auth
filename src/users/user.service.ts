@@ -5,6 +5,7 @@ import { CreateUserDto } from '../dto/create-user.dto';
 import { UpdateUserDto } from '../dto/update-user.dto';
 import { HttpErrorByCode } from '@nestjs/common/utils/http-error-by-code.util';
 import { HttpException, HttpStatus } from '@nestjs/common';
+import { uuid } from 'uuidv4';
 
 import { Inject } from '@nestjs/common';
 
@@ -15,6 +16,7 @@ import {
   queuePublisher,
   sendEmailConfirmation,
   signJWT,
+  authDefault
 } from '../utils/common.utils';
 import { ClientProxy, ClientRMQ } from '@nestjs/microservices';
 import e from 'express';
@@ -52,21 +54,12 @@ export class UserService {
       username,
       password_hash,
       profile,
-      scopes: {
-        brainlife: ['user'],
-      },
+      ...authDefault,
       times: { register: new Date() },
-    }).save();
+    }).save()
 
-    // publishToQueue('user.create.'+sub, User.toJSON())
-
-    // this.client.emit<any>('message_printed',
-    // new Message('AUTH TS = SENDING SUB')).toPromise().then((res) => {
-    //     console.log(res);
-    // }).catch((err) => {
-    //     console.error(err);
-    // });
-
+    console.log("User created", User);
+    
     queuePublisher.publishToQueue(
       'user.create.' + sub,
       User.toJSON().toString(),
@@ -74,7 +67,7 @@ export class UserService {
 
     if (process.env.EMAIL_ENABLED == 'true') {
       console.log('sending email confirmation');
-      sendEmailConfirmation(User).catch((e) => {
+      await sendEmailConfirmation(User).catch((e) => {
         if (User) {
           this.removebySub(sub);
           console.error('removed newly registred record - email failurer');

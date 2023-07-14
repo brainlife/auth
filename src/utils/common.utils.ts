@@ -50,16 +50,20 @@ class QueuePublisher {
   }
 }
 
+export const authDefault = {
+  "ext": {
+    "x509dns": [],
+    "openids": []
+  },
+  "scopes": {
+    "brainlife": [
+      "user"
+    ]
+  },
+  "email_confirmed": false,
+}
+
 export const queuePublisher = QueuePublisher.getInstance();
-
-// export const client = await ClientProxyFactory.create(clientOptions).connect();
-
-// export async function publishToQueue(key: string, message: String)  {
-
-//     client.emit<any>(key, new Message(message)).subscribe((result) => {
-//         console.log(key, message)
-//     });
-// }
 
 export function signJWT(payload: object) {
   if (!process.env.JWT_SECRET || !process.env.JWT_ALGORITHM) {
