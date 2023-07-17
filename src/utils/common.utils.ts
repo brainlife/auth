@@ -154,7 +154,7 @@ export async function sendEmailConfirmation(user) {
 export async function sendPasswordReset(user: any) {
   const url = process.env.URL_REFERRER || 'http://localhost:8000';
   const fullurl =
-    url + '#!/reset_password/' + user.sub + '/' + user.password_reset_token;
+    url + '#!/forgotpass/' + user.password_reset_token;
   const text =
     'Hello!\n\nIf you have requested to reset your password, please visit the following URL to reset your password.\n\n';
 

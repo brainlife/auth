@@ -1,9 +1,11 @@
-import { Body, Controller, Post } from '@nestjs/common';
+import { Body, Controller, Post, Req, Res } from '@nestjs/common';
 import { UserService } from '../users/user.service';
 import { Inject } from '@nestjs/common';
 import { HttpException, HttpStatus } from '@nestjs/common';
 import { ClientProxy } from '@nestjs/microservices';
-import { sendEmailConfirmation } from '../utils/common.utils';
+import { hashPassword, sendEmailConfirmation , sendPasswordReset } from '../utils/common.utils';
+import { Response, Request } from 'express';
+import { use } from 'passport';
 
 @Controller('/')
 export class RootController {

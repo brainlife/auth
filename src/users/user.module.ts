@@ -6,6 +6,7 @@ import { MongooseModule } from '@nestjs/mongoose';
 import { UserSchema } from '../schema/user.schema';
 import { UserController } from './user.controller';
 import { RootController } from '../controller/root.controller';
+import { LocalController } from 'src/controller/local.controller';
 import { UserService } from './user.service';
 import { ClientsModule, Transport } from '@nestjs/microservices';
 
@@ -22,7 +23,7 @@ import { ClientsModule, Transport } from '@nestjs/microservices';
       },
     ]),
   ],
-  controllers: [AppController, UserController, RootController],
+  controllers: [AppController, UserController, RootController, LocalController],
   providers: [AppService, UserService],
 })
 export class UserModule {}
