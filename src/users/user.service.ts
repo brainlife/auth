@@ -65,10 +65,6 @@ export class UserService {
       // send email confirmation and check for errors
       await sendEmailConfirmation(User).catch((e) => {
         console.log('email confirmation error', e);
-          throw new HttpException(
-            'Failed to send confirmation email. Please reach out to support',
-            HttpStatus.INTERNAL_SERVER_ERROR,
-          ); // is it a good message to send? 
       });
     } else {
       console.log('email confirmation disabled', process.env.EMAIL_ENABLED);
