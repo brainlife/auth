@@ -65,19 +65,10 @@ export class UserService {
       // send email confirmation and check for errors
       await sendEmailConfirmation(User).catch((e) => {
         console.log('email confirmation error', e);
-        if (User) {
-          this.removebySub(sub);
-          console.error('removed newly registred record - email failurer');
           throw new HttpException(
-            'Failed to send confirmation email. Please make sure your email address is valid',
+            'Failed to send confirmation email. Please reach out to support',
             HttpStatus.INTERNAL_SERVER_ERROR,
-          );
-        } else {
-          throw new HttpException(
-            'Failed to send confirmation email. Please make sure your email address is valid',
-            HttpStatus.INTERNAL_SERVER_ERROR,
-          );
-        }
+          ); // is it a good message to send? 
       });
     } else {
       console.log('email confirmation disabled', process.env.EMAIL_ENABLED);
