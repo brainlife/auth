@@ -1,11 +1,12 @@
-import { Body, Controller, Post, Req, Res } from '@nestjs/common';
+import { Body, Controller, Post, Req, Res, UseGuards } from '@nestjs/common';
 import { UserService } from '../users/user.service';
 import { Inject } from '@nestjs/common';
 import { HttpException, HttpStatus } from '@nestjs/common';
 import { ClientProxy } from '@nestjs/microservices';
 import { hashPassword, sendEmailConfirmation , sendPasswordReset } from '../utils/common.utils';
 import { Response, Request } from 'express';
-
+import { AuthGuard } from '@nestjs/passport';
+import { AuthService } from '../auth/auth.service';
 
 @Controller('/local')
 
@@ -91,5 +92,24 @@ export class LocalController {
       }
   }
 
-  
+  /**
+ * @api {post} /local/auth Perform authentication
+ * @apiName LocalAuth
+ * @apiDescription Perform authentication using username(or email) and password get JWT token.
+ * @apiGroup Local
+ *
+ * @apiParam {String} username Username or email address
+ * @apiParam {String} password Password!
+ * @apiParam {String} [ttl]    time-to-live in milliseconds (if not set, it will be defaulted to server default)
+ *
+ * @apiSuccess {Object} jwt JWT token
+ */
+  @UseGuards(AuthGuard('local'))
+  @Post('/auth')
+  async localLogin(@Req() req, @Res() res, @Body() { ttl,email, password }) {
+    console.error('localLogin', email);
+    return req.user;
+  }
+
+
 }

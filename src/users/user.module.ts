@@ -8,6 +8,7 @@ import { UserController } from './user.controller';
 import { RootController } from '../controller/root.controller';
 import { LocalController } from 'src/controller/local.controller';
 import { UserService } from './user.service';
+
 import { ClientsModule, Transport } from '@nestjs/microservices';
 
 @Module({
@@ -25,5 +26,6 @@ import { ClientsModule, Transport } from '@nestjs/microservices';
   ],
   controllers: [AppController, UserController, RootController, LocalController],
   providers: [AppService, UserService],
+  exports: [UserService], // Make sure to export the UserService
 })
 export class UserModule {}
