@@ -166,6 +166,16 @@ export async function sendPasswordReset(user: any) {
   );
 }
 
-export async function createClaim(user: any) {
+export function checkUser(user:any, req:any) {
+
+    let error = null;
+    if(!user.active)  error = {message: "Account is disabled. Please contact the administrator.", code: "inactive"};
   
+    if(process.env.EMAIL_ENABLED  && user.email_confirmed !== true) error = {message: "Email is not confirmed yet", path: "/confirm_email/"+user.sub, code: "un_confirmed"};
+
+    return error;
+}
+
+export async function createClaim(user: any) {
+  const adminGroups = await user.getAdminGroups();
 }

@@ -3,7 +3,7 @@ import { UserService } from '../users/user.service';
 import { Inject } from '@nestjs/common';
 import { HttpException, HttpStatus } from '@nestjs/common';
 import { ClientProxy } from '@nestjs/microservices';
-import { hashPassword, sendEmailConfirmation , sendPasswordReset } from '../utils/common.utils';
+import { hashPassword, sendEmailConfirmation , sendPasswordReset, queuePublisher } from '../utils/common.utils';
 import { Response, Request } from 'express';
 import { AuthGuard } from '@nestjs/passport';
 import { AuthService } from '../auth/auth.service';
@@ -107,8 +107,11 @@ export class LocalController {
   @UseGuards(AuthGuard('local'))
   @Post('/auth')
   async localLogin(@Req() req, @Res() res, @Body() { ttl,email, password }) {
-    console.error('localLogin', email);
-    return req.user;
+    console.log('localLogin', email);
+    if(!req.user) {
+      console.log('localLogin', 'no user');
+    }
+    res.json(req.user);
   }
 
 
