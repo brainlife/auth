@@ -10,7 +10,6 @@ import { FailedLogin, FailedLoginSchema } from '../schema/failedLogin.schema';
 
 @Module({
     imports: [
-        UserModule,
         PassportModule,
         RedisModule,
         MongooseModule.forFeature([{ name: FailedLogin.name, schema: FailedLoginSchema }]) // add this

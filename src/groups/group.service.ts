@@ -19,6 +19,10 @@ export class GroupService {
         return this.groupModel.find().exec();
     }
 
+    async findBy(item:any): Promise<Group[]> {
+        return this.groupModel.find(item);
+    }
+
     async findOne(id: string): Promise<Group> {
         return this.groupModel.findById(id);
     }

@@ -3,10 +3,14 @@ import { UserService } from '../users/user.service';
 import { Inject } from '@nestjs/common';
 import { HttpException, HttpStatus } from '@nestjs/common';
 import { ClientProxy } from '@nestjs/microservices';
-import { hashPassword, sendEmailConfirmation , sendPasswordReset, queuePublisher } from '../utils/common.utils';
+import { hashPassword, signJWT, sendEmailConfirmation , sendPasswordReset, queuePublisher, checkUser } from '../utils/common.utils';
 import { Response, Request } from 'express';
 import { AuthGuard } from '@nestjs/passport';
 import { AuthService } from '../auth/auth.service';
+import { RedisService } from 'src/redis/redis.service';
+import { FailedLoginService } from 'src/failedLogins/failedLogin.service';
+import { CreateFailedLoginDto } from 'src/dto/create-failedLogin.dto';
+import { FailedLogin } from 'src/schema/failedLogin.schema';
 
 @Controller('/local')
 
@@ -14,6 +18,8 @@ export class LocalController {
     constructor(
         private readonly userService: UserService,
         @Inject('RABBITMQ_SERVICE') private readonly client: ClientProxy,
+        private redisService: RedisService,
+        private failedLoginService: FailedLoginService,
       ) {}
 
   /**
@@ -107,11 +113,48 @@ export class LocalController {
   @UseGuards(AuthGuard('local'))
   @Post('/auth')
   async localLogin(@Req() req, @Res() res, @Body() { ttl,email, password }) {
-    console.log('localLogin', email);
-    if(!req.user) {
-      console.log('localLogin', 'no user');
+    // if some error
+
+    //TODO: discuss to improve it to use username or email while publishing message
+    if(req.user.message) {
+      // publish to rabbitmq
+      const publishMessage = {type: "userpass", headers: req.headers, message: "Invalid credentials", username: req.body.username}; // need to confirm the message
+      queuePublisher.publishToQueue("user.login_fail", publishMessage.toString());
+      //set redis failure to lock account
+      await this.redisService.set("auth.fail."+req.body.username+"."+(new Date().getTime()), "failedLogin", 3600); // 1 hour
+      return res.status(403).json({status: 403,message: req.user.message});
     }
-    res.json(req.user);
+    const user = req.user;
+    //TODO should i move it to local strategy ? 
+    const status = checkUser(user,req)
+    if(status && status.message) {
+      const userDocument = user as any;
+      let failedLogin: CreateFailedLoginDto = {
+        username: user.username, // Add this
+        user_id: userDocument._id.toString(), // And this
+        code: status.code, 
+        headers: req.headers,
+        create_date: new Date() // And this
+      }
+    
+      await this.failedLoginService.create(failedLogin);
+      console.log("Failed login created", failedLogin);
+      throw new HttpException(status.message, HttpStatus.UNAUTHORIZED);
+    }
+    //TODO implement create claim 
+    console.log('User validated', user);
+        //TODO implement to use claim
+        // convert user to object
+
+    const jwt = signJWT({...user});
+    if(!user.times) user.times = {};
+    user.times.last_login = new Date();
+    user.reqHeaders = req.headers;
+    await this.userService.updatebySub(user.sub, user);
+    
+    // queuePublisher.publishToQueue("user.login."+user.sub, {type: "userpass", username: user.username, exp: claim.exp, headers: req.headers});
+
+    return res.json({message: "Login Success", jwt, sub: user.sub});
   }
 
 

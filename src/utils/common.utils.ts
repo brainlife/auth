@@ -130,7 +130,7 @@ export async function sendEmail(
     });
 }
 
-export async function sendEmailConfirmation(user) {
+export async function sendEmailConfirmation(user): Promise<any> {
   if (!user.email_confirmation_token) {
     user.email_confirmation_token = uuid();
     await user.save();
@@ -151,7 +151,7 @@ export async function sendEmailConfirmation(user) {
   );
 }
 
-export async function sendPasswordReset(user: any) {
+export async function sendPasswordReset(user: any): Promise<any> {
   const url = process.env.URL_REFERRER || 'http://localhost:8000';
   const fullurl =
     url + '#!/forgotpass/' + user.password_reset_token;
@@ -166,13 +166,10 @@ export async function sendPasswordReset(user: any) {
   );
 }
 
-export function checkUser(user:any, req:any) {
-
+export function checkUser(user:any, req:any): any {
     let error = null;
     if(!user.active)  error = {message: "Account is disabled. Please contact the administrator.", code: "inactive"};
-  
     if(process.env.EMAIL_ENABLED  && user.email_confirmed !== true) error = {message: "Email is not confirmed yet", path: "/confirm_email/"+user.sub, code: "un_confirmed"};
-
     return error;
 }
 

@@ -8,14 +8,17 @@ import { UserController } from './user.controller';
 import { RootController } from '../controller/root.controller';
 import { LocalController } from 'src/controller/local.controller';
 import { UserService } from './user.service';
-
+import { RedisModule } from 'src/redis/redis.module';
 import { ClientsModule, Transport } from '@nestjs/microservices';
-
+import { FailedLoginModule } from 'src/failedLogins/failedLogin.module';
 @Module({
   imports: [
+    RedisModule,
+    FailedLoginModule,
     ConfigModule.forRoot(),
     ClientsModule.register([
       { name: 'RABBITMQ_SERVICE', transport: Transport.RMQ },
+
     ]),
     MongooseModule.forFeature([
       {
