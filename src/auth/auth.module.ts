@@ -7,13 +7,21 @@ import { UserService } from 'src/users/user.service';
 import { RedisService } from 'src/redis/redis.service';
 import { RedisModule } from 'src/redis/redis.module';
 import { FailedLoginModule } from 'src/failedLogins/failedLogin.module';
+import { JwtModule } from '@nestjs/jwt';
+import { JwtStrategy } from './jwt.strategy';
+
 @Module({
   imports: [
     UserModule,
     PassportModule,
     RedisModule,
-    FailedLoginModule
+    FailedLoginModule,
+    JwtModule.register({
+      secret: process.env.JWT_SECRET,
+      signOptions: { expiresIn: '1d' },
+    }),
+    PassportModule.register({ defaultStrategy: 'jwt' }),
   ],
-  providers: [AuthService, LocalStrategy],
+  providers: [AuthService, LocalStrategy, JwtStrategy],
 })
 export class AuthModule {}

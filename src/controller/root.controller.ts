@@ -1,4 +1,4 @@
-import { Body, Controller, Post, Req, Res } from '@nestjs/common';
+import { Body, Controller, Post, Req, Res, UseGuards } from '@nestjs/common';
 import { UserService } from '../users/user.service';
 import { Inject } from '@nestjs/common';
 import { HttpException, HttpStatus } from '@nestjs/common';
@@ -6,6 +6,7 @@ import { ClientProxy } from '@nestjs/microservices';
 import { hashPassword, sendEmailConfirmation , sendPasswordReset } from '../utils/common.utils';
 import { Response, Request } from 'express';
 import { use } from 'passport';
+import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 
 @Controller('/')
 export class RootController {
@@ -112,5 +113,35 @@ export class RootController {
     await this.userService.updatebySub(user.sub, user);
     return { message: 'Email address confirmed! Please re-login.' };
   }
+
+  /**
+ * @api {post} /refresh Refresh JWT Token.
+ * @apiDescription 
+ *              JWT Token normally lasts for a few hours. Application should call this API periodically
+ *              to get it refreshed before it expires. 
+ *              You can also use this API to temporarily drop certain privileges you previously had to 
+ *              simulate user with less privileges, or make your token more secure by removing unnecessary
+ *              privileges (set scopes parameters)
+ *
+ * @apiName Refresh
+ * @apiGroup User
+ *
+ * @apiHeader {String} authorization    A valid JWT token (Bearer:)
+ * @apiParam {Object} [scopes]    Desired scopes to intersect (you can remove certain scopes)
+ * @apiParam {Number[]} [gids]    Desired gids to intersect (you can remove certain gids)
+ * @apiParam {Boolean} [clearProfile]
+ *                              Set this to true if you don't need profile info 
+ * @apiParam {String} [ttl]     time-to-live in milliseconds (if not set, it will be defaulted to server default)
+ *
+ * @apiSuccess {Object} jwt New JWT token
+ */
+  @UseGuards(JwtAuthGuard)
+  @Post('/refresh')
+  async refresh(@Req() req, @Res() res) {
+    console.log('refreshing token');
+    return res.json("WORKS :)")
+  }
+
+
 
 }

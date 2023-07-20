@@ -4,6 +4,7 @@ import zxcvbn from 'zxcvbn-typescript';
 import * as nodemailer from 'nodemailer';
 import { uuid } from 'uuidv4';
 import { Message } from 'src/schema/message';
+import {private_key} from '../auth/constants';
 
 import {
   ClientOptions,
@@ -61,15 +62,12 @@ export const authDefault = {
 export const queuePublisher = QueuePublisher.getInstance();
 
 export function signJWT(payload: object) {
-  if (!process.env.JWT_SECRET || !process.env.JWT_ALGORITHM) {
-    throw new Error('Required JWT environment variables are not set');
-  }
-
+  
   const options = {
     algorithm: process.env.JWT_ALGORITHM as jwt.Algorithm, // add the assertion here
     // add other options as required
   };
-  return jwt.sign(payload, process.env.JWT_SECRET, options);
+  return jwt.sign(payload, private_key, options);
 }
 
 export function hashPassword(password: string): any {

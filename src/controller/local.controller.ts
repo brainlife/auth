@@ -147,6 +147,7 @@ export class LocalController {
         // convert user to object
 
     const jwt = signJWT({...user});
+
     if(!user.times) user.times = {};
     user.times.last_login = new Date();
     user.reqHeaders = req.headers;
