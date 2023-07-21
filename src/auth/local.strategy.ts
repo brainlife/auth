@@ -8,7 +8,8 @@ import { AuthService } from './auth.service';
 export class LocalStrategy extends PassportStrategy(Strategy) {
   constructor(private authService: AuthService) {
     super({
-      usernameField: 'email',  // This should match the field you're sending in the request
+      usernameField: 'username',  // This should match the field you're sending in the request
+      // usernameQueryFields: ['email'],
       passwordField: 'password',
       passReqToCallback: true,
     });
@@ -20,5 +21,13 @@ export class LocalStrategy extends PassportStrategy(Strategy) {
     const status = await this.authService.validateUser(usernameOrEmail, password,req);
     // console.log("Return", status);
     return status;
+  }
+
+  handleRequest(err, user, info) {
+    console.log("Handle Request",err,user,info);
+    if (err || !user) {
+      throw err || new UnauthorizedException();
+    }
+    return user;
   }
 }

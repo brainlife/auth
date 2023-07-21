@@ -69,7 +69,7 @@ export class UserService {
     } else {
       console.log('email confirmation disabled', process.env.EMAIL_ENABLED);
       // create Claim
-      const jwt = signJWT(User);
+      const jwt = signJWT(User.toObject());
       return { jwt: jwt, sub: sub };
     }
     return User;

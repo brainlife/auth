@@ -1,4 +1,4 @@
-import { Body, Controller, Post, Req, Res, UseGuards } from '@nestjs/common';
+import { Body, Controller, Get, Post, Req, Res, UseGuards } from '@nestjs/common';
 import { UserService } from '../users/user.service';
 import { Inject } from '@nestjs/common';
 import { HttpException, HttpStatus } from '@nestjs/common';
@@ -142,6 +142,35 @@ export class RootController {
     return res.json("WORKS :)")
   }
 
+  /**
+ * @api {get} /me Get user details
+ * @apiDescription Returns things that user might want to know about himself.
+ * password_hash will be set to true if the password is set, otherwise null
+ *
+ * @apiGroup User
+ * 
+ * @apiHeader {String} authorization A valid JWT token "Bearer: xxxxx"
+ * @apiSuccessExample {json} Success-Response:
+ *     HTTP/1.1 200 OK
+ *     {
+ *         "username": "hayashis",
+ *         "fullname": "Soichi Hayashi",
+ *         "email": "hayashis@iu.edu",
+ *         "email_confirmed": true,
+ *         "iucas": "hayashis"
+ *     }
+ */
 
+  @UseGuards(JwtAuthGuard)
+  @Get('/me')
+  async me(@Req() req, @Res() res) {
+    const user = await this.userService.findOnebySub(req.user.sub);
+    if (!user) {
+      throw new HttpException('User not found', HttpStatus.NOT_FOUND);
+    }
+    //TODO : Discuss about if we should mark it true or not
+    // if(user.password_hash) user.password_hash = true;
+    return res.json(user);
+  }
 
 }

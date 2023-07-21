@@ -87,7 +87,7 @@ export function hashPassword(password: string): any {
   return bcrypt.hashSync(password, salt); // hash the password
 }
 
-export function checkPassword(password: string, hash: string) {
+export function checkPassword(password: string, hash: string): boolean {
   return bcrypt.compareSync(password, hash); // compare the password
 }
 

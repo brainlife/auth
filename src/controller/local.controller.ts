@@ -1,19 +1,18 @@
-import { Body, Controller, Post, Req, Res, UseGuards } from '@nestjs/common';
+import { Body, Controller, Post, Put, Req, Res, UseGuards } from '@nestjs/common';
 import { UserService } from '../users/user.service';
 import { Inject } from '@nestjs/common';
 import { HttpException, HttpStatus } from '@nestjs/common';
 import { ClientProxy } from '@nestjs/microservices';
-import { hashPassword, signJWT, sendEmailConfirmation , sendPasswordReset, queuePublisher, checkUser } from '../utils/common.utils';
+import { hashPassword, signJWT, sendEmailConfirmation , sendPasswordReset, queuePublisher, checkUser, checkPassword } from '../utils/common.utils';
 import { Response, Request } from 'express';
 import { AuthGuard } from '@nestjs/passport';
 import { AuthService } from '../auth/auth.service';
 import { RedisService } from 'src/redis/redis.service';
 import { FailedLoginService } from 'src/failedLogins/failedLogin.service';
 import { CreateFailedLoginDto } from 'src/dto/create-failedLogin.dto';
-import { FailedLogin } from 'src/schema/failedLogin.schema';
+import { JwtAuthGuard } from 'src/auth/jwt-auth.guard';
 
 @Controller('/local')
-
 export class LocalController {
     constructor(
         private readonly userService: UserService,
@@ -156,6 +155,44 @@ export class LocalController {
     // queuePublisher.publishToQueue("user.login."+user.sub, {type: "userpass", username: user.username, exp: claim.exp, headers: req.headers});
 
     return res.json({message: "Login Success", jwt, sub: user.sub});
+  }
+
+
+  @UseGuards(JwtAuthGuard)
+  @Put('/setpass')
+  async setPass(@Req() req, @Res() res, @Body() { password, password_old }) {
+    const userPayload = req.user._doc;
+    const user = await this.userService.findOnebySub(req.user.sub);
+    if(!user) {
+      throw new HttpException(
+        'failed to find the user with sub:'+req.user.sub,
+        HttpStatus.NOT_FOUND,
+      );
+    }
+    if(user.password_hash) {
+      // check current password
+      if(!checkPassword(password_old, user.password_hash)) {
+        queuePublisher.publishToQueue("user.setpass_fail."+user.sub, 
+        {username: user.username, message: "wrong current pass"}.toString());
+        throw new HttpException(
+          'Wrong current password',
+          HttpStatus.INTERNAL_SERVER_ERROR,
+        );
+      }
+
+      const hashedPassword = await hashPassword(password)
+      if(hashedPassword.message) {
+        throw new HttpException(
+          hashedPassword.message,
+          HttpStatus.INTERNAL_SERVER_ERROR,
+        );
+      }
+      user.password_hash = hashedPassword;
+      if(!user.times) user.times = {};
+      user.times.password_reset_token = new Date();
+      await this.userService.updatebySub(user.sub, user);
+      res.json({message: "Password reset successfully"});
+    }
   }
 
 
