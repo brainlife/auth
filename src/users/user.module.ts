@@ -11,8 +11,10 @@ import { UserService } from './user.service';
 import { RedisModule } from 'src/redis/redis.module';
 import { ClientsModule, Transport } from '@nestjs/microservices';
 import { FailedLoginModule } from 'src/failedLogins/failedLogin.module';
+import { GroupModule } from 'src/groups/group.module';
 @Module({
   imports: [
+    GroupModule,
     RedisModule,
     FailedLoginModule,
     ConfigModule.forRoot(),

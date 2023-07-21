@@ -3,7 +3,7 @@ import { UserService } from '../users/user.service';
 import { Inject } from '@nestjs/common';
 import { HttpException, HttpStatus } from '@nestjs/common';
 import { ClientProxy } from '@nestjs/microservices';
-import { hashPassword, signJWT, sendEmailConfirmation , sendPasswordReset, queuePublisher, checkUser, checkPassword } from '../utils/common.utils';
+import { hashPassword, signJWT, sendEmailConfirmation , createClaim, sendPasswordReset, queuePublisher, checkUser, checkPassword } from '../utils/common.utils';
 import { Response, Request } from 'express';
 import { AuthGuard } from '@nestjs/passport';
 import { AuthService } from '../auth/auth.service';
@@ -11,6 +11,7 @@ import { RedisService } from 'src/redis/redis.service';
 import { FailedLoginService } from 'src/failedLogins/failedLogin.service';
 import { CreateFailedLoginDto } from 'src/dto/create-failedLogin.dto';
 import { JwtAuthGuard } from 'src/auth/jwt-auth.guard';
+import { GroupService } from 'src/groups/group.service';
 
 @Controller('/local')
 export class LocalController {
@@ -18,6 +19,7 @@ export class LocalController {
         private readonly userService: UserService,
         @Inject('RABBITMQ_SERVICE') private readonly client: ClientProxy,
         private redisService: RedisService,
+        private groupService: GroupService,
         private failedLoginService: FailedLoginService,
       ) {}
 
@@ -127,6 +129,7 @@ export class LocalController {
     //TODO should i move it to local strategy ? 
     const status = checkUser(user,req)
     if(status && status.message) {
+      // failedLoginstep
       const userDocument = user as any;
       let failedLogin: CreateFailedLoginDto = {
         username: user.username, // Add this
@@ -140,12 +143,13 @@ export class LocalController {
       console.log("Failed login created", failedLogin);
       throw new HttpException(status.message, HttpStatus.UNAUTHORIZED);
     }
-    //TODO implement create claim 
-    console.log('User validated', user);
-        //TODO implement to use claim
-        // convert user to object
-
-    const jwt = signJWT({...user});
+    
+    //create claim
+    
+    let claim = await createClaim(user, this.userService, this.groupService);
+    if(ttl) claim.exp = Math.floor(Date.now() / 1000) + ttl;
+    
+    const jwt = signJWT(claim);
 
     if(!user.times) user.times = {};
     user.times.last_login = new Date();

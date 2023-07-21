@@ -12,6 +12,10 @@ import {
   ClientProxyFactory,
   Transport,
 } from '@nestjs/microservices';
+import { User } from 'src/schema/user.schema';
+import { UserService } from 'src/users/user.service';
+import { Group } from 'src/schema/group.schema';
+import { GroupService } from 'src/groups/group.service';
 
 class QueuePublisher {
   private static instance: QueuePublisher;
@@ -164,13 +168,53 @@ export async function sendPasswordReset(user: any): Promise<any> {
   );
 }
 
+//TODO ask for improvment and provide suggestion
 export function checkUser(user:any, req:any): any {
-    let error = null;
-    if(!user.active)  error = {message: "Account is disabled. Please contact the administrator.", code: "inactive"};
-    if(process.env.EMAIL_ENABLED  && user.email_confirmed !== true) error = {message: "Email is not confirmed yet", path: "/confirm_email/"+user.sub, code: "un_confirmed"};
-    return error;
+  let error = null;
+  if(!user.active)  error = {message: "Account is disabled. Please contact the administrator.", code: "inactive"};
+  if(process.env.EMAIL_ENABLED === 'true' && user.email_confirmed == false) error = {message: "Email is not confirmed yet", path: "/confirm_email/"+user.sub, code: "un_confirmed"};
+  return error;
+}
+//TODO improved ??
+export function intersect_scopes(o1, o2) {
+  var intersect = {};
+  for(var k in o1) {
+      var v1 = o1[k];
+      if(o2[k] === undefined) continue; //key doesn't exist in o2..
+      var v2 = o2[k];
+      //if(typeof v1 ! = typeof v2) return; //type doesn't match
+      var vs = [];
+      v1.forEach(function(v) {
+          if(~v2.indexOf(v)) vs.push(v);
+      });
+      intersect[k] = vs;
+  }
+  return intersect;
 }
 
-export async function createClaim(user: any) {
-  const adminGroups = await user.getAdminGroups();
+export async function createClaim(user: any, userService: UserService, groupService: GroupService): Promise<any> {
+    
+    const adminGroups = await groupService.findBy({active: true, admins: user._id});
+    const adminGids = adminGroups.map(group => group.id);
+    const memberGroups = await groupService.findBy({active: true, members: user._id});
+    const memberGids = memberGroups.map(group => group.id);
+
+    const gids = [...adminGids, 0];
+    memberGids.forEach(gid => {
+      if(!gids.includes(gid)) gids.push(gid);
+    });
+    console.log("User in create claim",user)
+    return {
+      iss: process.env.ISSUER,
+      exp: (Date.now() + 24*3600*1000*7) / 1000,
+      scopes: user?.scopes,
+      sub: user?.sub,
+      gids,
+      profile: {
+        username: user?.username,
+        email: user?.email,
+        fullname: user?.fullname,
+        aup: user?.profile?.private?.aup,
+      },
+    };    
 }

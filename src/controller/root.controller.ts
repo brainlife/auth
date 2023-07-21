@@ -3,16 +3,19 @@ import { UserService } from '../users/user.service';
 import { Inject } from '@nestjs/common';
 import { HttpException, HttpStatus } from '@nestjs/common';
 import { ClientProxy } from '@nestjs/microservices';
-import { hashPassword, sendEmailConfirmation , sendPasswordReset } from '../utils/common.utils';
-import { Response, Request } from 'express';
+import { checkUser, createClaim, hashPassword, sendEmailConfirmation , sendPasswordReset, intersect_scopes, signJWT, queuePublisher } from '../utils/common.utils';
+import e, { Response, Request } from 'express';
 import { use } from 'passport';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
+import { GroupService } from 'src/groups/group.service';
+import { commandOptions } from 'redis';
 
 @Controller('/')
 export class RootController {
   constructor(
     private readonly userService: UserService,
     @Inject('RABBITMQ_SERVICE') private readonly client: ClientProxy,
+    private readonly groupService: GroupService
   ) {}
 
   @Post('signup')
@@ -138,8 +141,33 @@ export class RootController {
   @UseGuards(JwtAuthGuard)
   @Post('/refresh')
   async refresh(@Req() req, @Res() res) {
-    console.log('refreshing token');
-    return res.json("WORKS :)")
+    const user = await this.userService.findOnebySub(req.user.sub);
+    if (!user) {
+      throw new HttpException("Couldn't find any user with sub:"+req.user.sub, HttpStatus.NOT_FOUND);
+    }
+    if(checkUser(user,req)?.message) return res.status(500).json(checkUser(user,req)); 
+    
+    let claim = await createClaim(user,this.userService,this.groupService);
+  
+    // //TODO improve this part, causing issues with refresh
+    // if(req.body.scopes) claim.scopes = intersect_scopes(claim.scopes, req.body.scopes);
+
+    // //intersect gids with requested gids
+    // if(req.body.gids) claim.gids = claim.gids.filter(id=>req.body.gids.includes(id));
+
+    // if(req.body.clearProfile) delete claim.profile;
+
+    //TODO Fix TTL
+    // if(req.body.ttl) claim.exp = (Date.now() + req.body.ttl)/1000;
+    // else claim.exp =  24*3600*1000*7; //time to live
+    
+    const jwt = signJWT(claim);
+    console.log(claim,req.user);
+    
+    queuePublisher.publishToQueue("user.refresh."+user.sub, 
+    {username: user.username, exp: claim.exp}.toString());
+
+    return res.json({jwt});
   }
 
   /**
