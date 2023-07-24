@@ -41,10 +41,10 @@ export class UserController {
   //   return this.userService.findOnebySub(sub);
   // }
 
-  @Put(':sub')
-  update(@Param('sub') sub: number, @Body() updateUserDto: UpdateUserDto) {
-    return this.userService.updatebySub(sub, updateUserDto);
-  }
+  // @Put(':sub')
+  // update(@Param('sub') sub: number, @Body() updateUserDto: UpdateUserDto) {
+  //   return this.userService.updatebySub(sub, updateUserDto);
+  // }
 
   @Delete(':sub')
   remove(@Param('sub') sub: number) {

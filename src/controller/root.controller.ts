@@ -5,6 +5,7 @@ import {
   Post,
   Req,
   Res,
+  Put,
   SetMetadata,
   UseGuards,
 } from '@nestjs/common';
@@ -352,4 +353,26 @@ export class RootController {
     const jwt = signJWT(claim);
     return res.json({ jwt });
   }
+
+  /**
+   * @apiName UserGroups
+   * @api {put} /user/:id  update user
+   * @apiDescription      (admin only)
+   * @apiGroup User
+   * */
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @SetMetadata('roles', 'admin')
+  @Put('/user/:id')
+  async updateUser(@Req() req, @Res() res) {
+    const user = await this.userService.findOnebySub(req.params.id);
+    if (!user) {
+      throw new HttpException(
+        "Couldn't find any user with sub:" + req.params.id,
+        HttpStatus.NOT_FOUND,
+      );
+    }
+    await this.userService.updatebySub(user.sub, req.body);
+    return res.json({ message : 'User Updated Successfully' });
+  }
+
 }
