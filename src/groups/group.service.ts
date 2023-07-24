@@ -35,4 +35,13 @@ export class GroupService {
   async remove(id: string): Promise<Group> {
     return this.groupModel.findByIdAndRemove(id);
   }
+
+  async findGroups(find:any,skip:number,limit:number) {
+    const groups = await this.groupModel.find(find).skip(skip).limit(limit).lean().populate('admins members', 'email fullname username sub').exec();
+
+    const count = await this.groupModel.countDocuments(find).exec();
+    //forcing to add canedit property to each group
+    groups.forEach((group:any) => group.canedit = true);
+    return {groups:  groups, count: count};
+  }
 }

@@ -21,6 +21,7 @@ import {
   sendPasswordReset,
   signJWT,
   queuePublisher,
+  hasScope,
 } from '../utils/common.utils';
 import e, { Response, Request } from 'express';
 import { use } from 'passport';
@@ -373,6 +374,55 @@ export class RootController {
     }
     await this.userService.updatebySub(user.sub, req.body);
     return res.json({ message : 'User Updated Successfully' });
+  }
+
+  /**
+   * @apiName UserGroups
+   * query all groups with basic info
+   * @api {get} /groups
+   * @apiDescription  access to both admin and users who are member of at least one group
+   * returns groups with count for admin and just the group for user who are not auth-admin
+   * @apiGroup User
+   * */
+
+  @UseGuards(JwtAuthGuard)
+  @Get('/groups')
+  async groups(@Req() req, @Res() res) {
+    const user:any = await this.userService.findOnebySub(req.user.sub);
+    if (!user) {
+      throw new HttpException(
+        "Couldn't find any user with sub:" + req.user.sub,
+        HttpStatus.NOT_FOUND,
+      );
+    }
+    let find = {};
+    if(req.query.find) find = JSON.parse(req.query.find);
+    if(hasScope(req.user, 'admin')) {
+      const limit = req.query.limit || 50;
+      const skip = req.query.skip || 0;
+      const groups = await this.groupService.findGroups(find, +skip, +limit);
+      //returns group with count
+      return res.json(groups);
+    } else {
+      const query = {
+        $and: [
+            //user provided query
+            find,
+
+            //normal user only gets to see groups that they are admin/members
+            {
+                $or: [
+                    {admins: user._id},
+                    {members: user._id},
+                ]
+            }
+        ],
+    }
+      //TODO - should I remove count ?
+      // https://github.com/brainlife/auth/blob/c6e6f9e9eea82ab4c8dfd1dac2445aa040879a86/api/controllers/root.js#L334-L335
+      const groups = await this.groupService.findGroups(find, 0, 0);
+      return res.json(groups.groups);
+    }
   }
 
 }
