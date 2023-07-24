@@ -245,6 +245,7 @@ export class RootController {
  *     HTTP/1.1 200 OK
  *     [ 1,2,3 ] 
  */
+
   @UseGuards(JwtAuthGuard,RolesGuard)
   @SetMetadata('roles', 'admin')
   @Get('/user/groups/:id')
@@ -253,11 +254,19 @@ export class RootController {
     if (!user) {
       throw new HttpException('User not found', HttpStatus.NOT_FOUND);
     }
-    const query = [{$or: [{admins: user}, {members: user}]}, {id: 1}];
+    //TODO why we need 1 here? 
+    //https://github.com/brainlife/auth/blob/c6e6f9e9eea82ab4c8dfd1dac2445aa040879a86/api/controllers/root.js#L189
+    const query = { 
+      $or: [{ admins: user }, { members: user }],
+      id: 1,
+    };
     const groups = await this.groupService.findBy(query);
     let gids = groups.map(g=>g.id);
     return res.json(gids);
   }
+
+
+
 
 
 
