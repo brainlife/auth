@@ -20,7 +20,6 @@ import { GroupModule } from 'src/groups/group.module';
     ConfigModule.forRoot(),
     ClientsModule.register([
       { name: 'RABBITMQ_SERVICE', transport: Transport.RMQ },
-
     ]),
     MongooseModule.forFeature([
       {

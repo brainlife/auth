@@ -62,8 +62,6 @@ describe('UtilTests', () => {
     });
   });
 
-  
-
   //Tested the below function manually with a valid email address and MailHog
 
   // describe('sendEmail', () => {

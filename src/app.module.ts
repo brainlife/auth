@@ -35,7 +35,8 @@ import { RedisModule } from './redis/redis.module';
         },
       },
     ]),
-    AuthModule, RedisModule
+    AuthModule,
+    RedisModule,
   ],
   controllers: [AppController],
   providers: [AppService],

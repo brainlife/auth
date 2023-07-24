@@ -4,7 +4,7 @@ import zxcvbn from 'zxcvbn-typescript';
 import * as nodemailer from 'nodemailer';
 import { uuid } from 'uuidv4';
 import { Message } from 'src/schema/message';
-import {private_key} from '../auth/constants';
+import { private_key } from '../auth/constants';
 
 import {
   ClientOptions,
@@ -66,7 +66,6 @@ export const authDefault = {
 export const queuePublisher = QueuePublisher.getInstance();
 
 export function signJWT(payload: object) {
-  
   const options = {
     algorithm: process.env.JWT_ALGORITHM as jwt.Algorithm, // add the assertion here
     // add other options as required
@@ -155,8 +154,7 @@ export async function sendEmailConfirmation(user): Promise<any> {
 
 export async function sendPasswordReset(user: any): Promise<any> {
   const url = process.env.URL_REFERRER || 'http://localhost:8000';
-  const fullurl =
-    url + '#!/forgotpass/' + user.password_reset_token;
+  const fullurl = url + '#!/forgotpass/' + user.password_reset_token;
   const text =
     'Hello!\n\nIf you have requested to reset your password, please visit the following URL to reset your password.\n\n';
 
@@ -169,61 +167,79 @@ export async function sendPasswordReset(user: any): Promise<any> {
 }
 
 //TODO ask for improvment and provide suggestion
-export function checkUser(user:any, req:any): any {
+export function checkUser(user: any, req: any): any {
   let error = null;
-  if(!user.active)  error = {message: "Account is disabled. Please contact the administrator.", code: "inactive"};
-  if(process.env.EMAIL_ENABLED === 'true' && user.email_confirmed == false) error = {message: "Email is not confirmed yet", path: "/confirm_email/"+user.sub, code: "un_confirmed"};
+  if (!user.active)
+    error = {
+      message: 'Account is disabled. Please contact the administrator.',
+      code: 'inactive',
+    };
+  if (process.env.EMAIL_ENABLED === 'true' && user.email_confirmed == false)
+    error = {
+      message: 'Email is not confirmed yet',
+      path: '/confirm_email/' + user.sub,
+      code: 'un_confirmed',
+    };
   return error;
 }
 //TODO improved ??
 export function intersect_scopes(o1, o2) {
-  var intersect = {};
-  for(var k in o1) {
-      var v1 = o1[k];
-      if(o2[k] === undefined) continue; //key doesn't exist in o2..
-      var v2 = o2[k];
-      //if(typeof v1 ! = typeof v2) return; //type doesn't match
-      var vs = [];
-      v1.forEach(function(v) {
-          if(~v2.indexOf(v)) vs.push(v);
-      });
-      intersect[k] = vs;
+  const intersect = {};
+  for (const k in o1) {
+    const v1 = o1[k];
+    if (o2[k] === undefined) continue; //key doesn't exist in o2..
+    const v2 = o2[k];
+    //if(typeof v1 ! = typeof v2) return; //type doesn't match
+    const vs = [];
+    v1.forEach(function (v) {
+      if (~v2.indexOf(v)) vs.push(v);
+    });
+    intersect[k] = vs;
   }
   return intersect;
 }
 
-export async function createClaim(user: any, userService: UserService, groupService: GroupService): Promise<any> {
-    
-    const adminGroups = await groupService.findBy({active: true, admins: user._id});
-    const adminGids = adminGroups.map(group => group.id);
-    const memberGroups = await groupService.findBy({active: true, members: user._id});
-    const memberGids = memberGroups.map(group => group.id);
+export async function createClaim(
+  user: any,
+  userService: UserService,
+  groupService: GroupService,
+): Promise<any> {
+  const adminGroups = await groupService.findBy({
+    active: true,
+    admins: user._id,
+  });
+  const adminGids = adminGroups.map((group) => group.id);
+  const memberGroups = await groupService.findBy({
+    active: true,
+    members: user._id,
+  });
+  const memberGids = memberGroups.map((group) => group.id);
 
-    const gids = [...adminGids, 0];
-    memberGids.forEach(gid => {
-      if(!gids.includes(gid)) gids.push(gid);
-    });
-    console.log("User in create claim",user)
-    return {
-      iss: process.env.ISSUER,
-      exp: (Date.now() + 24*3600*1000*7) / 1000,
-      scopes: user?.scopes,
-      sub: user?.sub,
-      gids,
-      profile: {
-        username: user?.username,
-        email: user?.email,
-        fullname: user?.fullname,
-        aup: user?.profile?.private?.aup,
-      },
-    };    
+  const gids = [...adminGids, 0];
+  memberGids.forEach((gid) => {
+    if (!gids.includes(gid)) gids.push(gid);
+  });
+  console.log('User in create claim', user);
+  return {
+    iss: process.env.ISSUER,
+    exp: (Date.now() + 24 * 3600 * 1000 * 7) / 1000,
+    scopes: user?.scopes,
+    sub: user?.sub,
+    gids,
+    profile: {
+      username: user?.username,
+      email: user?.email,
+      fullname: user?.fullname,
+      aup: user?.profile?.private?.aup,
+    },
+  };
 }
 
 export function hasScope(user: any, role: string): boolean {
-  console.log("hasScope", user.scopes.auth, role)
+  console.log('hasScope', user.scopes.auth, role);
   if (!user) return false;
   if (!user.scopes) return false;
-  //TODO what about brainlife admin ? 
+  //TODO what about brainlife admin ?
   // if (user.scopes.brainlife) return true;
   if (!user.scopes.auth) return false;
   if (!~user.scopes.auth.indexOf(role)) return false;

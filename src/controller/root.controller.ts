@@ -1,9 +1,26 @@
-import { Body, Controller, Get, Post, Req, Res, SetMetadata, UseGuards } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Get,
+  Post,
+  Req,
+  Res,
+  SetMetadata,
+  UseGuards,
+} from '@nestjs/common';
 import { UserService } from '../users/user.service';
 import { Inject } from '@nestjs/common';
 import { HttpException, HttpStatus } from '@nestjs/common';
 import { ClientProxy } from '@nestjs/microservices';
-import { checkUser, createClaim, hashPassword, sendEmailConfirmation , sendPasswordReset, intersect_scopes, signJWT, queuePublisher } from '../utils/common.utils';
+import {
+  checkUser,
+  createClaim,
+  hashPassword,
+  sendEmailConfirmation,
+  sendPasswordReset,
+  signJWT,
+  queuePublisher,
+} from '../utils/common.utils';
 import e, { Response, Request } from 'express';
 import { use } from 'passport';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
@@ -17,7 +34,7 @@ export class RootController {
   constructor(
     private readonly userService: UserService,
     @Inject('RABBITMQ_SERVICE') private readonly client: ClientProxy,
-    private readonly groupService: GroupService
+    private readonly groupService: GroupService,
   ) {}
 
   @Post('signup')
@@ -120,37 +137,41 @@ export class RootController {
   }
 
   /**
- * @api {post} /refresh Refresh JWT Token.
- * @apiDescription 
- *              JWT Token normally lasts for a few hours. Application should call this API periodically
- *              to get it refreshed before it expires. 
- *              You can also use this API to temporarily drop certain privileges you previously had to 
- *              simulate user with less privileges, or make your token more secure by removing unnecessary
- *              privileges (set scopes parameters)
- *
- * @apiName Refresh
- * @apiGroup User
- *
- * @apiHeader {String} authorization    A valid JWT token (Bearer:)
- * @apiParam {Object} [scopes]    Desired scopes to intersect (you can remove certain scopes)
- * @apiParam {Number[]} [gids]    Desired gids to intersect (you can remove certain gids)
- * @apiParam {Boolean} [clearProfile]
- *                              Set this to true if you don't need profile info 
- * @apiParam {String} [ttl]     time-to-live in milliseconds (if not set, it will be defaulted to server default)
- *
- * @apiSuccess {Object} jwt New JWT token
- */
+   * @api {post} /refresh Refresh JWT Token.
+   * @apiDescription
+   *              JWT Token normally lasts for a few hours. Application should call this API periodically
+   *              to get it refreshed before it expires.
+   *              You can also use this API to temporarily drop certain privileges you previously had to
+   *              simulate user with less privileges, or make your token more secure by removing unnecessary
+   *              privileges (set scopes parameters)
+   *
+   * @apiName Refresh
+   * @apiGroup User
+   *
+   * @apiHeader {String} authorization    A valid JWT token (Bearer:)
+   * @apiParam {Object} [scopes]    Desired scopes to intersect (you can remove certain scopes)
+   * @apiParam {Number[]} [gids]    Desired gids to intersect (you can remove certain gids)
+   * @apiParam {Boolean} [clearProfile]
+   *                              Set this to true if you don't need profile info
+   * @apiParam {String} [ttl]     time-to-live in milliseconds (if not set, it will be defaulted to server default)
+   *
+   * @apiSuccess {Object} jwt New JWT token
+   */
   @UseGuards(JwtAuthGuard)
   @Post('/refresh')
   async refresh(@Req() req, @Res() res) {
     const user = await this.userService.findOnebySub(req.user.sub);
     if (!user) {
-      throw new HttpException("Couldn't find any user with sub:"+req.user.sub, HttpStatus.NOT_FOUND);
+      throw new HttpException(
+        "Couldn't find any user with sub:" + req.user.sub,
+        HttpStatus.NOT_FOUND,
+      );
     }
-    if(checkUser(user,req)?.message) return res.status(500).json(checkUser(user,req)); 
-    
-    let claim = await createClaim(user,this.userService,this.groupService);
-  
+    if (checkUser(user, req)?.message)
+      return res.status(500).json(checkUser(user, req));
+
+    const claim = await createClaim(user, this.userService, this.groupService);
+
     // //TODO improve this part, causing issues with refresh
     // if(req.body.scopes) claim.scopes = intersect_scopes(claim.scopes, req.body.scopes);
 
@@ -162,34 +183,36 @@ export class RootController {
     //TODO Fix TTL
     // if(req.body.ttl) claim.exp = (Date.now() + req.body.ttl)/1000;
     // else claim.exp =  24*3600*1000*7; //time to live
-    
-    const jwt = signJWT(claim);
-    console.log(claim,req.user);
-    
-    queuePublisher.publishToQueue("user.refresh."+user.sub, 
-    {username: user.username, exp: claim.exp}.toString());
 
-    return res.json({jwt});
+    const jwt = signJWT(claim);
+    console.log(claim, req.user);
+
+    queuePublisher.publishToQueue(
+      'user.refresh.' + user.sub,
+      { username: user.username, exp: claim.exp }.toString(),
+    );
+
+    return res.json({ jwt });
   }
 
   /**
- * @api {get} /me Get user details
- * @apiDescription Returns things that user might want to know about himself.
- * password_hash will be set to true if the password is set, otherwise null
- *
- * @apiGroup User
- * 
- * @apiHeader {String} authorization A valid JWT token "Bearer: xxxxx"
- * @apiSuccessExample {json} Success-Response:
- *     HTTP/1.1 200 OK
- *     {
- *         "username": "hayashis",
- *         "fullname": "Soichi Hayashi",
- *         "email": "hayashis@iu.edu",
- *         "email_confirmed": true,
- *         "iucas": "hayashis"
- *     }
- */
+   * @api {get} /me Get user details
+   * @apiDescription Returns things that user might want to know about himself.
+   * password_hash will be set to true if the password is set, otherwise null
+   *
+   * @apiGroup User
+   *
+   * @apiHeader {String} authorization A valid JWT token "Bearer: xxxxx"
+   * @apiSuccessExample {json} Success-Response:
+   *     HTTP/1.1 200 OK
+   *     {
+   *         "username": "hayashis",
+   *         "fullname": "Soichi Hayashi",
+   *         "email": "hayashis@iu.edu",
+   *         "email_confirmed": true,
+   *         "iucas": "hayashis"
+   *     }
+   */
 
   @UseGuards(JwtAuthGuard)
   @Get('/me')
@@ -204,49 +227,52 @@ export class RootController {
   }
 
   /**
- * @api {get} /users
- * @apiName UserGroups
- * @apiDescription Query list of users
- *
- * @apiGroup User
- *
- * @apiParam {Object} find      Optional sequelize where query - defaults to {}
- * 
- * @apiHeader {String} authorization A valid JWT token "Bearer: xxxxx"
- * @apiSuccessExample {json} Success-Response:
- *     HTTP/1.1 200 OK
- *     [ 1,2,3 ] 
- */
+   * @api {get} /users
+   * @apiName UserGroups
+   * @apiDescription Query list of users
+   *
+   * @apiGroup User
+   *
+   * @apiParam {Object} find      Optional sequelize where query - defaults to {}
+   *
+   * @apiHeader {String} authorization A valid JWT token "Bearer: xxxxx"
+   * @apiSuccessExample {json} Success-Response:
+   *     HTTP/1.1 200 OK
+   *     [ 1,2,3 ]
+   */
 
-
-  @UseGuards(JwtAuthGuard,RolesGuard)
+  @UseGuards(JwtAuthGuard, RolesGuard)
   @SetMetadata('roles', 'admin')
   @Get('/users')
   async users(@Req() req, @Res() res) {
     let where = {};
-    console.log(req.query.where,req.query.find)
-    if(req.query.find||req.query.where) where = JSON.parse(req.query.find||req.query.where);
+    console.log(req.query.where, req.query.find);
+    if (req.query.find || req.query.where)
+      where = JSON.parse(req.query.find || req.query.where);
     const limit = req.query.limit || 50;
     const skip = req.query.skip || 0;
-    const select = req.query.select || 'sub profile username email_confirmed fullname email ext times scopes active';
-    return res.json(await this.userService.findUsers(where, select, +skip, +limit));  
+    const select =
+      req.query.select ||
+      'sub profile username email_confirmed fullname email ext times scopes active';
+    return res.json(
+      await this.userService.findUsers(where, select, +skip, +limit),
+    );
   }
 
-
   /**
- * @api {get} /user/groups/:id Get list of group IDS that user is member/admin of
- * @apiName UserGroups
- * @apiDescription admin only
- *
- * @apiGroup User
- * 
- * @apiHeader {String} authorization A valid JWT token "Bearer: xxxxx"
- * @apiSuccessExample {json} Success-Response:
- *     HTTP/1.1 200 OK
- *     [ 1,2,3 ] 
- */
+   * @api {get} /user/groups/:id Get list of group IDS that user is member/admin of
+   * @apiName UserGroups
+   * @apiDescription admin only
+   *
+   * @apiGroup User
+   *
+   * @apiHeader {String} authorization A valid JWT token "Bearer: xxxxx"
+   * @apiSuccessExample {json} Success-Response:
+   *     HTTP/1.1 200 OK
+   *     [ 1,2,3 ]
+   */
 
-  @UseGuards(JwtAuthGuard,RolesGuard)
+  @UseGuards(JwtAuthGuard, RolesGuard)
   @SetMetadata('roles', 'admin')
   @Get('/user/groups/:id')
   async userGroups(@Req() req, @Res() res) {
@@ -254,74 +280,76 @@ export class RootController {
     if (!user) {
       throw new HttpException('User not found', HttpStatus.NOT_FOUND);
     }
-    //TODO why we need 1 here? 
+    //TODO why we need 1 here?
     //https://github.com/brainlife/auth/blob/c6e6f9e9eea82ab4c8dfd1dac2445aa040879a86/api/controllers/root.js#L189
-    const query = { 
+    const query = {
       $or: [{ admins: user }, { members: user }],
       id: 1,
     };
     const groups = await this.groupService.findBy(query);
-    let gids = groups.map(g=>g.id);
+    const gids = groups.map((g) => g.id);
     return res.json(gids);
   }
-
 
   /**
    * @api {get} /user/:id Get user details
    * used by event service to query for user's email and admin ui to query for user's profile
-   * 
+   *
    * @apiGroup User
    **/
-  @UseGuards(JwtAuthGuard,RolesGuard)
+  @UseGuards(JwtAuthGuard, RolesGuard)
   @SetMetadata('roles', 'admin')
   @Get('/user/:id')
   async user(@Req() req, @Res() res) {
-    console.log("getting user",req.params.id);
-    //TODO - we should probably use findOnebySub and remove fields ? 
-    const user = (await this.userService.findUsers({sub:req.params.id}, '-password_hash -password_reset_token',0,1)).users[0];
-    
+    console.log('getting user', req.params.id);
+    //TODO - we should probably use findOnebySub and remove fields ?
+    const user = (
+      await this.userService.findUsers(
+        { sub: req.params.id },
+        '-password_hash -password_reset_token',
+        0,
+        1,
+      )
+    ).users[0];
+
     if (!user) {
       throw new HttpException('User not found', HttpStatus.NOT_FOUND);
     }
     return res.json(user);
   }
 
-/**
- * @apiName UserGroups
- * @api {get} /jwt/:id  issue user jwt
- * @apiDescription      (admin only)
- * @apiGroup User
- *
- * @apiParam {String[]} [gids] gids to append
- * 
- * @apiHeader {String} authorization A valid JWT token "Bearer: xxxxx"
- *
- * @apiSuccessExample {json} Success-Response:
- *     HTTP/1.1 200 OK
- *     [ 1,2,3 ] 
- */
-@UseGuards(JwtAuthGuard,RolesGuard)
-@SetMetadata('roles', 'admin')
-@Get('/jwt/:id')
-async jwt(@Req() req, @Res() res) {
-  const user = await this.userService.findOnebySub(req.params.id);
-  if (!user) {
-    throw new HttpException("Couldn't find any user with sub:"+req.params.id, HttpStatus.NOT_FOUND);
+  /**
+   * @apiName UserGroups
+   * @api {get} /jwt/:id  issue user jwt
+   * @apiDescription      (admin only)
+   * @apiGroup User
+   *
+   * @apiParam {String[]} [gids] gids to append
+   *
+   * @apiHeader {String} authorization A valid JWT token "Bearer: xxxxx"
+   *
+   * @apiSuccessExample {json} Success-Response:
+   *     HTTP/1.1 200 OK
+   *     [ 1,2,3 ]
+   */
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @SetMetadata('roles', 'admin')
+  @Get('/jwt/:id')
+  async jwt(@Req() req, @Res() res) {
+    const user = await this.userService.findOnebySub(req.params.id);
+    if (!user) {
+      throw new HttpException(
+        "Couldn't find any user with sub:" + req.params.id,
+        HttpStatus.NOT_FOUND,
+      );
+    }
+    const error = checkUser(user, req);
+    if (error) {
+      throw new HttpException(error, HttpStatus.FORBIDDEN);
+    }
+    const claim = await createClaim(user, req, this.groupService);
+    if (req.query.claim) Object.assign(claim, JSON.parse(req.query.claim));
+    const jwt = signJWT(claim);
+    return res.json({ jwt });
   }
-  const error = checkUser(user,req);
-  if(error) {
-    throw new HttpException(error, HttpStatus.FORBIDDEN);
-  }
-  let claim = await createClaim(user,req,this.groupService);
-  if(req.query.claim) Object.assign(claim,JSON.parse(req.query.claim));
-  const jwt = signJWT(claim);
-  return res.json({jwt});
-}
-
-
-
-
-
-
-
 }

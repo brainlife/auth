@@ -5,7 +5,6 @@ export type FailedLoginDocument = FailedLogin & Document;
 
 @Schema()
 export class FailedLogin {
-  
   @Prop({ type: String })
   username: string;
 
