@@ -286,7 +286,37 @@ export class RootController {
     return res.json(user);
   }
 
-
+/**
+ * @apiName UserGroups
+ * @api {get} /jwt/:id  issue user jwt
+ * @apiDescription      (admin only)
+ * @apiGroup User
+ *
+ * @apiParam {String[]} [gids] gids to append
+ * 
+ * @apiHeader {String} authorization A valid JWT token "Bearer: xxxxx"
+ *
+ * @apiSuccessExample {json} Success-Response:
+ *     HTTP/1.1 200 OK
+ *     [ 1,2,3 ] 
+ */
+@UseGuards(JwtAuthGuard,RolesGuard)
+@SetMetadata('roles', 'admin')
+@Get('/jwt/:id')
+async jwt(@Req() req, @Res() res) {
+  const user = await this.userService.findOnebySub(req.params.id);
+  if (!user) {
+    throw new HttpException("Couldn't find any user with sub:"+req.params.id, HttpStatus.NOT_FOUND);
+  }
+  const error = checkUser(user,req);
+  if(error) {
+    throw new HttpException(error, HttpStatus.FORBIDDEN);
+  }
+  let claim = await createClaim(user,req,this.groupService);
+  if(req.query.claim) Object.assign(claim,JSON.parse(req.query.claim));
+  const jwt = signJWT(claim);
+  return res.json({jwt});
+}
 
 
 
