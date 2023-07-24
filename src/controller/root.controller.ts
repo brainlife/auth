@@ -232,4 +232,33 @@ export class RootController {
     return res.json(await this.userService.findUsers(where, select, +skip, +limit));  
   }
 
+
+  /**
+ * @api {get} /user/groups/:id Get list of group IDS that user is member/admin of
+ * @apiName UserGroups
+ * @apiDescription admin only
+ *
+ * @apiGroup User
+ * 
+ * @apiHeader {String} authorization A valid JWT token "Bearer: xxxxx"
+ * @apiSuccessExample {json} Success-Response:
+ *     HTTP/1.1 200 OK
+ *     [ 1,2,3 ] 
+ */
+  @UseGuards(JwtAuthGuard,RolesGuard)
+  @SetMetadata('roles', 'admin')
+  @Get('/user/groups/:id')
+  async userGroups(@Req() req, @Res() res) {
+    const user = await this.userService.findOnebySub(req.params.id);
+    if (!user) {
+      throw new HttpException('User not found', HttpStatus.NOT_FOUND);
+    }
+    const query = [{$or: [{admins: user}, {members: user}]}, {id: 1}];
+    const groups = await this.groupService.findBy(query);
+    let gids = groups.map(g=>g.id);
+    return res.json(gids);
+  }
+
+
+
 }
