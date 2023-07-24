@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Post, Req, Res, UseGuards } from '@nestjs/common';
+import { Body, Controller, Get, Post, Req, Res, SetMetadata, UseGuards } from '@nestjs/common';
 import { UserService } from '../users/user.service';
 import { Inject } from '@nestjs/common';
 import { HttpException, HttpStatus } from '@nestjs/common';
@@ -9,6 +9,8 @@ import { use } from 'passport';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { GroupService } from 'src/groups/group.service';
 import { commandOptions } from 'redis';
+import { RolesGuard } from 'src/auth/roles.guard';
+import { set } from 'mongoose';
 
 @Controller('/')
 export class RootController {
@@ -199,6 +201,35 @@ export class RootController {
     //TODO : Discuss about if we should mark it true or not
     // if(user.password_hash) user.password_hash = true;
     return res.json(user);
+  }
+
+  /**
+ * @api {get} /users
+ * @apiName UserGroups
+ * @apiDescription Query list of users
+ *
+ * @apiGroup User
+ *
+ * @apiParam {Object} find      Optional sequelize where query - defaults to {}
+ * 
+ * @apiHeader {String} authorization A valid JWT token "Bearer: xxxxx"
+ * @apiSuccessExample {json} Success-Response:
+ *     HTTP/1.1 200 OK
+ *     [ 1,2,3 ] 
+ */
+
+
+  @UseGuards(JwtAuthGuard,RolesGuard)
+  @SetMetadata('roles', 'admin')
+  @Get('/users')
+  async users(@Req() req, @Res() res) {
+    let where = {};
+    console.log(req.query.where,req.query.find)
+    if(req.query.find||req.query.where) where = JSON.parse(req.query.find||req.query.where);
+    const limit = req.query.limit || 50;
+    const skip = req.query.skip || 0;
+    const select = req.query.select || 'sub profile username email_confirmed fullname email ext times scopes active';
+    return res.json(await this.userService.findUsers(where, select, +skip, +limit));  
   }
 
 }

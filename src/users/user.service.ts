@@ -126,4 +126,20 @@ export class UserService {
     if (!lastUser) return 1;
     return lastUser.sub + 1;
   }
+
+  async findUsers(where: any, select: string, skip: number, limit: number) : Promise<{ users: User[], count: number }> {
+    try {
+      const users = await this.userModel.find(where)
+        .select(select)
+        .skip(skip)
+        .limit(limit)
+        .lean()
+        .exec();
+      const count = await this.userModel.countDocuments(where).exec();
+      console.log('users', users,count);      
+      return { users, count };
+    } catch (err) {
+      throw err;
+    }
+  }
 }
