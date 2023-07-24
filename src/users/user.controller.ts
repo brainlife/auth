@@ -35,10 +35,11 @@ export class UserController {
     return this.userService.findAll();
   }
 
-  @Get(':sub')
-  findOne(@Param('sub') sub: number) {
-    return this.userService.findOnebySub(sub);
-  }
+  // @Get(':sub')
+  // findOne(@Param('sub') sub: number) {
+  //   console.log('sub', sub);
+  //   return this.userService.findOnebySub(sub);
+  // }
 
   @Put(':sub')
   update(@Param('sub') sub: number, @Body() updateUserDto: UpdateUserDto) {

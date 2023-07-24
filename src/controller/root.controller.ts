@@ -266,6 +266,30 @@ export class RootController {
   }
 
 
+  /**
+   * @api {get} /user/:id Get user details
+   * used by event service to query for user's email and admin ui to query for user's profile
+   * 
+   * @apiGroup User
+   **/
+  @UseGuards(JwtAuthGuard,RolesGuard)
+  @SetMetadata('roles', 'admin')
+  @Get('/user/:id')
+  async user(@Req() req, @Res() res) {
+    console.log("getting user",req.params.id);
+    //TODO - we should probably use findOnebySub and remove fields ? 
+    const user = (await this.userService.findUsers({sub:req.params.id}, '-password_hash -password_reset_token',0,1)).users[0];
+    
+    if (!user) {
+      throw new HttpException('User not found', HttpStatus.NOT_FOUND);
+    }
+    return res.json(user);
+  }
+
+
+
+
+
 
 
 
