@@ -257,7 +257,7 @@ export class RootController {
       req.query.select ||
       'sub profile username email_confirmed fullname email ext times scopes active';
     return res.json(
-      await this.userService.findUsers(where, select, +skip, +limit),
+      await this.userService.findUsersbyCount(where, select, +skip, +limit),
     );
   }
 
@@ -306,7 +306,7 @@ export class RootController {
     console.log('getting user', req.params.id);
     //TODO - we should probably use findOnebySub and remove fields ?
     const user = (
-      await this.userService.findUsers(
+      await this.userService.findUsersbyCount(
         { sub: req.params.id },
         '-password_hash -password_reset_token',
         0,
@@ -373,7 +373,7 @@ export class RootController {
       );
     }
     await this.userService.updatebySub(user.sub, req.body);
-    return res.json({ message : 'User Updated Successfully' });
+    return res.json({ message: 'User Updated Successfully' });
   }
 
   /**
@@ -388,7 +388,7 @@ export class RootController {
   @UseGuards(JwtAuthGuard)
   @Get('/groups')
   async groups(@Req() req, @Res() res) {
-    const user:any = await this.userService.findOnebySub(req.user.sub);
+    const user: any = await this.userService.findOnebySub(req.user.sub);
     if (!user) {
       throw new HttpException(
         "Couldn't find any user with sub:" + req.user.sub,
@@ -396,8 +396,8 @@ export class RootController {
       );
     }
     let find = {};
-    if(req.query.find) find = JSON.parse(req.query.find);
-    if(hasScope(req.user, 'admin')) {
+    if (req.query.find) find = JSON.parse(req.query.find);
+    if (hasScope(req.user, 'admin')) {
       const limit = req.query.limit || 50;
       const skip = req.query.skip || 0;
       const groups = await this.groupService.findGroups(find, +skip, +limit);
@@ -406,18 +406,15 @@ export class RootController {
     } else {
       const query = {
         $and: [
-            //user provided query
-            find,
+          //user provided query
+          find,
 
-            //normal user only gets to see groups that they are admin/members
-            {
-                $or: [
-                    {admins: user._id},
-                    {members: user._id},
-                ]
-            }
+          //normal user only gets to see groups that they are admin/members
+          {
+            $or: [{ admins: user._id }, { members: user._id }],
+          },
         ],
-    }
+      };
       //TODO - should I remove count ?
       // https://github.com/brainlife/auth/blob/c6e6f9e9eea82ab4c8dfd1dac2445aa040879a86/api/controllers/root.js#L334-L335
       const groups = await this.groupService.findGroups(find, 0, 0);
@@ -425,4 +422,26 @@ export class RootController {
     }
   }
 
+  /**
+   * @apiName Create new group
+   * @api POST /groups
+   * @apiDescription  create a new group
+   * */
+
+  @UseGuards(JwtAuthGuard)
+  @Post('/group')
+  async createGroup(@Req() req, @Res() res) {
+    req.body.members = await this.userService.findbyQuery({
+      sub: { $in: req.body.members },
+    });
+    req.body.admins = await this.userService.findbyQuery({
+      sub: { $in: req.body.admins },
+    });
+    const group = await this.groupService.create(req.body);
+    queuePublisher.publishToQueue(
+      'group.create.' + group.id,
+      group.toJSON().toString(),
+    );
+    res.json({ message: 'Group created', group });
+  }
 }

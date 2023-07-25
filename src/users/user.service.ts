@@ -96,7 +96,8 @@ export class UserService {
   }
 
   async findOne(query: any): Promise<User> {
-    return this.userModel.findOne(query).exec();
+    //TODO - added limit just to be safe
+    return this.userModel.findOne(query).limit(1).exec();
   }
 
   async updatebyID(
@@ -127,7 +128,7 @@ export class UserService {
     return lastUser.sub + 1;
   }
 
-  async findUsers(
+  async findUsersbyCount(
     where: any,
     select: string,
     skip: number,
@@ -147,5 +148,9 @@ export class UserService {
     } catch (err) {
       throw err;
     }
+  }
+
+  async findbyQuery(query: any): Promise<User[]> {
+    return this.userModel.find(query).exec();
   }
 }
