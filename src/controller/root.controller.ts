@@ -444,4 +444,42 @@ export class RootController {
     );
     res.json({ message: 'Group created', group });
   }
+
+  /**
+   * @apiName Update group
+   * @api PUT /groups/:id
+   * @apiDescription  update a group
+   * the user must be an admin of the group or have admin scope
+   * */
+  @UseGuards(JwtAuthGuard)
+  @Put('/group/:id')
+  async updateGroup(@Req() req, @Res() res) {
+    const group = await this.groupService.findOne(req.params.id);
+    if (!group) {
+      throw new HttpException(
+        "Couldn't find any group with id:" + req.params.id,
+        HttpStatus.NOT_FOUND,
+      );
+    }
+    const isadmin = group.admins.find((contact:any) =>contact.sub == req.user.sub)
+    
+    if(!isadmin && !hasScope(req.user, 'admin')) {
+      throw new HttpException(
+        "You don't have permission to update this group",
+        HttpStatus.FORBIDDEN,
+      );
+    }
+    req.body.members = await this.userService.findbyQuery({
+      sub: { $in: req.body.members },
+    });
+    req.body.admins = await this.userService.findbyQuery({
+      sub: { $in: req.body.admins },
+    });
+    const updatedGroup = await this.groupService.update(req.params.id, req.body);
+    console.log(updatedGroup);
+    queuePublisher.publishToQueue(
+      "group.update."+group.id, req.body
+    );
+    res.json({ message: 'Group updated successfully'});
+  }
 }

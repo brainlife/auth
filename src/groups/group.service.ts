@@ -43,11 +43,12 @@ export class GroupService {
   }
 
   async findOne(id: string): Promise<Group> {
-    return this.groupModel.findById(id);
+    return this.groupModel.findOne({ id: id }).exec();
   }
 
   async update(id: string, updateGroupDto: CreateGroupDto): Promise<Group> {
-    return this.groupModel.findByIdAndUpdate(updateGroupDto);
+    //new returns the updated document
+    return await this.groupModel.findOneAndUpdate({ id: id }, updateGroupDto);
   }
 
   async remove(id: string): Promise<Group> {
