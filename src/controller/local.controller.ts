@@ -14,7 +14,6 @@ import { ClientProxy } from '@nestjs/microservices';
 import {
   hashPassword,
   signJWT,
-  sendEmailConfirmation,
   createClaim,
   sendPasswordReset,
   queuePublisher,
@@ -23,19 +22,20 @@ import {
 } from '../utils/common.utils';
 import { Response, Request } from 'express';
 import { AuthGuard } from '@nestjs/passport';
-import { AuthService } from '../auth/auth.service';
 import { RedisService } from 'src/redis/redis.service';
 import { FailedLoginService } from 'src/failedLogins/failedLogin.service';
 import { CreateFailedLoginDto } from 'src/dto/create-failedLogin.dto';
 import { JwtAuthGuard } from 'src/auth/jwt-auth.guard';
 import { GroupService } from 'src/groups/group.service';
+import { RolesGuard } from 'src/auth/roles.guard';
+import { SetMetadata } from '@nestjs/common';
 
 @Controller('/local')
 export class LocalController {
   constructor(
     private readonly userService: UserService,
     @Inject('RABBITMQ_SERVICE') private readonly client: ClientProxy,
-    private redisService: RedisService,
+    private readonly redisService: RedisService,
     private groupService: GroupService,
     private failedLoginService: FailedLoginService,
   ) {}
@@ -162,7 +162,13 @@ export class LocalController {
         'auth.fail.' + req.body.username + '.' + new Date().getTime(),
         'failedLogin',
         3600,
-      ); // 1 hour
+      ).then((value)=>{
+        console.log('redis set', value);
+      }); // 1 hour
+      
+      const fails = await this.redisService.keys('auth.fail.' + req.body.username+".*");
+      // console.log('fails/auth', fails);
+
       return res.status(403).json({ status: 403, message: req.user.message });
     }
     const user = req.user;
@@ -239,4 +245,30 @@ export class LocalController {
       res.json({ message: 'Password reset successfully' });
     }
   }
+
+  @UseGuards(JwtAuthGuard,RolesGuard)
+  @SetMetadata('roles', 'admin')
+  @Post('/unlockuser/:id')
+  async unlockUser(@Req() req, @Res() res) {
+    const user = await this.userService.findOnebySub(req.params.id);
+    if (!user) {
+      throw new HttpException(
+        'No such user registered',
+        HttpStatus.NOT_FOUND,
+      );
+    }
+    const fails = await this.redisService.keys('auth.fail.' + user.username + '.*');
+    if (!fails || fails.length === 0) {
+      throw new HttpException(
+        'Account already unlocked',
+        HttpStatus.NOT_FOUND,
+      );
+    }
+    for (const fail of fails) {
+      console.log('Deleting', fail);
+      await this.redisService.del(fail);
+    }
+    res.json({status:"ok", message: 'Account unlocked' });
+  }
+
 }

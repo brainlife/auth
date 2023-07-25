@@ -37,13 +37,14 @@ export class AuthService {
         code: 'no_password',
       };
 
-    const fails = await this.redisService.get(
+    const fails = await this.redisService.keys(
       'auth.fail.' + user.username + '.*',
     );
+    console.log('failsValidateUser', fails);
     if (fails && fails.length > 3)
       return { message: 'Account Locked ! Try after an hour' };
 
-    const passwordMatch = await checkPassword(pass, user.password_hash);
+    const passwordMatch = checkPassword(pass, user.password_hash);
 
     if (!passwordMatch)
       return { message: 'Incorrect user/password', code: 'bad_password' };

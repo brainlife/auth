@@ -9,10 +9,30 @@ export class RedisService {
   ) {}
 
   async set(key: string, value: string, expirationSeconds: number) {
-    await this.client.set(key, value, 'EX', expirationSeconds);
+    try {
+      const result = await this.client.set(key, value, 'EX', expirationSeconds);
+      console.log('Redis SET operation result:', result);
+      console.log('Redis SET operation successful for key:', key);
+      return result;
+    } catch (error) {
+      console.error('Error while performing Redis SET operation:', error);
+      throw error; // Rethrow the error to propagate it to the caller, if needed.
+    }  
   }
 
   async get(key: string): Promise<string | null> {
-    return await this.client.get(key);
+    return this.client.get(key);
+  }
+
+  async keys(key:string): Promise<string[]> {
+    return this.client.keys(key);
+  }
+
+  async del(key: string) {
+    return this.client.del(key);
+  }
+
+  ping() {
+    return this.client.ping();
   }
 }
