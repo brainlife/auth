@@ -158,15 +158,19 @@ export class LocalController {
         publishMessage.toString(),
       );
       //set redis failure to lock account
-      await this.redisService.set(
-        'auth.fail.' + req.body.username + '.' + new Date().getTime(),
-        'failedLogin',
-        3600,
-      ).then((value)=>{
-        console.log('redis set', value);
-      }); // 1 hour
-      
-      const fails = await this.redisService.keys('auth.fail.' + req.body.username+".*");
+      await this.redisService
+        .set(
+          'auth.fail.' + req.body.username + '.' + new Date().getTime(),
+          'failedLogin',
+          3600,
+        )
+        .then((value) => {
+          console.log('redis set', value);
+        }); // 1 hour
+
+      const fails = await this.redisService.keys(
+        'auth.fail.' + req.body.username + '.*',
+      );
       // console.log('fails/auth', fails);
 
       return res.status(403).json({ status: 403, message: req.user.message });
@@ -246,29 +250,24 @@ export class LocalController {
     }
   }
 
-  @UseGuards(JwtAuthGuard,RolesGuard)
+  @UseGuards(JwtAuthGuard, RolesGuard)
   @SetMetadata('roles', 'admin')
   @Post('/unlockuser/:id')
   async unlockUser(@Req() req, @Res() res) {
     const user = await this.userService.findOnebySub(req.params.id);
     if (!user) {
-      throw new HttpException(
-        'No such user registered',
-        HttpStatus.NOT_FOUND,
-      );
+      throw new HttpException('No such user registered', HttpStatus.NOT_FOUND);
     }
-    const fails = await this.redisService.keys('auth.fail.' + user.username + '.*');
+    const fails = await this.redisService.keys(
+      'auth.fail.' + user.username + '.*',
+    );
     if (!fails || fails.length === 0) {
-      throw new HttpException(
-        'Account already unlocked',
-        HttpStatus.NOT_FOUND,
-      );
+      throw new HttpException('Account already unlocked', HttpStatus.NOT_FOUND);
     }
     for (const fail of fails) {
       console.log('Deleting', fail);
       await this.redisService.del(fail);
     }
-    res.json({status:"ok", message: 'Account unlocked' });
+    res.json({ status: 'ok', message: 'Account unlocked' });
   }
-
 }

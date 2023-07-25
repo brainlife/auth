@@ -17,14 +17,14 @@ export class RedisService {
     } catch (error) {
       console.error('Error while performing Redis SET operation:', error);
       throw error; // Rethrow the error to propagate it to the caller, if needed.
-    }  
+    }
   }
 
   async get(key: string): Promise<string | null> {
     return this.client.get(key);
   }
 
-  async keys(key:string): Promise<string[]> {
+  async keys(key: string): Promise<string[]> {
     return this.client.keys(key);
   }
 

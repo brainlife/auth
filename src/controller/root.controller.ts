@@ -461,9 +461,11 @@ export class RootController {
         HttpStatus.NOT_FOUND,
       );
     }
-    const isadmin = group.admins.find((contact:any) =>contact.sub == req.user.sub)
-    
-    if(!isadmin && !hasScope(req.user, 'admin')) {
+    const isadmin = group.admins.find(
+      (contact: any) => contact.sub == req.user.sub,
+    );
+
+    if (!isadmin && !hasScope(req.user, 'admin')) {
       throw new HttpException(
         "You don't have permission to update this group",
         HttpStatus.FORBIDDEN,
@@ -475,11 +477,12 @@ export class RootController {
     req.body.admins = await this.userService.findbyQuery({
       sub: { $in: req.body.admins },
     });
-    const updatedGroup = await this.groupService.update(req.params.id, req.body);
-    console.log(updatedGroup);
-    queuePublisher.publishToQueue(
-      "group.update."+group.id, req.body
+    const updatedGroup = await this.groupService.update(
+      req.params.id,
+      req.body,
     );
-    res.json({ message: 'Group updated successfully'});
+    console.log(updatedGroup);
+    queuePublisher.publishToQueue('group.update.' + group.id, req.body);
+    res.json({ message: 'Group updated successfully' });
   }
 }

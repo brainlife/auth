@@ -13,14 +13,17 @@ export class GroupService {
     @InjectModel(Group.name) private groupModel: Model<GroupDocument>,
     @InjectConnection() private readonly connection: mongoose.Connection,
   ) {}
-  
+
   //TODO: needs extra testing to check for transactions
   async create(createGroupDto: CreateGroupDto): Promise<Group> {
     const session = await this.connection.startSession();
     session.startTransaction();
     try {
       let groupID = 1;
-      const lastGroup = await this.groupModel.findOne().sort({ _id: -1 }).exec();
+      const lastGroup = await this.groupModel
+        .findOne()
+        .sort({ _id: -1 })
+        .exec();
       console.log('lastGroup', lastGroup);
       if (lastGroup) groupID = lastGroup.id + 1;
       createGroupDto.id = groupID;
@@ -31,7 +34,6 @@ export class GroupService {
     } finally {
       await session.endSession();
     }
-    
   }
 
   async findAll(): Promise<Group[]> {
@@ -69,5 +71,4 @@ export class GroupService {
     groups.forEach((group: any) => (group.canedit = true));
     return { groups: groups, count: count };
   }
-
 }

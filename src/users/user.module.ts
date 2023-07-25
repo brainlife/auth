@@ -12,6 +12,7 @@ import { RedisModule } from 'src/redis/redis.module';
 import { ClientsModule, Transport } from '@nestjs/microservices';
 import { FailedLoginModule } from 'src/failedLogins/failedLogin.module';
 import { GroupModule } from 'src/groups/group.module';
+import { ProfileController } from 'src/controller/profile.controller';
 @Module({
   imports: [
     GroupModule,
@@ -28,7 +29,13 @@ import { GroupModule } from 'src/groups/group.module';
       },
     ]),
   ],
-  controllers: [AppController, UserController, RootController, LocalController],
+  controllers: [
+    AppController,
+    UserController,
+    RootController,
+    LocalController,
+    ProfileController,
+  ],
   providers: [AppService, UserService],
   exports: [UserService], // Make sure to export the UserService
 })
