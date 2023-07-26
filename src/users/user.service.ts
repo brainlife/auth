@@ -75,7 +75,21 @@ export class UserService {
     return User;
   }
 
-  async findAll(): Promise<User[]> {
+  async findAll(
+    find?: any,
+    select?: any,
+    sort?: any,
+    limit?: number,
+    skip?: number,
+  ): Promise<User[]> {
+    if(find) {
+      let query = this.userModel.find(find).lean();
+      if(select) query = query.select(select);
+      if(sort) query = query.sort(sort);
+      if(limit) query = query.limit(limit);
+      if(skip) query = query.skip(skip);
+      return query.exec();
+    }
     return this.userModel.find().exec();
   }
 
@@ -83,7 +97,8 @@ export class UserService {
     return this.userModel.findById(id).exec();
   }
 
-  async findOnebySub(sub: number): Promise<User> {
+  async findOnebySub(sub: number, select?:any): Promise<User> {
+    if(select) return this.userModel.findOne({ sub }).select(select).exec();
     return this.userModel.findOne({ sub }).exec();
   }
 
