@@ -23,13 +23,9 @@ import {
   queuePublisher,
   hasScope,
 } from '../utils/common.utils';
-import e, { Response, Request } from 'express';
-import { use } from 'passport';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
-import { GroupService } from 'src/groups/group.service';
-import { commandOptions } from 'redis';
-import { RolesGuard } from 'src/auth/roles.guard';
-import { set } from 'mongoose';
+import { GroupService } from '../groups/group.service';
+import { RolesGuard } from '../auth/roles.guard';
 
 @Controller('/')
 export class RootController {
@@ -68,7 +64,7 @@ export class RootController {
       );
 
     //check for existing user
-    let user = await this.userService.findByUsername(username);
+    let user = await this.userService.findOne(username);
     if (user)
       throw new HttpException(
         'The username you chose is already registered. If it is yours, please try signing in, or register with a different username.',

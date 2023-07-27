@@ -6,7 +6,7 @@ import {
   Inject,
 } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
-import { hasScope } from 'src/utils/common.utils';
+import { hasScope } from '../utils/common.utils';
 
 @Injectable()
 export class RolesGuard implements CanActivate {

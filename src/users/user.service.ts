@@ -5,8 +5,6 @@ import { CreateUserDto } from '../dto/create-user.dto';
 import { UpdateUserDto } from '../dto/update-user.dto';
 import { HttpException, HttpStatus } from '@nestjs/common';
 
-import { Inject } from '@nestjs/common';
-
 import { User, UserDocument } from '../schema/user.schema';
 import {
   hashPassword,
@@ -15,14 +13,10 @@ import {
   signJWT,
   authDefault,
 } from '../utils/common.utils';
-import { ClientRMQ } from '@nestjs/microservices';
 
 @Injectable()
 export class UserService {
-  constructor(
-    @InjectModel(User.name) private userModel: Model<UserDocument>,
-    @Inject('RABBITMQ_SERVICE') private client: ClientRMQ,
-  ) {}
+  constructor(@InjectModel(User.name) private userModel: Model<UserDocument>) {}
 
   async create(createUserDto: CreateUserDto): Promise<User> {
     const User = new this.userModel(createUserDto);
@@ -82,12 +76,12 @@ export class UserService {
     limit?: number,
     skip?: number,
   ): Promise<User[]> {
-    if(find) {
+    if (find) {
       let query = this.userModel.find(find).lean();
-      if(select) query = query.select(select);
-      if(sort) query = query.sort(sort);
-      if(limit) query = query.limit(limit);
-      if(skip) query = query.skip(skip);
+      if (select) query = query.select(select);
+      if (sort) query = query.sort(sort);
+      if (limit) query = query.limit(limit);
+      if (skip) query = query.skip(skip);
       return query.exec();
     }
     return this.userModel.find().exec();
@@ -97,8 +91,8 @@ export class UserService {
     return this.userModel.findById(id).exec();
   }
 
-  async findOnebySub(sub: number, select?:any): Promise<User> {
-    if(select) return this.userModel.findOne({ sub }).select(select).exec();
+  async findOnebySub(sub: number, select?: any): Promise<User> {
+    if (select) return this.userModel.findOne({ sub }).select(select).exec();
     return this.userModel.findOne({ sub }).exec();
   }
 
@@ -106,9 +100,10 @@ export class UserService {
     return this.userModel.findOne({ email: email }).exec();
   }
 
-  async findByUsername(username: string): Promise<User> {
-    return this.userModel.findOne({ username: username }).exec();
-  }
+  //no need ? Should I remove it ?
+  // async findByUsername(username: string): Promise<User> {
+  //   return this.userModel.findOne({ username: username }).exec();
+  // }
 
   async findOne(query: any): Promise<User> {
     //TODO - added limit just to be safe

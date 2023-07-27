@@ -3,7 +3,7 @@ import * as bcrypt from 'bcryptjs';
 import zxcvbn from 'zxcvbn-typescript';
 import * as nodemailer from 'nodemailer';
 import { uuid } from 'uuidv4';
-import { Message } from 'src/schema/message';
+import { Message } from '../schema/message';
 import { private_key } from '../auth/constants';
 
 import {

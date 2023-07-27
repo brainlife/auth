@@ -1,10 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
-import {
-  FailedLogin,
-  FailedLoginDocument,
-} from 'src/schema/failedLogin.schema';
+import { FailedLogin, FailedLoginDocument } from '../schema/failedLogin.schema';
 
 @Injectable()
 export class FailedLoginService {

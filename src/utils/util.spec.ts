@@ -4,6 +4,7 @@ import {
   checkPassword,
   createmailTransport,
 } from './common.utils';
+import { public_key } from '../auth/constants';
 import * as jwt from 'jsonwebtoken';
 
 describe('UtilTests', () => {
@@ -15,7 +16,7 @@ describe('UtilTests', () => {
         role: 'test',
       };
       const token = signJWT(payload);
-      const decoded = jwt.verify(token, process.env.JWT_SECRET);
+      const decoded = jwt.verify(token, public_key);
       expect(decoded).toEqual(expect.objectContaining(payload)); // check if the decoded token is equal to the payload
     });
   });

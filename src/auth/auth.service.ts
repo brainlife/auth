@@ -1,20 +1,13 @@
 import { HttpException, Injectable, HttpStatus } from '@nestjs/common';
 import { UserService } from '../users/user.service';
-import { checkPassword } from 'src/utils/common.utils';
-import { queuePublisher, checkUser, signJWT } from 'src/utils/common.utils';
+import { checkPassword } from '../utils/common.utils';
 import { RedisService } from '../redis/redis.service';
-import { FailedLoginService } from 'src/failedLogins/failedLogin.service';
-import { FailedLogin } from 'src/schema/failedLogin.schema';
-import { CreateFailedLoginDto } from 'src/dto/create-failedLogin.dto';
-import { use } from 'passport';
-import { JwtService } from '@nestjs/jwt';
 
 @Injectable()
 export class AuthService {
   constructor(
     private userService: UserService,
     private readonly redisService: RedisService,
-    private readonly failedLoginService: FailedLoginService,
   ) {}
 
   async validateUser(
