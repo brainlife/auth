@@ -48,7 +48,7 @@ export class ProfileController {
    */
   //TODO - https://github.com/brainlife/auth/blob/c6e6f9e9eea82ab4c8dfd1dac2445aa040879a86/api/controllers/profile.js#L79-L80
   @Get('/list')
-  async listProfiles(@Req() req: Request, @Res() res: Response) {}
+  listProfiles(@Req() req: Request, @Res() res: Response) {}
 
   /**
    * @apiGroup Profile

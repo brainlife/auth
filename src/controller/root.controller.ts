@@ -183,7 +183,7 @@ export class RootController {
     // else claim.exp =  24*3600*1000*7; //time to live
 
     const jwt = signJWT(claim);
-    console.log(claim, req.user);
+    // console.log(claim, req.user);
 
     queuePublisher.publishToQueue(
       'user.refresh.' + user.sub,
@@ -301,14 +301,18 @@ export class RootController {
   async user(@Req() req, @Res() res) {
     console.log('getting user', req.params.id);
     //TODO - we should probably use findOnebySub and remove fields ?
-    const user = (
-      await this.userService.findUsersbyCount(
-        { sub: req.params.id },
-        '-password_hash -password_reset_token',
-        0,
-        1,
-      )
-    ).users[0];
+    // const user = (
+    //   await this.userService.findUsersbyCount(
+    //     { sub: req.params.id },
+    //     '-password_hash -password_reset_token',
+    //     0,
+    //     1,
+    //   )
+    // ).users[0];
+    const user = await this.userService.findOnebySub(
+      req.params.id,
+      '-password_hash -password_reset_token',
+    );
 
     if (!user) {
       throw new HttpException('User not found', HttpStatus.NOT_FOUND);

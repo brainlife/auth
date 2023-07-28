@@ -51,6 +51,7 @@ class QueuePublisher {
     });
   }
 }
+export const queuePublisher = QueuePublisher.getInstance();
 
 export const authDefault = {
   ext: {
@@ -62,8 +63,6 @@ export const authDefault = {
   },
   email_confirmed: false,
 };
-
-export const queuePublisher = QueuePublisher.getInstance();
 
 export function signJWT(payload: object) {
   const options = {
@@ -131,7 +130,7 @@ export async function sendEmail(
     });
 }
 
-export async function sendEmailConfirmation(user): Promise<any> {
+export async function sendEmailConfirmation(user: any): Promise<any> {
   if (!user.email_confirmation_token) {
     user.email_confirmation_token = uuid();
     await user.save();
