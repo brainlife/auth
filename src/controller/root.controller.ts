@@ -244,7 +244,7 @@ export class RootController {
   @Get('/users')
   async users(@Req() req, @Res() res) {
     let where = {};
-    console.log(req.query.where, req.query.find);
+    // console.log(req.query.where, req.query.find);
     if (req.query.find || req.query.where)
       where = JSON.parse(req.query.find || req.query.where);
     const limit = req.query.limit || 50;
@@ -299,7 +299,7 @@ export class RootController {
   @SetMetadata('roles', 'admin')
   @Get('/user/:id')
   async user(@Req() req, @Res() res) {
-    console.log('getting user', req.params.id);
+    // console.log('getting user', req.params.id);
     //TODO - we should probably use findOnebySub and remove fields ?
     // const user = (
     //   await this.userService.findUsersbyCount(
@@ -345,7 +345,8 @@ export class RootController {
         HttpStatus.NOT_FOUND,
       );
     }
-    const error = checkUser(user, req);
+    const error = await checkUser(user, req);
+    // console.log('Error from checkUser: ', error); // Log the error here
     if (error) {
       throw new HttpException(error, HttpStatus.FORBIDDEN);
     }
@@ -417,7 +418,7 @@ export class RootController {
       };
       //TODO - should I remove count ?
       // https://github.com/brainlife/auth/blob/c6e6f9e9eea82ab4c8dfd1dac2445aa040879a86/api/controllers/root.js#L334-L335
-      const groups = await this.groupService.findGroups(find, 0, 0);
+      const groups = await this.groupService.findGroups(query, 0, 0);
       return res.json(groups.groups);
     }
   }
