@@ -11,11 +11,13 @@ import {
 } from '../utils/common.utils';
 
 import * as utilModule from '../utils/common.utils';
+import { queue } from 'rxjs';
 
 
 class GroupServiceMock {
   findBy = jest.fn();
   findGroups = jest.fn();
+  create = jest.fn();
 }
 class ClientProxyMock {}
 
@@ -29,6 +31,7 @@ class UserServiceMock {
   findOnebySub = jest.fn();
   updatebySub = jest.fn();
   findUsersbyCount = jest.fn();
+  findbyQuery = jest.fn();
 }
 
 class QueuePublisherMock {
@@ -623,4 +626,57 @@ describe('RootController', () => {
       await expect(rootController.groups(req, res)).rejects.toThrow(HttpException);
     });
   });
+
+  it('should create a new group', async () => {
+    // Given
+    const members = [1, 2, 3]; // Replace with valid sub values
+    const admins = [1, 2, 3]; // Replace with valid sub values
+    const groupData = {
+      name: 'testGroup',
+      members,
+      admins,
+    };
+    const userArray = members.map(sub => ({ sub, name: `user${sub}` }));
+    const createdGroup = { id: 'group1', name: 'testGroup', members: userArray, admins: userArray };
+
+    // When userService.findbyQuery is called, return the array of users
+    userService.findbyQuery = jest.fn().mockResolvedValue(userArray);
+
+    // When groupService.create is called, return the created group
+    groupService.create = jest.fn().mockResolvedValue(createdGroup);
+
+    const req = { body: groupData };
+    const res = { json: jest.fn() }; // Mock the res.json function
+
+    // When groupService.create is called, return the created group
+    groupService.create = jest.fn().mockResolvedValue({
+      ...createdGroup,
+      toJSON: () => createdGroup, // Here's where we add the toJSON method
+    });
+
+    // Act
+    await rootController.createGroup(req, res);
+
+    // Assert
+    expect(userService.findbyQuery).toHaveBeenCalledTimes(2);
+    expect(userService.findbyQuery).toHaveBeenCalledWith({ sub: { $in: members } });
+    expect(userService.findbyQuery).toHaveBeenCalledWith({ sub: { $in: admins } });
+    
+    expect(groupService.create).toHaveBeenCalledTimes(1);
+    expect(groupService.create).toHaveBeenCalledWith({ ...groupData, members: userArray, admins: userArray });
+    
+    // expect(queuePublisher.publishToQueue).toHaveBeenCalledTimes(1);
+    // expect(queuePublisher.publishToQueue).toHaveBeenCalledWith(
+    //   'group.create.' + createdGroup.id,
+    //   JSON.stringify(createdGroup),
+    // );
+
+    expect(res.json).toHaveBeenCalledTimes(1);
+    expect(res.json).toHaveBeenCalledWith({
+      message: 'Group created',
+      group: expect.objectContaining(createdGroup)
+    });
+    
+  });
+
 });
