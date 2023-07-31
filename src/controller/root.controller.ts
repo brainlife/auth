@@ -22,6 +22,7 @@ import {
   signJWT,
   queuePublisher,
   hasScope,
+  intersect_scopes
 } from '../utils/common.utils';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { GroupService } from '../groups/group.service';
@@ -170,26 +171,25 @@ export class RootController {
 
     const claim = await createClaim(user, this.userService, this.groupService);
 
-    // //TODO improve this part, causing issues with refresh
-    // if(req.body.scopes) claim.scopes = intersect_scopes(claim.scopes, req.body.scopes);
+    if(req.body.scopes) claim.scopes = intersect_scopes(claim.scopes, req.body.scopes);
+    console.log(claim.scopes, req.body.scopes);
 
     // //intersect gids with requested gids
-    // if(req.body.gids) claim.gids = claim.gids.filter(id=>req.body.gids.includes(id));
+    if(req.body.gids) claim.gids = claim.gids.filter(id=>req.body.gids.includes(id));
 
-    // if(req.body.clearProfile) delete claim.profile;
+    if(req.body.clearProfile) delete claim.profile;
 
-    //TODO Fix TTL
-    // if(req.body.ttl) claim.exp = (Date.now() + req.body.ttl)/1000;
-    // else claim.exp =  24*3600*1000*7; //time to live
+    if(req.body.ttl) claim.exp = (Date.now() + req.body.ttl)/1000;
 
     const jwt = signJWT(claim);
-    // console.log(claim, req.user);
+    console.log("/refresh, claim v/s req.user",claim, req.user);
 
     queuePublisher.publishToQueue(
       'user.refresh.' + user.sub,
       { username: user.username, exp: claim.exp }.toString(),
     );
 
+    //TODO : why aren't we saving these changed to db ?
     return res.json({ jwt });
   }
 
