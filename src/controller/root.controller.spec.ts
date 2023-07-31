@@ -22,15 +22,6 @@ class ClientProxyMock {}
 // Create a mock for RABBITMQ_SERVICE
 class RabbitMQServiceMock {}
 
-// Mock the checkUser function to resolve to null or undefined
-jest.mock('../utils/common.utils', () => ({
-  checkUser: jest.fn().mockResolvedValue(null),
-  sendEmailConfirmation: jest.fn().mockResolvedValue(undefined),
-  createClaim: jest.fn().mockResolvedValue({}),
-  signJWT: jest.fn().mockReturnValue('mocked-jwt-token'),
-  hasScope: jest.fn().mockReturnValue(true),
-}));
-
 class UserServiceMock {
   findOne = jest.fn();
   findByEmail = jest.fn();
@@ -46,6 +37,18 @@ class QueuePublisherMock {
     return Promise.resolve();
   }
 }
+
+// Mock the checkUser function to resolve to null or undefined
+jest.mock('../utils/common.utils', () => ({
+  checkUser: jest.fn().mockResolvedValue(null),
+  sendEmailConfirmation: jest.fn().mockResolvedValue(undefined),
+  createClaim: jest.fn().mockResolvedValue({}),
+  signJWT: jest.fn().mockReturnValue('mocked-jwt-token'),
+  hasScope: jest.fn().mockReturnValue(true),
+  queuePublisher: {
+    publishToQueue: jest.fn(),
+  },
+}));
 
 beforeEach(() => {
   jest.clearAllMocks();  // clear all mocks
@@ -251,61 +254,61 @@ describe('RootController', () => {
     expect(userService.createUser).toHaveBeenCalledTimes(0);
   });
 
+  it('/refresh - should not refresh JWT token', async () => {
+    // Mock the user data
+    const user = {
+      sub: 1,
+      ...newUser,
+    };
+
+    // Mock the response from the userService.findOnebySub() method
+    userService.findOnebySub = jest.fn().mockResolvedValue(user);
+
+    
+    const checkUserError = {message: 'Account is disabled. Please contact the administrator.'}
+    const checkUser = jest.spyOn(utilModule, "checkUser").mockReturnValue(checkUserError);
+
+    // Call the refresh() method of the RootController with the mock data
+    const response = await rootController.refresh({ user }, res);
+    console.log(response);
+
+    // Expectations
+    expect(userService.findOnebySub).toHaveBeenCalledTimes(1);
+    expect(userService.findOnebySub).toHaveBeenCalledWith(1);
+
+    // Make assertions about the res object using the 'status' and 'json' mocks
+    expect(res.status).toHaveBeenCalledTimes(1); // Since the user exists, status should be called
+    expect(res.status).not.toHaveBeenCalledWith(HttpStatus.OK); // Assuming HttpStatus.OK for successful request
+    expect(res.json).toHaveBeenCalledTimes(1);
+    expect(res.json).not.toHaveBeenCalledWith({ jwt: 'mocked-jwt-token' });
+    expect(res.json).toHaveBeenCalledWith({
+      message: 'Account is disabled. Please contact the administrator.',
+      // code: 'inactive', 
+    });
+  });
+
   //TODO - WIP
-  // it('/refresh - should not refresh JWT token', async () => {
-  //   // Mock the user data
-  //   const user = {
-  //     sub: 1,
-  //     ...newUser,
-  //   };
+  it('/refresh - hould refresh JWT token', async () => {
+    // Mock the user data
+    const user = {
+      sub: 1,
+      ...newUser,
+    };
 
-  //   // Mock the response from the userService.findOnebySub() method
-  //   userService.findOnebySub = jest.fn().mockResolvedValue(user);
+    // Mock the response from the userService.findOnebySub() method
+    userService.findOnebySub = jest.fn().mockResolvedValue(user);
 
-  //   (checkUser as jest.Mock).mockResolvedValue({
-  //     message: 'Account is disabled. Please contact the administrator.',
-  //   });
+    // Update the checkUser mock to resolve to null or undefined
+    const checkUserError = {message: 'Account is disabled. Please contact the administrator.'}
+    const checkUser = jest.spyOn(utilModule, "checkUser").mockReturnValue(null);
+    // Call the refresh() method of the RootController with the mock data
+    const response = await rootController.refresh({ user: { sub: 1 } }, res);
 
-  //   // Call the refresh() method of the RootController with the mock data
-  //   const response = await rootController.refresh({ user }, res);
-  //   console.log(response);
-
-  //   // Expectations
-  //   expect(userService.findOnebySub).toHaveBeenCalledTimes(1);
-  //   expect(userService.findOnebySub).toHaveBeenCalledWith(1);
-
-  //   // Make assertions about the res object using the 'status' and 'json' mocks
-  //   expect(res.status).toHaveBeenCalledTimes(1); // Since the user exists, status should be called
-  //   expect(res.status).toHaveBeenCalledWith(HttpStatus.OK); // Assuming HttpStatus.OK for successful request
-  //   expect(res.json).toHaveBeenCalledTimes(1);
-  //   expect(res.json).not.toHaveBeenCalledWith({ jwt: 'mocked-jwt-token' });
-  //   expect(res.json).toHaveBeenCalledWith({
-  //     code: 'inactive',
-  //     message: 'Account is disabled. Please contact the administrator.',
-  //   });
-  // });
-
-  //TODO - WIP
-  // it('/refresh - hould refresh JWT token', async () => {
-  //   // Mock the user data
-  //   const user = {
-  //     sub: 1,
-  //     ...newUser,
-  //   };
-
-  //   // Mock the response from the userService.findOnebySub() method
-  //   userService.findOnebySub = jest.fn().mockResolvedValue(user);
-
-  //   // Update the checkUser mock to resolve to null or undefined
-  //   (checkUser as jest.Mock).mockResolvedValue(null);
-  //   // Call the refresh() method of the RootController with the mock data
-  //   const response = await rootController.refresh({ user: { sub: 1 } }, res);
-
-  //   // Expectations
-  //   expect(userService.findOnebySub).toHaveBeenCalledTimes(1);
-  //   expect(res.json).toHaveBeenCalledTimes(1);
-  //   expect(res.json).toHaveBeenCalledWith({ jwt: 'mocked-jwt-token' });
-  // });
+    // Expectations
+    expect(userService.findOnebySub).toHaveBeenCalledTimes(1);
+    expect(res.json).toHaveBeenCalledTimes(1);
+    expect(res.json).toHaveBeenCalledWith({ jwt: 'mocked-jwt-token' });
+  });
 
   describe('/GET me', () => {
     it('should return user if user exists', async () => {
