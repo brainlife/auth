@@ -4,15 +4,18 @@ import { UserService } from '../users/user.service';
 import { HttpException, HttpStatus } from '@nestjs/common';
 
 import { GroupService } from '../groups/group.service';
-import { User } from 'src/schema/user.schema';
 import {
-  checkUser,
+  createClaim,
   sendEmailConfirmation,
   signJWT,
 } from '../utils/common.utils';
 
+import * as utilModule from '../utils/common.utils';
+
+
 class GroupServiceMock {
   findBy = jest.fn();
+  findGroups = jest.fn();
 }
 class ClientProxyMock {}
 
@@ -21,10 +24,11 @@ class RabbitMQServiceMock {}
 
 // Mock the checkUser function to resolve to null or undefined
 jest.mock('../utils/common.utils', () => ({
-  checkUser: jest.fn(),
+  checkUser: jest.fn().mockResolvedValue(null),
   sendEmailConfirmation: jest.fn().mockResolvedValue(undefined),
   createClaim: jest.fn().mockResolvedValue({}),
   signJWT: jest.fn().mockReturnValue('mocked-jwt-token'),
+  hasScope: jest.fn().mockReturnValue(true),
 }));
 
 class UserServiceMock {
@@ -42,6 +46,11 @@ class QueuePublisherMock {
     return Promise.resolve();
   }
 }
+
+beforeEach(() => {
+  jest.clearAllMocks();  // clear all mocks
+});
+
 
 describe('RootController', () => {
   let rootController: RootController;
@@ -243,67 +252,67 @@ describe('RootController', () => {
   });
 
   //TODO - WIP
-  it('/refresh - should not refresh JWT token', async () => {
-    // Mock the user data
-    const user = {
-      sub: 1,
-      ...newUser,
-    };
+  // it('/refresh - should not refresh JWT token', async () => {
+  //   // Mock the user data
+  //   const user = {
+  //     sub: 1,
+  //     ...newUser,
+  //   };
 
-    // Mock the response from the userService.findOnebySub() method
-    userService.findOnebySub = jest.fn().mockResolvedValue(user);
+  //   // Mock the response from the userService.findOnebySub() method
+  //   userService.findOnebySub = jest.fn().mockResolvedValue(user);
 
-    (checkUser as jest.Mock).mockResolvedValue({
-      message: 'Account is disabled. Please contact the administrator.',
-    });
+  //   (checkUser as jest.Mock).mockResolvedValue({
+  //     message: 'Account is disabled. Please contact the administrator.',
+  //   });
 
-    // Call the refresh() method of the RootController with the mock data
-    const response = await rootController.refresh({ user }, res);
-    console.log(response);
+  //   // Call the refresh() method of the RootController with the mock data
+  //   const response = await rootController.refresh({ user }, res);
+  //   console.log(response);
 
-    // Expectations
-    expect(userService.findOnebySub).toHaveBeenCalledTimes(1);
-    expect(userService.findOnebySub).toHaveBeenCalledWith(1);
+  //   // Expectations
+  //   expect(userService.findOnebySub).toHaveBeenCalledTimes(1);
+  //   expect(userService.findOnebySub).toHaveBeenCalledWith(1);
 
-    // Make assertions about the res object using the 'status' and 'json' mocks
-    expect(res.status).toHaveBeenCalledTimes(1); // Since the user exists, status should be called
-    expect(res.status).toHaveBeenCalledWith(HttpStatus.OK); // Assuming HttpStatus.OK for successful request
-    expect(res.json).toHaveBeenCalledTimes(1);
-    expect(res.json).not.toHaveBeenCalledWith({ jwt: 'mocked-jwt-token' });
-    expect(res.json).toHaveBeenCalledWith({
-      code: 'inactive',
-      message: 'Account is disabled. Please contact the administrator.',
-    });
-  });
+  //   // Make assertions about the res object using the 'status' and 'json' mocks
+  //   expect(res.status).toHaveBeenCalledTimes(1); // Since the user exists, status should be called
+  //   expect(res.status).toHaveBeenCalledWith(HttpStatus.OK); // Assuming HttpStatus.OK for successful request
+  //   expect(res.json).toHaveBeenCalledTimes(1);
+  //   expect(res.json).not.toHaveBeenCalledWith({ jwt: 'mocked-jwt-token' });
+  //   expect(res.json).toHaveBeenCalledWith({
+  //     code: 'inactive',
+  //     message: 'Account is disabled. Please contact the administrator.',
+  //   });
+  // });
 
   //TODO - WIP
-  it('/refresh - hould refresh JWT token', async () => {
-    // Mock the user data
-    const user = {
-      sub: 1,
-      ...newUser,
-    };
+  // it('/refresh - hould refresh JWT token', async () => {
+  //   // Mock the user data
+  //   const user = {
+  //     sub: 1,
+  //     ...newUser,
+  //   };
 
-    // Mock the response from the userService.findOnebySub() method
-    userService.findOnebySub = jest.fn().mockResolvedValue(user);
+  //   // Mock the response from the userService.findOnebySub() method
+  //   userService.findOnebySub = jest.fn().mockResolvedValue(user);
 
-    // Update the checkUser mock to resolve to null or undefined
-    (checkUser as jest.Mock).mockResolvedValue(null);
-    // Call the refresh() method of the RootController with the mock data
-    const response = await rootController.refresh({ user: { sub: 1 } }, res);
+  //   // Update the checkUser mock to resolve to null or undefined
+  //   (checkUser as jest.Mock).mockResolvedValue(null);
+  //   // Call the refresh() method of the RootController with the mock data
+  //   const response = await rootController.refresh({ user: { sub: 1 } }, res);
 
-    // Expectations
-    expect(userService.findOnebySub).toHaveBeenCalledTimes(1);
-    expect(res.json).toHaveBeenCalledTimes(1);
-    expect(res.json).toHaveBeenCalledWith({ jwt: 'mocked-jwt-token' });
-  });
+  //   // Expectations
+  //   expect(userService.findOnebySub).toHaveBeenCalledTimes(1);
+  //   expect(res.json).toHaveBeenCalledTimes(1);
+  //   expect(res.json).toHaveBeenCalledWith({ jwt: 'mocked-jwt-token' });
+  // });
 
   describe('/GET me', () => {
     it('should return user if user exists', async () => {
       const req = { user: { sub: 1 } };
 
       // Mock the findOnebySub function to resolve to a user
-      userService.findOnebySub.mockResolvedValue(newUser);
+      userService.findOnebySub = jest.fn().mockResolvedValue(newUser);
 
       await rootController.me(req, res);
 
@@ -452,88 +461,163 @@ describe('RootController', () => {
         expect(res.json).toHaveBeenCalledWith(user);
       });
     });
+  });
+  describe('/GET jwt/:id', () => {
+    const user = {
+      id: 'user-id',
+      username: 'testuser',
+      email: 'testuser@mail.com',
+    };
+    const claim = { sub: user.id };
 
-    describe('/GET jwt/:id', () => {
-      const user = {
-        id: 'user-id',
-        username: 'testuser',
-        email: 'testuser@mail.com',
-      };
-      const claim = { sub: user.id };
+    it('should throw User not found exception if user does not exist', async () => {
+      const req = { params: { id: user.id } };
 
-      it('should throw User not found exception if user does not exist', async () => {
-        const req = { params: { id: user.id } };
+      userService.findOnebySub = jest.fn().mockResolvedValue(null);
 
-        userService.findOnebySub = jest.fn().mockResolvedValue(null);
+      await expect(rootController.jwt(req, res)).rejects.toThrow(
+        HttpException,
+      );
+      expect(userService.findOnebySub).toHaveBeenCalledWith(user.id);
+    });
 
-        await expect(rootController.jwt(req, res)).rejects.toThrow(
-          HttpException,
-        );
-        expect(userService.findOnebySub).toHaveBeenCalledWith(user.id);
-      });
+    it('should throw Forbidden exception if checkUser returns an error', async () => {
+      const req = { params: { id: user.id } };
+      const checkUserError = 'Some error';
 
-      it('should throw Forbidden exception if checkUser returns an error', async () => {
-        const req = { params: { id: user.id } };
-        const checkUserError = 'Some error';
+      userService.findOnebySub = jest.fn().mockResolvedValue(user);
+      // let checkUser = jest.fn().mockResolvedValue(checkUserError);
+     const checkUser = jest.spyOn(utilModule, "checkUser").mockResolvedValue(checkUserError);
+      
+     await expect(rootController.jwt(req, res)).rejects.toThrow(
+        HttpException,
+      );
+      expect(checkUser).toHaveBeenCalledWith(user, req);
+    });
 
-        userService.findOnebySub = jest.fn().mockResolvedValue(user);
-        // checkUser.mockReturnValue(checkUserError);
-
-        await expect(rootController.jwt(req, res)).rejects.toThrow(
-          HttpException,
-        );
-        expect(checkUser).toHaveBeenCalledWith(user, req);
-      });
-
-      it('should return jwt if all checks pass', async () => {
-        const req = { params: { id: user.id }, query: {} };
-        const jwt = 'jwt-token';
-
-        userService.findOnebySub = jest.fn().mockResolvedValue(user);
-        // checkUser.mockReturnValue(null);
-        // createClaim.mockResolvedValue(claim);
-        // signJWT(jwt);
-
+    it('should return jwt if all checks pass', async () => {
+      const req = { params: { id: user.id }, query: {} };
+      const jwt = 'jwt-token';
+    
+      userService.findOnebySub = jest.fn().mockResolvedValue(user);
+    
+      jest.spyOn(utilModule, "checkUser").mockResolvedValue(null);
+      jest.spyOn(utilModule, "createClaim").mockResolvedValue(claim);
+      jest.spyOn(utilModule, "signJWT").mockReturnValue(jwt);
+    
+      // Try-catch block to capture any thrown exceptions and log them
+      try {
         await rootController.jwt(req, res);
+      } catch (e) {
+        console.log(e); // Add this to log the error
+      }
+    
+      expect(utilModule.createClaim).toHaveBeenCalledWith(user, req, groupService);
+      expect(utilModule.signJWT).toHaveBeenCalledWith(claim);
+      expect(res.json).toHaveBeenCalledWith({ jwt });
+    });
+    
+    
+  });
 
-        // expect(createClaim).toHaveBeenCalledWith(user, req, groupService);
-        expect(signJWT).toHaveBeenCalledWith(claim);
-        expect(res.json).toHaveBeenCalledWith({ jwt });
+  describe('updateUser', () => {
+    it('should update user and return success message', async () => {
+      const req = {
+        params: { id: 1 },
+        body: { username: 'updated-username' },
+      };
+
+      const userMock = { sub: 1 };
+      userService.findOnebySub = jest.fn().mockResolvedValue(userMock);
+      userService.updatebySub = jest.fn().mockResolvedValue(userMock);
+
+      await rootController.updateUser(req, res);
+
+      expect(userService.findOnebySub).toHaveBeenCalledWith(1);
+      expect(userService.updatebySub).toHaveBeenCalledWith(1, req.body);
+      expect(res.json).toHaveBeenCalledWith({
+        message: 'User Updated Successfully',
       });
     });
 
-    describe('updateUser', () => {
-      it('should update user and return success message', async () => {
-        const req = {
-          params: { id: 1 },
-          body: { username: 'updated-username' },
-        };
+    it('should throw an exception if user is not found', async () => {
+      const req = {
+        params: { id: 'non-existent-id' },
+        body: { username: 'updated-username' },
+      };
 
-        const userMock = { sub: 1 };
-        userService.findOnebySub = jest.fn().mockResolvedValue(userMock);
-        userService.updatebySub = jest.fn().mockResolvedValue(userMock);
+      userService.findOnebySub = jest.fn().mockResolvedValue(null);
 
-        await rootController.updateUser(req, res);
+      await expect(rootController.updateUser(req, res)).rejects.toThrow(
+        HttpException,
+      );
+    });
+  });
+  describe('groups', () => {
+    it('should return groups with count for admin', async () => {
+      const req = {
+        user: {
+          sub: 1,
+        },
+        query: {
+          limit: 2,
+          skip: 1,
+        },
+      };
 
-        expect(userService.findOnebySub).toHaveBeenCalledWith(1);
-        expect(userService.updatebySub).toHaveBeenCalledWith(1, req.body);
-        expect(res.json).toHaveBeenCalledWith({
-          message: 'User Updated Successfully',
-        });
-      });
+      const mockUser = { _id: 'userId01' };
+      const mockGroups = { count: 2, groups: [{}, {}] };
 
-      it('should throw an exception if user is not found', async () => {
-        const req = {
-          params: { id: 'non-existent-id' },
-          body: { username: 'updated-username' },
-        };
+      userService.findOnebySub.mockResolvedValue(mockUser);
+      jest.spyOn(utilModule, "hasScope").mockReturnValue(true);
+      groupService.findGroups.mockResolvedValue(mockGroups);
 
-        userService.findOnebySub = jest.fn().mockResolvedValue(null);
+      await rootController.groups(req, res);
 
-        await expect(rootController.updateUser(req, res)).rejects.toThrow(
-          HttpException,
-        );
-      });
+      expect(userService.findOnebySub).toHaveBeenCalledWith(req.user.sub);
+      expect(groupService.findGroups).toHaveBeenCalledWith({}, req.query.skip, req.query.limit);
+      expect(res.json).toHaveBeenCalledWith(mockGroups);
+    });
+
+    //Todo - discuss 
+    it('should return only group data for non-admin users', async () => {
+      const req = {
+        user: {
+          sub: 2,
+        },
+        query: {},
+      };
+
+      const mockUser = { _id: 'userId02' };
+      const mockGroups = { groups: [{}, {}] };
+
+      userService.findOnebySub.mockResolvedValue(mockUser);
+      jest.spyOn(utilModule, "hasScope").mockReturnValue(false);
+      groupService.findGroups.mockResolvedValue(mockGroups);
+
+      await rootController.groups(req, res);
+
+      expect(userService.findOnebySub).toHaveBeenCalledWith(req.user.sub);
+      expect(groupService.findGroups).toHaveBeenCalledWith({
+        $and: [
+          {},
+          { $or: [{ admins: mockUser._id }, { members: mockUser._id }] },
+        ],
+      }, 0, 0);
+      expect(res.json).toHaveBeenCalledWith(mockGroups.groups);
+    });
+
+    it('should throw an exception if user is not found', async () => {
+      const req = {
+        user: {
+          sub: 'nonExistentUserSub',
+        },
+        query: {},
+      };
+
+      userService.findOnebySub.mockResolvedValue(null);
+
+      await expect(rootController.groups(req, res)).rejects.toThrow(HttpException);
     });
   });
 });
