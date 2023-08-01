@@ -196,19 +196,19 @@ export function intersect_scopes(o1, o2) {
   //   intersect[k] = vs;
   // }
   // return intersect;
-  var intersect = {};
-    for(var k in o1) {
-        var v1 = o1[k];
-        if(o2[k] === undefined) continue; //key doesn't exist in o2..
-        var v2 = o2[k];
-        //if(typeof v1 ! = typeof v2) return; //type doesn't match
-        var vs = [];
-        v1.forEach(function(v) {
-            if(~v2.indexOf(v)) vs.push(v);
-        });
-        intersect[k] = vs;
-    }
-    return intersect;
+  const intersect = {};
+  for (const k in o1) {
+    const v1 = o1[k];
+    if (o2[k] === undefined) continue; //key doesn't exist in o2..
+    var v2 = o2[k];
+    //if(typeof v1 ! = typeof v2) return; //type doesn't match
+    var vs = [];
+    v1.forEach(function (v) {
+      if (~v2.indexOf(v)) vs.push(v);
+    });
+    intersect[k] = vs;
+  }
+  return intersect;
 }
 
 export async function createClaim(

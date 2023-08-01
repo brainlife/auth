@@ -4,17 +4,17 @@ import { Inject } from '@nestjs/common';
 import { ClientProxy } from '@nestjs/microservices';
 import { RedisService } from '../redis/redis.service';
 import { GroupService } from '../groups/group.service';
-import { RolesGuard } from 'src/auth/roles.guard';
+import { RolesGuard } from '../auth/roles.guard';
 import { SetMetadata } from '@nestjs/common';
-import { JwtAuthGuard } from 'src/auth/jwt-auth.guard';
+import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { Request, Response } from 'express';
 import { Res } from '@nestjs/common';
 import { Req } from '@nestjs/common';
 import { HttpException } from '@nestjs/common';
 import { HttpStatus } from '@nestjs/common';
-import { queuePublisher } from 'src/utils/common.utils';
-import { positionGroups } from 'src/auth/constants';
-import { User } from 'src/schema/user.schema';
+import { queuePublisher } from '../utils/common.utils';
+import { positionGroups } from '../auth/constants';
+import { User } from '../schema/user.schema';
 
 //TODO: should i move it to constants / utils ?
 export const safe_fields = [
@@ -105,7 +105,7 @@ export class ProfileController {
   @UseGuards(JwtAuthGuard, RolesGuard)
   @SetMetadata('roles', 'admin')
   @Get('/poscount')
-  async test(@Req() req: Request, @Res() res: Response) {
+  async positionCount(@Req() req: Request, @Res() res: Response) {
     const find = { 'profile.private.position': { $exists: true } };
     const users = await this.userService.findbyQuery(find);
     //TODO = can I make it better ?

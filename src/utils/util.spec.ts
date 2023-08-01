@@ -12,7 +12,7 @@ describe('UtilTests', () => {
     it('should return a signed JWT', () => {
       const payload = {
         username: 'test',
-        sub: 'test',
+        sub: 12,
         role: 'test',
       };
       const token = signJWT(payload);
