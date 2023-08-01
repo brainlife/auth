@@ -16,7 +16,8 @@ import { queuePublisher } from 'src/utils/common.utils';
 import { positionGroups } from 'src/auth/constants';
 import { User } from 'src/schema/user.schema';
 
-const safe_fields = [
+//TODO: should i move it to constants / utils ?
+export const safe_fields = [
   'sub',
   'fullname',
   'email',
