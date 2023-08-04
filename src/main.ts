@@ -1,19 +1,22 @@
+import * as dotenv from 'dotenv';
+dotenv.config();
+
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import { Transport } from '@nestjs/microservices';
 import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
-import * as dotenv from 'dotenv';
 import * as cookieParser from 'cookie-parser';
 
 async function bootstrap() {
+
   const app = await NestFactory.create(AppModule);
-  app.connectMicroservice({
-    transport: Transport.REDIS,
-    options: {
-      host: 'localhost',
-      port: 6379,
-    },
-  });
+  // app.connectMicroservice({
+  //   transport: Transport.REDIS,
+  //   options: {
+  //     host: 'localhost',
+  //     port: 6379,
+  //   },
+  // });
 
   // app.connectMicroservice({
   //   transport: Transport.RMQ,
@@ -24,11 +27,9 @@ async function bootstrap() {
   //   },
   // })
 
-  dotenv.config();
-
   const config = new DocumentBuilder()
-    .setTitle('AUTH API')
-    .setDescription('The AUTH API description')
+    .setTitle('Auth API')
+    .setDescription('The Auth API description')
     .setVersion('1.0')
     .addTag('auth')
     .build();

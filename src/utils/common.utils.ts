@@ -131,37 +131,43 @@ export async function sendEmail(
 }
 
 export async function sendEmailConfirmation(user: any): Promise<any> {
-  if (!user.email_confirmation_token) {
+  if (!user.email_confirmation_token) { // TODO maybe this should be moved to user service
     user.email_confirmation_token = uuid();
     await user.save();
   }
   const url = process.env.URL_REFERRER || 'http://localhost:8000';
-  let text =
-    'Hello!\n\nIf you have created a new account, please visit the following URL to confirm your email address.\n\n';
-  text +=
+  const confirmationUrl =
     url + '#!/confirm_email/' + user.sub + '/' + user.email_confirmation_token;
+  const text = `
+Hello!
+If you have created a new account, please visit the following URL to confirm your email address:
 
-  console.log('sending email.. to', user.email);
+${confirmationUrl}
+`;
 
   return await sendEmail(
     user.email,
-    process.env.EMAIL_CONFIRM_FROM,
-    process.env.EMAIL_CONFIRM_SUBJECT,
+    process.env.EMAIL_FROM,
+    'Account Confirmation',
     text,
   );
 }
 
 export async function sendPasswordReset(user: any): Promise<any> {
   const url = process.env.URL_REFERRER || 'http://localhost:8000';
-  const fullurl = url + '#!/forgotpass/' + user.password_reset_token;
-  const text =
-    'Hello!\n\nIf you have requested to reset your password, please visit the following URL to reset your password.\n\n';
+  const forgotPasswordUrl = url + '#!/forgotpass/' + user.password_reset_token;
+  const text = `
+Hello!
+If you have requested to reset your password, please visit the following URL to reset your password:
+
+${forgotPasswordUrl}
+`;
 
   return sendEmail(
     user.email,
-    process.env.PASSWORD_RESET_FROM,
-    process.env.PASSWORD_RESET_SUBJECT,
-    text + fullurl,
+    process.env.EMAIL_FROM,
+    'Password reset instruction',
+    text,
   );
 }
 

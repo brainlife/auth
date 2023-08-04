@@ -1,7 +1,7 @@
 import { Module } from '@nestjs/common';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
-import { ConfigModule } from '@nestjs/config';
+import { ConfigModule, ConfigService } from '@nestjs/config';
 import { MongooseModule } from '@nestjs/mongoose';
 import { UserModule } from './users/user.module';
 
@@ -11,28 +11,43 @@ import { RedisModule } from './redis/redis.module';
 
 @Module({
   imports: [
-    ConfigModule.forRoot(),
-    MongooseModule.forRoot('mongodb://localhost:27017', { dbName: 'test' }), // temporary connection string
+    ConfigModule.forRoot({
+      envFilePath: '.env.dev',
+    }),
+    MongooseModule.forRootAsync({
+      imports: [ConfigModule],
+      inject: [ConfigService],
+      useFactory: async (configService: ConfigService) => ({
+        uri: configService.get<string>('DB_URL'),
+      }),
+    }),
     UserModule,
-    ClientsModule.register([
+    ClientsModule.registerAsync([
       {
         name: 'REDIS_SERVICE',
-        transport: Transport.REDIS,
-        options: {
-          host: 'localhost',
-          port: 6379,
-        },
+        imports: [ConfigModule],
+        inject: [ConfigService],
+        useFactory: async (configService: ConfigService) => ({
+          transport: Transport.REDIS,
+          options: {
+            host: configService.get<string>('REDIS_HOST'),
+            port: configService.get<number>('REDIS_PORT'),
+          },
+        }),
       },
       {
         name: 'RABBITMQ_SERVICE',
-        transport: Transport.RMQ,
-        options: {
-          urls: ['amqp://guest:guest@localhost:5672/brainlife?heartbeat=30'],
-          queue: 'user-messages',
-          queueOptions: {
-            durable: false,
+        imports: [ConfigModule],
+        inject: [ConfigService],
+        useFactory: async (configService: ConfigService) => ({
+          transport: Transport.RMQ,
+          options: {
+            urls: [configService.get<string>('RABBITMQ_URL')],
+            queueOptions: {
+              durable: false,
+            },
           },
-        },
+        }),
       },
     ]),
     AuthModule,
