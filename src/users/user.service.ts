@@ -139,20 +139,27 @@ export class UserService {
   }
 
   async findUsersbyCount(
-    where: any,
-    select: string,
-    skip: number,
-    limit: number,
+    find?: any,
+    select?: any,
+    skip?: number,
+    sort?: any,
+    limit?: number,
   ): Promise<{ users: User[]; count: number }> {
     try {
-      const users = await this.userModel
-        .find(where)
-        .select(select)
-        .skip(skip)
-        .limit(limit)
-        .lean()
-        .exec();
-      const count = await this.userModel.countDocuments(where).exec();
+      let query = this.userModel.find(find).lean();
+      if (select) query = query.select(select);
+      if (sort) query = query.sort(sort);
+      if (limit) query = query.limit(limit);
+      if (skip) query = query.skip(skip);
+      const users = await query.exec();
+      const count = await this.userModel.countDocuments(query).exec();
+      // const users = await this.userModel
+      //   .find(where)
+      //   .select(select)
+      //   .skip(skip)
+      //   .limit(limit)
+      //   .lean()
+      //   .exec();
       console.log('users', users, count);
       return { users, count };
     } catch (err) {

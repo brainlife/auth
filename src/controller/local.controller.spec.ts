@@ -20,9 +20,9 @@ class RedisServiceMock {
     del = jest.fn();
 }
 
-class AuthServiceMock {
-    validateUser = jest.fn().mockResolvedValue({});
-}
+// class AuthServiceMock {
+//     validateUser = jest.fn().mockResolvedValue({});
+// }
 
 
 // Mock the checkUser function to resolve to null or undefined
@@ -35,6 +35,7 @@ jest.mock('../utils/common.utils', () => ({
     queuePublisher: {
       publishToQueue: jest.fn(),
     },
+    checkPassword: jest.fn().mockResolvedValue(true),
     hashPassword: jest.fn().mockResolvedValue('mocked-password'),
     sendPasswordReset: jest.fn().mockResolvedValue(undefined),
     sendPasswordResetConfirmation: jest.fn().mockResolvedValue(undefined),
@@ -93,7 +94,7 @@ describe('ProfileController', () => {
     };
 });
 
-describe('resetPass', () => {
+describe('/resetpass', () => {
     it('should generate reset tokens and send a reset password email', async () => {
       // Arrange
       const request = { cookies: {} };
@@ -146,7 +147,7 @@ describe('resetPass', () => {
   });
 
   
-  describe('unlockUser', () => {
+  describe('/unlockUser/:id', () => {
     it('should unlock user by deleting failed login attempts', async () => {
         // Arrange
         const request = { params: { id: '1' } };
@@ -194,7 +195,7 @@ describe('resetPass', () => {
     });
 });
 
-describe('localLogin', () => {
+describe('/auth', () => {
   const mockAuthService = {
     validateUser: jest.fn()
   };
@@ -283,6 +284,121 @@ describe('localLogin', () => {
   });
 });
 
+describe('/setpass', () => {
+  it('should return an error when trying to change password with an invalid old password', async () => {
+    const req = { 
+      user: { 
+        _doc: {}, 
+        sub: 'test-sub' 
+      }, 
+      headers: {} 
+    };
+
+    const res = {
+      status: jest.fn().mockReturnThis(),
+      json: jest.fn(),
+    };
+
+    const user = { username: 'testuser', password_hash: 'hashed-password' };
+    
+    userService.findOnebySub.mockResolvedValue(user);
+    
+    jest.spyOn(utilModule, 'checkPassword').mockReturnValue(false);
+
+    try {
+      await localController.setPass(req, res, { password: 'new-password', password_old: 'old-password' });
+    } catch (error) {
+      expect(error).toBeInstanceOf(HttpException);
+      expect(error.message).toBe('Wrong current password');
+      expect(error.status).toBe(HttpStatus.INTERNAL_SERVER_ERROR);
+    }
+  });
+
+  it('should successfully change password', async () => {
+    const req = { 
+      user: { 
+        _doc: {}, 
+        sub: 'test-sub' 
+      }, 
+      headers: {} 
+    };
+
+    const res = {
+      status: jest.fn().mockReturnThis(),
+      json: jest.fn(),
+    };
+
+    const user = { username: 'testuser', password_hash: 'hashed-password' };
+    
+    userService.findOnebySub.mockResolvedValue(user);
+    
+    jest.spyOn(utilModule, 'checkPassword').mockReturnValue(true);
+
+    jest.spyOn(utilModule, 'hashPassword').mockResolvedValue('new-hashed-password');
+
+    await localController.setPass(req, res, { password: 'new-password', password_old: 'old-password' });
+
+    expect(res.json).toBeCalledWith({ message: 'Password reset successfully' });
+  });
+
+  it('should return an error when user is not found', async () => {
+    const req = { 
+      user: { 
+        _doc: {}, 
+        sub: 'test-sub' 
+      }, 
+      headers: {} 
+    };
+
+    const res = {
+      status: jest.fn().mockReturnThis(),
+      json: jest.fn(),
+    };
+
+    userService.findOnebySub.mockResolvedValue(undefined); // User not found
+    
+    try {
+      await localController.setPass(req, res, { password: 'new-password', password_old: 'old-password' });
+    } catch (error) {
+      expect(error).toBeInstanceOf(HttpException);
+      expect(error.message).toBe('failed to find the user with sub:' + req.user.sub);
+      expect(error.status).toBe(HttpStatus.NOT_FOUND);
+    }
+  });
+
+  it('should return an error when hashing new password fails', async () => {
+    const req = { 
+      user: { 
+        _doc: {}, 
+        sub: 'test-sub' 
+      }, 
+      headers: {} 
+    };
+
+    const res = {
+      status: jest.fn().mockReturnThis(),
+      json: jest.fn(),
+    };
+
+    const user = { username: 'testuser', password_hash: 'hashed-password' };
+    
+    userService.findOnebySub.mockResolvedValue(user);
+    
+    jest.spyOn(utilModule, 'checkPassword').mockReturnValue(true);
+
+    const hashingError = { message: 'Error while hashing password' };
+    jest.spyOn(utilModule, 'hashPassword').mockResolvedValue(hashingError);
+
+    try {
+      await localController.setPass(req, res, { password: 'new-password', password_old: 'old-password' });
+    } catch (error) {
+      expect(error).toBeInstanceOf(HttpException);
+      expect(error.message).toBe(hashingError.message);
+      expect(error.status).toBe(HttpStatus.INTERNAL_SERVER_ERROR);
+    }
+  });
+
+});
 
   
 

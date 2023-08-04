@@ -1,4 +1,4 @@
-import { Controller, Get, Patch, UseGuards } from '@nestjs/common';
+import { Controller, Get, Patch, UseGuards, Query } from '@nestjs/common';
 import { UserService } from '../users/user.service';
 import { Inject } from '@nestjs/common';
 import { ClientProxy } from '@nestjs/microservices';
@@ -15,6 +15,7 @@ import { HttpStatus } from '@nestjs/common';
 import { queuePublisher } from '../utils/common.utils';
 import { positionGroups } from '../auth/constants';
 import { User } from '../schema/user.schema';
+import { hasScope } from '../utils/common.utils';
 
 //TODO: should i move it to constants / utils ?
 export const safe_fields = [
@@ -48,8 +49,43 @@ export class ProfileController {
    *
    */
   //TODO - https://github.com/brainlife/auth/blob/c6e6f9e9eea82ab4c8dfd1dac2445aa040879a86/api/controllers/profile.js#L79-L80
+
+  // @UseGuards(JwtAuthGuard)
   @Get('/list')
-  listProfiles(@Req() req: Request, @Res() res: Response) {}
+  async listProfiles( @Query('where') whereQuery: string,
+  @Query('find') findQuery: string,
+  @Query('order') order: string = 'fullname',
+  @Query('limit') limit: number = 100,
+  @Query('offset') offset: number = 0,
+  @Req() req: Request,
+  @Res() res: Response,
+  ) {
+
+    let dirty_find = whereQuery ? JSON.parse(whereQuery) : {};
+    if(findQuery) dirty_find = JSON.parse(findQuery);
+
+    let find = {};
+    let isAdmin = false;
+    console.log("user", req.user);
+    if(req.user) isAdmin = hasScope(req.user, "admin");
+    for(let k in dirty_find) {
+      if(isAdmin || ~safe_fields.indexOf(k)) find[k] = dirty_find[k];
+    }
+
+    let select = safe_fields.slice();
+    if(isAdmin) {
+        select.push("times");
+        select.push("profile.private");
+    }
+
+    res.json(await this.userService.findUsersbyCount(
+      find,
+      select,
+      offset,
+      order,
+      limit
+    ));
+  }
 
   /**
    * @apiGroup Profile
