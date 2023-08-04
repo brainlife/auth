@@ -170,8 +170,8 @@ describe('ProfileController', () => {
         params: { days: '10' },
       };
       const mockedUsers = [
-        { sub: '1', times: { register: new Date() } },
-        { sub: '2', times: { register: new Date() } },
+        { sub: 1, times: { register: new Date() } },
+        { sub: 2, times: { register: new Date() } },
       ];
       userService.findAll.mockResolvedValue(mockedUsers);
       const expectedTargetDate = new Date();
@@ -217,8 +217,8 @@ describe('ProfileController', () => {
           params: { days: '10' },
         };
         const mockedUsers = [
-          { sub: '1', times: { register: new Date() }, email_confirmed: true },
-          { sub: '2', times: { register: new Date() }, email_confirmed: false }, // User with unconfirmed email
+          { sub: 1, times: { register: new Date() }, email_confirmed: true },
+          { sub: 2, times: { register: new Date() }, email_confirmed: false }, // User with unconfirmed email
         ];
         userService.findAll.mockResolvedValue(mockedUsers);
     
@@ -229,6 +229,41 @@ describe('ProfileController', () => {
         expect(res.json).toHaveBeenCalledWith({ users: mockedUsers });
     });
   });
+  
+  //we still need more testing for this function
+//   describe('positionCount', () => {
+//     it('should count users correctly based on position', async () => {
+//         // Arrange
+//         const mockUsers = [
+//           { profile: { private: { position: 'PhD Student' } } },
+//           { profile: { private: { position: 'PhD Student' } } },
+//           { profile: { private: { position: 'Faculty' } } },
+//           { profile: { private: { position: 'unknown position' } } },
+//           { profile: { private: { position: 'unknown position' } } },
+//           // More user mocks...
+//         ];
+    
+//         userService.findbyQuery.mockResolvedValue(mockUsers);
+    
+//         const req = {} as any; 
+//         const res = { json: jest.fn() } as any; 
+    
+//         // Act
+//         await profileController.positionCount(req, res);
+    
+//         // Assert
+//         expect(userService.findbyQuery).toHaveBeenCalledWith({ 'profile.private.position': { $exists: true } });
+//         console.log(res.json);
+//         expect(res.json).toHaveBeenCalledWith({
+//           'PhD Student': 2,
+//           'Faculty': 1,
+//           'Other': 2,
+//           // More positions...
+//         });
+//       });
+//   });
+
+
   
 
 });

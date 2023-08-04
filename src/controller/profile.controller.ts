@@ -121,7 +121,7 @@ export class ProfileController {
           break;
         }
       }
-      if (!match) match = 'other';
+      if (!match) match = 'Other';
       if (!count[match]) count[match] = 0;
       count[match]++;
     });

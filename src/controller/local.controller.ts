@@ -22,19 +22,18 @@ import {
 } from '../utils/common.utils';
 import { Response, Request } from 'express';
 import { AuthGuard } from '@nestjs/passport';
-import { RedisService } from 'src/redis/redis.service';
-import { FailedLoginService } from 'src/failedLogins/failedLogin.service';
-import { CreateFailedLoginDto } from 'src/dto/create-failedLogin.dto';
-import { JwtAuthGuard } from 'src/auth/jwt-auth.guard';
-import { GroupService } from 'src/groups/group.service';
-import { RolesGuard } from 'src/auth/roles.guard';
+import { RedisService } from '../redis/redis.service';
+import { FailedLoginService } from '../failedLogins/failedLogin.service';
+import { CreateFailedLoginDto } from '../dto/create-failedLogin.dto';
+import { JwtAuthGuard } from '../auth/jwt-auth.guard';
+import { GroupService } from '../groups/group.service';
+import { RolesGuard } from '../auth/roles.guard';
 import { SetMetadata } from '@nestjs/common';
 
 @Controller('/local')
 export class LocalController {
   constructor(
     private readonly userService: UserService,
-    @Inject('RABBITMQ_SERVICE') private readonly client: ClientProxy,
     private readonly redisService: RedisService,
     private groupService: GroupService,
     private failedLoginService: FailedLoginService,
@@ -145,7 +144,7 @@ export class LocalController {
     // if some error
 
     //TODO: discuss to improve it to use username or email while publishing message
-    if (req.user.message) {
+    if (req.user?.message) {
       // publish to rabbitmq
       const publishMessage = {
         type: 'userpass',
@@ -200,7 +199,7 @@ export class LocalController {
     if (ttl) claim.exp = Math.floor(Date.now() / 1000) + ttl;
 
     const jwt = signJWT(claim);
-
+    console.log(user);
     if (!user.times) user.times = {};
     user.times.last_login = new Date();
     user.reqHeaders = req.headers;
