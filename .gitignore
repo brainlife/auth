@@ -33,15 +33,3 @@ lerna-debug.log*
 !.vscode/tasks.json
 !.vscode/launch.json
 !.vscode/extensions.json
-
-<<<<<<< Updated upstream
-=======
-#package files
-package-lock.json
-package.json
-
-#constant files
-.env
-.env.local
-src/auth/constants.js
->>>>>>> Stashed changes
