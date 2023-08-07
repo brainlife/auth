@@ -27,8 +27,8 @@ export class RolesGuard implements CanActivate {
     }
 
     const request = context.switchToHttp().getRequest();
-    console.log('RolesGuard canActivate request.user', request.user);
-    console.log('hasScopeValue check', hasScope(request.user, requiredRole));
+    // console.log('RolesGuard canActivate request.user', request.user);
+    // console.log('hasScopeValue check', hasScope(request.user, requiredRole));
     return hasScope(request.user, requiredRole);
   }
 }

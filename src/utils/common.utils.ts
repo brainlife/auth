@@ -72,6 +72,14 @@ export function signJWT(payload: object) {
   return jwt.sign(payload, private_key, options);
 }
 
+export function decodeJWT(token: string) {
+  const options = {
+    algorithms: [process.env.JWT_ALGORITHM as jwt.Algorithm], // add the assertion here
+    // add other options as required
+  };
+  return jwt.verify(token, private_key, options);
+}
+
 export function hashPassword(password: string): any {
   // check if password is strong enough
   const strength = zxcvbn(password);

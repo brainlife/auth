@@ -6,7 +6,7 @@ export type RedisClient = Redis;
 export const redisProvider: Provider = {
   useFactory: (): RedisClient => {
     return new Redis({
-      host: 'redis',
+      host: 'localhost',
       port: 6379,
     });
   },

@@ -15,7 +15,7 @@ import { HttpStatus } from '@nestjs/common';
 import { queuePublisher } from '../utils/common.utils';
 import { positionGroups } from '../auth/constants';
 import { User } from '../schema/user.schema';
-import { hasScope } from '../utils/common.utils';
+import { hasScope, decodeJWT } from '../utils/common.utils';
 
 //TODO: should i move it to constants / utils ?
 export const safe_fields = [
@@ -65,8 +65,11 @@ export class ProfileController {
     if(findQuery) dirty_find = JSON.parse(findQuery);
 
     let find = {};
+    // console.log("req.headers.authorization", req.headers.authorization);
+    // Bearer ey... -> ey...
+    if(req.headers.authorization) req.user = decodeJWT(req.headers.authorization.substring(7)) || null;
+    
     let isAdmin = false;
-    console.log("user", req.user);
     if(req.user) isAdmin = hasScope(req.user, "admin");
     for(let k in dirty_find) {
       if(isAdmin || ~safe_fields.indexOf(k)) find[k] = dirty_find[k];
