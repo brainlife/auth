@@ -27,12 +27,14 @@ import {
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { GroupService } from '../groups/group.service';
 import { RolesGuard } from '../auth/roles.guard';
+import { RabbitMQ } from 'src/rabbitmq/rabbitmq.service';
 
 @Controller('/')
 export class RootController {
   constructor(
     private readonly userService: UserService,
     private readonly groupService: GroupService,
+    private readonly queuePublisher: RabbitMQ
   ) {}
 
   @Post('signup')
@@ -64,7 +66,7 @@ export class RootController {
       );
 
     //check for existing user
-    let user = await this.userService.findOne(username);
+    let user = await this.userService.findOne({username});
     if (user)
       throw new HttpException(
         'The username you chose is already registered. If it is yours, please try signing in, or register with a different username.',
@@ -185,7 +187,7 @@ export class RootController {
     const jwt = signJWT(claim);
     // console.log("/refresh, claim v/s req.user",claim, req.user);
 
-    queuePublisher.publishToQueue(
+    this.queuePublisher.publishToQueue(
       'user.refresh.' + user.sub,
       { username: user.username, exp: claim.exp }.toString(),
     );
@@ -440,7 +442,7 @@ export class RootController {
       sub: { $in: req.body.admins },
     });
     const group = await this.groupService.create(req.body);
-    queuePublisher.publishToQueue(
+    this.queuePublisher.publishToQueue(
       'group.create.' + group.id,
       group.toJSON().toString(),
     );
@@ -484,7 +486,7 @@ export class RootController {
       req.body,
     );
     // console.log(updatedGroup);
-    queuePublisher.publishToQueue('group.update.' + group.id, req.body);
+    this.queuePublisher.publishToQueue('group.update.' + group.id, req.body);
     res.json({ message: 'Group updated successfully' });
   }
 }

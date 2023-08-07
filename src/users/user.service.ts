@@ -13,10 +13,14 @@ import {
   signJWT,
   authDefault,
 } from '../utils/common.utils';
+import { RabbitMQ } from '../rabbitmq/rabbitmq.service';
 
 @Injectable()
 export class UserService {
-  constructor(@InjectModel(User.name) private userModel: Model<UserDocument>) {}
+  constructor(@InjectModel(User.name) 
+  private userModel: Model<UserDocument>,
+  private queuePublisher: RabbitMQ
+  ) {}
 
   async create(createUserDto: CreateUserDto): Promise<User> {
     const User = new this.userModel(createUserDto);
@@ -49,7 +53,7 @@ export class UserService {
 
     console.log('User created', User);
 
-    queuePublisher.publishToQueue(
+    this.queuePublisher.publishToQueue(
       'user.create.' + sub,
       User.toJSON().toString(),
     );

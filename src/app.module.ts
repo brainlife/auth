@@ -22,20 +22,20 @@ import { RedisModule } from './redis/redis.module';
       }),
     }),
     UserModule,
-    ClientsModule.registerAsync([
-      {
-        name: 'REDIS_SERVICE',
-        imports: [ConfigModule],
-        inject: [ConfigService],
-        useFactory: async (configService: ConfigService) => ({
-          transport: Transport.REDIS,
-          options: {
-            host: configService.get<string>('REDIS_HOST'),
-            port: configService.get<number>('REDIS_PORT'),
-          },
-        }),
-      },
-    ]),
+    // ClientsModule.registerAsync([
+    //   {
+    //     name: 'REDIS_SERVICE',
+    //     imports: [ConfigModule],
+    //     inject: [ConfigService],
+    //     useFactory: async (configService: ConfigService) => ({
+    //       transport: Transport.REDIS,
+    //       options: {
+    //         host: configService.get<string>('REDIS_HOST'),
+    //         port: configService.get<number>('REDIS_PORT'),
+    //       },
+    //     }),
+    //   },
+    // ]),
     AuthModule,
     RedisModule,
   ],

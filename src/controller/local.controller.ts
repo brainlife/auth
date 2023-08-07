@@ -16,7 +16,7 @@ import {
   signJWT,
   createClaim,
   sendPasswordReset,
-  queuePublisher,
+  
   checkUser,
   checkPassword,
 } from '../utils/common.utils';
@@ -29,6 +29,7 @@ import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { GroupService } from '../groups/group.service';
 import { RolesGuard } from '../auth/roles.guard';
 import { SetMetadata } from '@nestjs/common';
+import { RabbitMQ } from '../rabbitmq/rabbitmq.service';
 
 @Controller('/local')
 export class LocalController {
@@ -37,6 +38,7 @@ export class LocalController {
     private readonly redisService: RedisService,
     private groupService: GroupService,
     private failedLoginService: FailedLoginService,
+    private queuePublisher: RabbitMQ,
   ) {}
 
   /**
@@ -152,7 +154,7 @@ export class LocalController {
         message: 'Invalid credentials',
         username: req.body.username,
       }; // need to confirm the message
-      queuePublisher.publishToQueue(
+      this.queuePublisher.publishToQueue(
         'user.login_fail',
         publishMessage.toString(),
       );
@@ -224,7 +226,7 @@ export class LocalController {
     if (user.password_hash) {
       // check current password
       if (!checkPassword(password_old, user.password_hash)) {
-        queuePublisher.publishToQueue(
+        this.queuePublisher.publishToQueue(
           'user.setpass_fail.' + user.sub,
           { username: user.username, message: 'wrong current pass' }.toString(),
         );

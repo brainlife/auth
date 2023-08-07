@@ -1,9 +1,5 @@
 import { Controller, Get, Patch, UseGuards, Query } from '@nestjs/common';
 import { UserService } from '../users/user.service';
-import { Inject } from '@nestjs/common';
-import { ClientProxy } from '@nestjs/microservices';
-import { RedisService } from '../redis/redis.service';
-import { GroupService } from '../groups/group.service';
 import { RolesGuard } from '../auth/roles.guard';
 import { SetMetadata } from '@nestjs/common';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
@@ -12,10 +8,10 @@ import { Res } from '@nestjs/common';
 import { Req } from '@nestjs/common';
 import { HttpException } from '@nestjs/common';
 import { HttpStatus } from '@nestjs/common';
-import { queuePublisher } from '../utils/common.utils';
 import { positionGroups } from '../auth/constants';
 import { User } from '../schema/user.schema';
 import { hasScope, decodeJWT } from '../utils/common.utils';
+import { RabbitMQ } from '../rabbitmq/rabbitmq.service';
 
 //TODO: should i move it to constants / utils ?
 export const safe_fields = [
@@ -31,8 +27,7 @@ export const safe_fields = [
 export class ProfileController {
   constructor(
     private readonly userService: UserService,
-    private readonly redisService: RedisService,
-    private groupService: GroupService,
+    private queuePublisher: RabbitMQ
   ) {}
 
   /**
@@ -123,17 +118,22 @@ export class ProfileController {
     if (req.body.fullname) user.fullname = req.body.fullname;
 
     if (req.body.profile) {
-      if (req.body.profile.public) {
-        if (!user.profile.public) user.profile.public = {};
-        Object.assign(user.profile.public, req.body.profile.public);
+      if (!user.profile) {
+        user.profile = {
+            public: {},
+            private: {}
+        };
+      } else {
+        user.profile.public = user.profile.public || {};
+        user.profile.private = user.profile.private || {};
       }
-      if (req.body.profile.private) {
-        if (!user.profile.private) user.profile.private = {};
-        Object.assign(user.profile.private, req.body.profile.private);
-      }
+    
+      if (req.body.profile.public) Object.assign(user.profile.public, req.body.profile.public);
+      if (req.body.profile.private) Object.assign(user.profile.private, req.body.profile.private);
+      
     }
     await this.userService.updatebySub(user.sub, user);
-    queuePublisher.publishToQueue('user.update.' + user.sub, req.body);
+    this.queuePublisher.publishToQueue('user.update.' + user.sub, req.body);
     return res.json(user);
   }
 

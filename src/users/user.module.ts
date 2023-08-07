@@ -11,9 +11,11 @@ import { RedisModule } from 'src/redis/redis.module';
 import { FailedLoginModule } from 'src/failedLogins/failedLogin.module';
 import { GroupModule } from 'src/groups/group.module';
 import { ProfileController } from 'src/controller/profile.controller';
+import { RabbitMqModule } from 'src/rabbitmq/rabbitmq.module';
 @Module({
   imports: [
     GroupModule,
+    RabbitMqModule,
     RedisModule,
     FailedLoginModule,
     ConfigModule.forRoot(),
