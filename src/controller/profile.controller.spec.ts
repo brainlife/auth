@@ -7,7 +7,7 @@ import { UserServiceMock } from './root.controller.spec';
 import { GroupServiceMock } from './root.controller.spec';
 import { QueuePublisherMock } from './root.controller.spec';
 import { RedisService } from '../redis/redis.service';
-
+import * as utilModule from '../utils/common.utils';
 import { safe_fields } from './profile.controller';
 
 class RedisServiceMock {
@@ -26,6 +26,7 @@ jest.mock('../utils/common.utils', () => ({
     queuePublisher: {
       publishToQueue: jest.fn(),
     },
+    decodeJWT: jest.fn().mockReturnValue({}),
   }));
 
 class ClientProxyMock {
@@ -68,6 +69,124 @@ describe('ProfileController', () => {
     // Initialize the 'res' mock
     res = { json: jest.fn(), status: jest.fn(() => res) };
   });
+
+  describe('listProfiles', () => {
+    it('should return profiles for an admin user with valid query parameters', async () => {
+      // Arrange
+      const request = {
+        headers: { authorization: 'Bearer mocked-jwt-token' },
+        user: { roles: ['admin'] },
+        query: {
+          where: JSON.stringify({ fullname: 'John Doe' }),
+          limit: 50,
+          offset: 10,
+          order: 'fullname'
+        }
+      };
+
+      const query = [
+        {
+          fullname: 'John Doe',
+          email: 'johndoe@test.com',
+          times: {
+            register: "2022-08-25T14:30:30.408Z",
+            local_login: "2023-07-03T20:34:52.481Z"
+          },
+          profile: {
+            private: false,
+            bio: 'I am John Doe',
+            location: 'Lagos, Nigeria',
+          },
+        }
+      ];
+
+      const expectedQuery = {
+        users: [
+          {
+            fullname: 'John Doe',
+            email: 'johndoe@test.com',
+            times: {
+              register: "2022-08-25T14:30:30.408Z",
+              local_login: "2023-07-03T20:34:52.481Z"
+            },
+            profile: {
+              private: false,
+              bio: 'I am John Doe',
+              location: 'Lagos, Nigeria',
+            },
+          }
+        ]};
+
+      jest.spyOn(utilModule, 'decodeJWT').mockReturnValue({roles: ['admin']});
+      userService.findUsersbyCount.mockResolvedValue(expectedQuery);
+  
+      // Act
+      await profileController.listProfiles(
+        request.query.where,
+        undefined,  // since findQuery is not provided
+        request.query.order,
+        request.query.limit,
+        request.query.offset,
+        request as any,
+        res as any
+      );
+        
+      // Assert
+      expect(userService.findUsersbyCount).toHaveBeenCalledWith(
+      JSON.parse(request.query.where),  // convert string to object
+      safe_fields, 
+      request.query.offset, 
+      request.query.order, 
+      request.query.limit
+      );
+      expect(res.json).toHaveBeenCalledWith(expectedQuery);
+    });
+  
+    it('should return profiles for a regular user with safe fields only', async () => {
+      // Arrange
+      const request = {
+          headers: { authorization: 'Bearer mocked-jwt-token' },
+          user: { roles: ['user'] },
+          query: {
+              where: JSON.stringify({ fullname: 'John Doe' }),
+              limit: 50,
+              offset: 10,
+              order: 'createdAt'
+          }
+      };
+  
+      const query = {
+          fullname: 'John Doe',
+          email: 'johndoe@test.com'
+      };
+  
+      jest.spyOn(utilModule, 'decodeJWT').mockReturnValue({roles: ['user']});
+      userService.findUsersbyCount.mockResolvedValue([query]);
+  
+      // Act
+      await profileController.listProfiles(
+          request.query.where,
+          undefined,  // since findQuery is not provided
+          request.query.order,
+          request.query.limit,
+          request.query.offset,
+          request as any,
+          res as any
+      );
+  
+      // Assert
+      expect(userService.findUsersbyCount).toHaveBeenCalledWith(
+          JSON.parse(request.query.where),
+          safe_fields,
+          request.query.offset,
+          request.query.order,
+          request.query.limit
+      );
+      expect(res.json).toHaveBeenCalledWith([query]);
+  });
+  
+  });
+  
 
   describe('getProfile', () => {
     it('should return a user profile when a user exists', async () => {
