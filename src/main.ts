@@ -8,25 +8,7 @@ import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
 import * as cookieParser from 'cookie-parser';
 
 async function bootstrap() {
-
   const app = await NestFactory.create(AppModule);
-  // app.connectMicroservice({
-  //   transport: Transport.REDIS,
-  //   options: {
-  //     host: 'localhost',
-  //     port: 6379,
-  //   },
-  // });
-
-  // app.connectMicroservice({
-  //   transport: Transport.RMQ,
-  //   options: {
-  //     urls: ['amqp://guest:guest@localhost:5672/brainlife'],
-  //     queue: 'user-messages',
-  //     queueOptions: { durable: false },
-  //   },
-  // })
-
   const config = new DocumentBuilder()
     .setTitle('Auth API')
     .setDescription('The Auth API description')

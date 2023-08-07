@@ -35,20 +35,6 @@ import { RedisModule } from './redis/redis.module';
           },
         }),
       },
-      {
-        name: 'RABBITMQ_SERVICE',
-        imports: [ConfigModule],
-        inject: [ConfigService],
-        useFactory: async (configService: ConfigService) => ({
-          transport: Transport.RMQ,
-          options: {
-            urls: [configService.get<string>('RABBITMQ_URL')],
-            queueOptions: {
-              durable: false,
-            },
-          },
-        }),
-      },
     ]),
     AuthModule,
     RedisModule,

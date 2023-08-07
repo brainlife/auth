@@ -32,7 +32,6 @@ import { RolesGuard } from '../auth/roles.guard';
 export class RootController {
   constructor(
     private readonly userService: UserService,
-    @Inject('RABBITMQ_SERVICE') private readonly client: ClientProxy,
     private readonly groupService: GroupService,
   ) {}
 

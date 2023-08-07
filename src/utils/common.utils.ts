@@ -139,7 +139,8 @@ export async function sendEmail(
 }
 
 export async function sendEmailConfirmation(user: any): Promise<any> {
-  if (!user.email_confirmation_token) { // TODO maybe this should be moved to user service
+  if (!user.email_confirmation_token) {
+    // TODO maybe this should be moved to user service
     user.email_confirmation_token = uuid();
     await user.save();
   }

@@ -31,7 +31,6 @@ export const safe_fields = [
 export class ProfileController {
   constructor(
     private readonly userService: UserService,
-    @Inject('RABBITMQ_SERVICE') private readonly client: ClientProxy,
     private readonly redisService: RedisService,
     private groupService: GroupService,
   ) {}
@@ -52,42 +51,45 @@ export class ProfileController {
 
   // @UseGuards(JwtAuthGuard)
   @Get('/list')
-  async listProfiles( @Query('where') whereQuery: string,
-  @Query('find') findQuery: string,
-  @Query('order') order: string = 'fullname',
-  @Query('limit') limit: number = 100,
-  @Query('offset') offset: number = 0,
-  @Req() req: Request,
-  @Res() res: Response,
+  async listProfiles(
+    @Query('where') whereQuery: string,
+    @Query('find') findQuery: string,
+    @Query('order') order = 'fullname',
+    @Query('limit') limit = 100,
+    @Query('offset') offset = 0,
+    @Req() req: Request,
+    @Res() res: Response,
   ) {
-
     let dirty_find = whereQuery ? JSON.parse(whereQuery) : {};
-    if(findQuery) dirty_find = JSON.parse(findQuery);
+    if (findQuery) dirty_find = JSON.parse(findQuery);
 
-    let find = {};
+    const find = {};
     // console.log("req.headers.authorization", req.headers.authorization);
     // Bearer ey... -> ey...
-    if(req.headers.authorization) req.user = decodeJWT(req.headers.authorization.substring(7)) || null;
-    
+    if (req.headers.authorization)
+      req.user = decodeJWT(req.headers.authorization.substring(7)) || null;
+
     let isAdmin = false;
-    if(req.user) isAdmin = hasScope(req.user, "admin");
-    for(let k in dirty_find) {
-      if(isAdmin || ~safe_fields.indexOf(k)) find[k] = dirty_find[k];
+    if (req.user) isAdmin = hasScope(req.user, 'admin');
+    for (const k in dirty_find) {
+      if (isAdmin || ~safe_fields.indexOf(k)) find[k] = dirty_find[k];
     }
 
-    let select = safe_fields.slice();
-    if(isAdmin) {
-        select.push("times");
-        select.push("profile.private");
+    const select = safe_fields.slice();
+    if (isAdmin) {
+      select.push('times');
+      select.push('profile.private');
     }
 
-    res.json(await this.userService.findUsersbyCount(
-      find,
-      select,
-      offset,
-      order,
-      limit
-    ));
+    res.json(
+      await this.userService.findUsersbyCount(
+        find,
+        select,
+        offset,
+        order,
+        limit,
+      ),
+    );
   }
 
   /**

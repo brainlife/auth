@@ -13,7 +13,8 @@ export const positionGroups = {
   Faculty:
     /prof|senior|pi|teacher|scholar|lec|advisor|inst|chair|scient|direc|invest/,
   'Postdoctoral Researcher': /^(research)|^(post)|(phd)/,
-  'Research Assistant': /(research)[^\s]*( assistant| associate | coordinator) |(intern)|\bra/,
+  'Research Assistant':
+    /(research)[^\s]*( assistant| associate | coordinator) |(intern)|\bra/,
   'High School Student': /school/,
   Clinician: /(logist)|(clin)|(neuro)|(chief)|(cal)|\b(md)|(physic)/,
   'Undergraduate Student': /undergrad|\bteaching assistant/,
