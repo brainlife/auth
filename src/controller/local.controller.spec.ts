@@ -8,7 +8,8 @@ import { RedisService } from '../redis/redis.service';
 import { FailedLoginService } from '../failedLogins/failedLogin.service';
 import { LocalController } from './local.controller';
 import * as utilModule from '../utils/common.utils';
-import { AuthService } from '../auth/auth.service';
+import { RabbitMQServiceMock } from './root.controller.spec';
+import { RabbitMQ } from '../rabbitmq/rabbitmq.service';
 
 class RedisServiceMock {
   get = jest.fn();
@@ -28,9 +29,6 @@ jest.mock('../utils/common.utils', () => ({
   createClaim: jest.fn().mockResolvedValue({}),
   signJWT: jest.fn().mockReturnValue('mocked-jwt-token'),
   hasScope: jest.fn().mockReturnValue(true),
-  queuePublisher: {
-    publishToQueue: jest.fn(),
-  },
   checkPassword: jest.fn().mockResolvedValue(true),
   hashPassword: jest.fn().mockResolvedValue('mocked-password'),
   sendPasswordReset: jest.fn().mockResolvedValue(undefined),
@@ -57,6 +55,7 @@ describe('ProfileController', () => {
   let groupService: GroupServiceMock;
   let redisService: RedisServiceMock;
   let failedLoginService: FailedLoginServiceMock;
+  let queuePublisher: RabbitMQServiceMock;
 
   let res: {
     cookie: jest.Mock<any, any>;
@@ -76,6 +75,7 @@ describe('ProfileController', () => {
         { provide: RedisService, useClass: RedisServiceMock },
         { provide: GroupService, useClass: GroupServiceMock },
         { provide: FailedLoginService, useClass: FailedLoginServiceMock },
+        { provide: RabbitMQ, useClass: RabbitMQServiceMock },
       ],
     }).compile();
 
@@ -84,6 +84,7 @@ describe('ProfileController', () => {
     groupService = module.get<GroupServiceMock>(GroupService);
     redisService = module.get<RedisServiceMock>(RedisService);
     failedLoginService = module.get<FailedLoginServiceMock>(FailedLoginService);
+    queuePublisher = module.get<RabbitMQServiceMock>(RabbitMQ);
     // Initialize the 'res' mock
     res = { cookie: jest.fn(), json: jest.fn(), status: jest.fn(() => res) };
     response = {

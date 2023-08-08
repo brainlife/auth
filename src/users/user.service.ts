@@ -17,9 +17,10 @@ import { RabbitMQ } from '../rabbitmq/rabbitmq.service';
 
 @Injectable()
 export class UserService {
-  constructor(@InjectModel(User.name) 
-  private userModel: Model<UserDocument>,
-  private queuePublisher: RabbitMQ
+  constructor(
+    @InjectModel(User.name)
+    private userModel: Model<UserDocument>,
+    private queuePublisher: RabbitMQ,
   ) {}
 
   async create(createUserDto: CreateUserDto): Promise<User> {

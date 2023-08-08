@@ -1,6 +1,11 @@
 // queue-publisher.service.ts
 import { Injectable, OnModuleInit } from '@nestjs/common';
-import { ClientProxy, ClientProxyFactory, RmqOptions, Transport } from '@nestjs/microservices';
+import {
+  ClientProxy,
+  ClientProxyFactory,
+  RmqOptions,
+  Transport,
+} from '@nestjs/microservices';
 import { Message } from '../schema/message';
 
 @Injectable()
@@ -8,7 +13,7 @@ export class RabbitMQ implements OnModuleInit {
   private client: ClientProxy;
 
   onModuleInit() {
-    const clientOptions: RmqOptions  = {
+    const clientOptions: RmqOptions = {
       transport: Transport.RMQ,
       options: {
         urls: ['amqp://guest:guest@localhost:5672/brainlife?heartbeat=30'],

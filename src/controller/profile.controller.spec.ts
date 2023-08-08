@@ -5,10 +5,12 @@ import { HttpException, HttpStatus } from '@nestjs/common';
 import { GroupService } from '../groups/group.service';
 import { UserServiceMock } from './root.controller.spec';
 import { GroupServiceMock } from './root.controller.spec';
-import { QueuePublisherMock } from './root.controller.spec';
+import { RabbitMQServiceMock } from './root.controller.spec';
+
 import { RedisService } from '../redis/redis.service';
 import * as utilModule from '../utils/common.utils';
 import { safe_fields } from './profile.controller';
+import { RabbitMQ } from '../rabbitmq/rabbitmq.service';
 
 class RedisServiceMock {
   get = jest.fn();
@@ -23,9 +25,6 @@ jest.mock('../utils/common.utils', () => ({
   createClaim: jest.fn().mockResolvedValue({}),
   signJWT: jest.fn().mockReturnValue('mocked-jwt-token'),
   hasScope: jest.fn().mockReturnValue(true),
-  queuePublisher: {
-    publishToQueue: jest.fn(),
-  },
   decodeJWT: jest.fn().mockReturnValue({}),
 }));
 
@@ -41,8 +40,7 @@ beforeEach(() => {
 describe('ProfileController', () => {
   let profileController: ProfileController;
   let userService: UserServiceMock;
-  let groupService: GroupServiceMock;
-  let redisService: RedisServiceMock;
+  let queuePublisher: RabbitMQServiceMock;
   let res: { json: jest.Mock<any, any>; status: jest.Mock<any, any> };
 
   beforeEach(async () => {
@@ -50,20 +48,13 @@ describe('ProfileController', () => {
       controllers: [ProfileController],
       providers: [
         { provide: UserService, useClass: UserServiceMock },
-        { provide: GroupService, useClass: GroupServiceMock },
-        { provide: 'RABBITMQ_SERVICE', useClass: ClientProxyMock },
-        { provide: RedisService, useClass: RedisServiceMock },
-        {
-          provide: 'QUEUE_PUBLISHER', // Use the correct token name
-          useClass: QueuePublisherMock, // Use the mock class
-        },
+        { provide: RabbitMQ, useClass: RabbitMQServiceMock },
       ],
     }).compile();
 
     profileController = module.get<ProfileController>(ProfileController);
     userService = module.get<UserServiceMock>(UserService);
-    groupService = module.get<GroupServiceMock>(GroupService);
-    redisService = module.get<RedisServiceMock>(RedisService);
+    queuePublisher = module.get<RabbitMQServiceMock>(RabbitMQ);
     // Initialize the 'res' mock
     res = { json: jest.fn(), status: jest.fn(() => res) };
   });
@@ -269,7 +260,10 @@ describe('ProfileController', () => {
         request.body.profile.private.privateKey,
       );
       expect(userService.updatebySub).toHaveBeenCalledWith(user.sub, user);
-      //   expect(queuePublisher.publishToQueue).toHaveBeenCalledWith('user.update.' + user.sub, request.body);
+      expect(queuePublisher.publishToQueue).toHaveBeenCalledWith(
+        'user.update.' + user.sub,
+        request.body,
+      );
       expect(res.json).toHaveBeenCalledWith(user);
     });
     it('should throw error when user does not exist', async () => {

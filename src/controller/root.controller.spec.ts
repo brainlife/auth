@@ -1,6 +1,7 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { RootController } from './root.controller';
 import { UserService } from '../users/user.service';
+import { RabbitMQ } from '../rabbitmq/rabbitmq.service';
 import { HttpException, HttpStatus } from '@nestjs/common';
 
 import { GroupService } from '../groups/group.service';
@@ -23,7 +24,9 @@ export class GroupServiceMock {
 export class ClientProxyMock {}
 
 // Create a mock for RABBITMQ_SERVICE
-class RabbitMQServiceMock {}
+export class RabbitMQServiceMock {
+  publishToQueue = jest.fn();
+}
 
 export class UserServiceMock {
   findOne = jest.fn();
@@ -34,13 +37,6 @@ export class UserServiceMock {
   findUsersbyCount = jest.fn();
   findbyQuery = jest.fn();
   findAll = jest.fn();
-}
-
-export class QueuePublisherMock {
-  publishToQueue(key: string, message: string): Promise<void> {
-    // Implement the mock functionality here
-    return Promise.resolve();
-  }
 }
 
 // Mock the checkUser function to resolve to null or undefined
@@ -64,6 +60,7 @@ describe('RootController', () => {
   let userService: UserServiceMock;
   let res: { json: jest.Mock<any, any>; status: jest.Mock<any, any> }; // Add the 'status' method to the 'res' mock
   let groupService: GroupServiceMock;
+  let queuePublisher: RabbitMQServiceMock;
 
   const newUser = {
     email: 'test@example.com',
@@ -78,14 +75,10 @@ describe('RootController', () => {
       providers: [
         { provide: UserService, useClass: UserServiceMock },
         { provide: GroupService, useClass: GroupServiceMock },
-        { provide: 'RABBITMQ_SERVICE', useClass: RabbitMQServiceMock }, // Add the RABBITMQ_SERVICE mock
+        { provide: RabbitMQ, useClass: RabbitMQServiceMock }, // Add the RABBITMQ_SERVICE mock
         {
           provide: sendEmailConfirmation,
           useValue: jest.fn().mockResolvedValue(undefined),
-        },
-        {
-          provide: 'QUEUE_PUBLISHER', // Use the correct token name
-          useClass: QueuePublisherMock, // Use the mock class
         },
         {
           provide: 'createClaim',
@@ -104,6 +97,7 @@ describe('RootController', () => {
     rootController = module.get<RootController>(RootController);
     userService = module.get<UserServiceMock>(UserService); // Use the mock class type
     groupService = module.get<GroupServiceMock>(GroupService); // Use the mock class type
+    queuePublisher = module.get<RabbitMQServiceMock>(RabbitMQ); // Use the mock class type
     // Initialize the 'res' mock
     res = { json: jest.fn(), status: jest.fn(() => res) };
   });
@@ -127,7 +121,9 @@ describe('RootController', () => {
 
     // Expectations
     expect(userService.findOne).toHaveBeenCalledTimes(1);
-    expect(userService.findOne).toHaveBeenCalledWith(newUser.username);
+    expect(userService.findOne).toHaveBeenCalledWith({
+      username: newUser.username,
+    });
     expect(userService.findByEmail).toHaveBeenCalledTimes(1);
     expect(userService.findByEmail).toHaveBeenCalledWith(newUser.email);
     expect(userService.createUser).toHaveBeenCalledTimes(1);
@@ -252,7 +248,9 @@ describe('RootController', () => {
 
     // Expectations
     expect(userService.findOne).toHaveBeenCalledTimes(1);
-    expect(userService.findOne).toHaveBeenCalledWith(user.username);
+    expect(userService.findOne).toHaveBeenCalledWith({
+      username: user.username,
+    });
     expect(userService.findByEmail).toHaveBeenCalledTimes(1);
     expect(userService.findByEmail).toHaveBeenCalledWith(user.email);
     expect(userService.createUser).toHaveBeenCalledTimes(0);

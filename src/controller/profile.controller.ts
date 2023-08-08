@@ -27,7 +27,7 @@ export const safe_fields = [
 export class ProfileController {
   constructor(
     private readonly userService: UserService,
-    private queuePublisher: RabbitMQ
+    private queuePublisher: RabbitMQ,
   ) {}
 
   /**
@@ -120,17 +120,18 @@ export class ProfileController {
     if (req.body.profile) {
       if (!user.profile) {
         user.profile = {
-            public: {},
-            private: {}
+          public: {},
+          private: {},
         };
       } else {
         user.profile.public = user.profile.public || {};
         user.profile.private = user.profile.private || {};
       }
-    
-      if (req.body.profile.public) Object.assign(user.profile.public, req.body.profile.public);
-      if (req.body.profile.private) Object.assign(user.profile.private, req.body.profile.private);
-      
+
+      if (req.body.profile.public)
+        Object.assign(user.profile.public, req.body.profile.public);
+      if (req.body.profile.private)
+        Object.assign(user.profile.private, req.body.profile.private);
     }
     await this.userService.updatebySub(user.sub, user);
     this.queuePublisher.publishToQueue('user.update.' + user.sub, req.body);

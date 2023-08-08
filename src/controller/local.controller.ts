@@ -16,7 +16,6 @@ import {
   signJWT,
   createClaim,
   sendPasswordReset,
-  
   checkUser,
   checkPassword,
 } from '../utils/common.utils';

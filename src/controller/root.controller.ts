@@ -27,14 +27,14 @@ import {
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { GroupService } from '../groups/group.service';
 import { RolesGuard } from '../auth/roles.guard';
-import { RabbitMQ } from 'src/rabbitmq/rabbitmq.service';
+import { RabbitMQ } from '../rabbitmq/rabbitmq.service';
 
 @Controller('/')
 export class RootController {
   constructor(
     private readonly userService: UserService,
     private readonly groupService: GroupService,
-    private readonly queuePublisher: RabbitMQ
+    private readonly queuePublisher: RabbitMQ,
   ) {}
 
   @Post('signup')
@@ -66,7 +66,7 @@ export class RootController {
       );
 
     //check for existing user
-    let user = await this.userService.findOne({username});
+    let user = await this.userService.findOne({ username });
     if (user)
       throw new HttpException(
         'The username you chose is already registered. If it is yours, please try signing in, or register with a different username.',
