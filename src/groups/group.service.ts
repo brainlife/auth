@@ -24,7 +24,6 @@ export class GroupService {
         .findOne()
         .sort({ _id: -1 })
         .exec();
-      console.log('lastGroup', lastGroup);
       if (lastGroup) groupID = lastGroup.id + 1;
       createGroupDto.id = groupID;
       const Group = new this.groupModel(createGroupDto);
@@ -40,7 +39,8 @@ export class GroupService {
     return this.groupModel.find().exec();
   }
 
-  async findBy(item: any): Promise<Group[]> {
+  async findBy(item: any,select?: any): Promise<Group[]> {
+    if(select) return this.groupModel.find(item).select(select);
     return this.groupModel.find(item);
   }
 

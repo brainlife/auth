@@ -10,17 +10,12 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import { UserService } from '../users/user.service';
-import { Inject } from '@nestjs/common';
 import { HttpException, HttpStatus } from '@nestjs/common';
-import { ClientProxy } from '@nestjs/microservices';
 import {
   checkUser,
   createClaim,
-  hashPassword,
   sendEmailConfirmation,
-  sendPasswordReset,
   signJWT,
-  queuePublisher,
   hasScope,
   intersect_scopes,
 } from '../utils/common.utils';
@@ -28,6 +23,16 @@ import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { GroupService } from '../groups/group.service';
 import { RolesGuard } from '../auth/roles.guard';
 import { RabbitMQ } from '../rabbitmq/rabbitmq.service';
+import {
+  ApiTags,
+  ApiBearerAuth,
+  ApiHeader,
+  ApiQuery,
+  ApiBody,
+  ApiOperation,
+  ApiResponse,
+  ApiParam
+} from '@nestjs/swagger';
 
 @Controller('/')
 export class RootController {
@@ -37,7 +42,24 @@ export class RootController {
     private readonly queuePublisher: RabbitMQ,
   ) {}
 
-  @Post('signup')
+  @ApiOperation({ summary: 'Create a new user - signup api' })
+  @ApiResponse({ status: 201, description: 'The user has been successfully created.' })
+  @ApiResponse({ status: 400, description: 'Invalid input data.' })
+  @ApiResponse({ status: 500, description: 'Internal server error.' })
+  @ApiBody({
+    description: 'User signup details',
+    schema: {
+      type: 'object',
+      required: ['email', 'username', 'password'],
+      properties: {
+        email: { type: 'string', description: 'User email' },
+        username: { type: 'string', description: 'Username' },
+        password: { type: 'string', description: 'User password' },
+        profile: { type: 'object', description: 'User profile data' },
+      },
+    },
+  })
+  @Post('/signup')
   async create(@Body() { email, username, password, profile }) {
     //validate email
     if (!email)
@@ -89,9 +111,29 @@ export class RootController {
     return response;
   }
 
+  @ApiOperation({ summary: 'Send email confirmation' })
+  @ApiResponse({ status: 200, description: 'Confirmation email sent successfully.' })
+  @ApiResponse({ status: 500, description: 'Invalid user sub provided.' })
+  @ApiResponse({ status: 500, description: 'Internal server error or email confirmation disabled.' })
   @Post('/send_email_confirmation')
+  @ApiBody({
+    description: 'User sub for sending email confirmation',
+    schema: {
+      type: 'object',
+      required: ['sub'],
+      properties: {
+        sub: { type: 'number', description: 'User sub (subject)' },
+      },
+    },
+  })
   async sendEmailConfirmation(@Body() { sub }) {
     const user = await this.userService.findOnebySub(sub);
+    if (!user) {
+      throw new HttpException(
+        'Invalid user sub',
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
+    }
     if (user.email_confirmed) {
       throw new HttpException(
         'Email already confirmed',
@@ -114,6 +156,20 @@ export class RootController {
     };
   }
 
+  @ApiOperation({ summary: 'Confirm email using a token' })
+  @ApiResponse({ status: 200, description: 'Email address confirmed successfully.' })
+  @ApiResponse({ status: 400, description: 'Invalid token provided or email already confirmed.' })
+  @ApiResponse({ status: 500, description: 'Internal server error.' })
+  @ApiBody({
+    description: 'Token for email confirmation',
+    schema: {
+      type: 'object',
+      required: ['token'],
+      properties: {
+        token: { type: 'string', description: 'Email confirmation token' },
+      },
+    },
+  })
   @Post('/confirm_email')
   async confirmEmail(@Body() { token }) {
     const user = await this.userService.findOne({ email_confirm_token: token });
@@ -157,6 +213,37 @@ export class RootController {
    *
    * @apiSuccess {Object} jwt New JWT token
    */
+
+  @ApiOperation({ summary: 'Refresh JWT Token' })
+  @ApiBearerAuth()
+  @ApiBody({
+    description: 'Parameters for JWT token refresh',
+    schema: {
+      type: 'object',
+      properties: {
+        scopes: {
+          type: 'object',
+          description: 'Desired scopes to intersect (you can remove certain scopes)',
+        },
+        gids: {
+          type: 'array',
+          items: { type: 'number' },
+          description: 'Desired gids to intersect (you can remove certain gids)',
+        },
+        clearProfile: {
+          type: 'boolean',
+          description: 'Set this to true if you don\'t need profile info',
+        },
+        ttl: {
+          type: 'string',
+          description: 'time-to-live in milliseconds (if not set, it will be defaulted to server default)',
+        }
+      }
+    }
+  })
+  @ApiResponse({ status: 200, description: 'JWT token refreshed successfully'})
+  @ApiResponse({ status: 404, description: 'User not found' })
+  @ApiResponse({ status: 500, description: 'Internal server error' })
   @UseGuards(JwtAuthGuard)
   @Post('/refresh')
   async refresh(@Req() req, @Res() res) {
@@ -215,6 +302,21 @@ export class RootController {
    *     }
    */
 
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Get user details', description: 'Returns things that user might want to know about himself. password_hash will be set to true if the password is set, otherwise null.' })
+  @ApiHeader({
+      name: 'authorization',
+      description: 'A valid JWT token "Bearer: xxxxx"',
+  })
+  @ApiResponse({
+      status: 200,
+      description: 'The user details.',
+      type: Object, // or the appropriate DTO
+  })
+  @ApiResponse({
+      status: 404,
+      description: 'User not found.',
+  })
   @UseGuards(JwtAuthGuard)
   @Get('/me')
   async me(@Req() req, @Res() res) {
@@ -242,6 +344,26 @@ export class RootController {
    *     [ 1,2,3 ]
    */
 
+  @ApiTags('User')
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Query list of users' })
+  @ApiHeader({
+      name: 'authorization',
+      description: 'A valid JWT token "Bearer: xxxxx"',
+  })
+  @ApiQuery({ name: 'find', required: false, description: 'Optional sequelize where query', type: String })
+  @ApiQuery({ name: 'limit', required: false, description: 'Limit the number of results', type: Number })
+  @ApiQuery({ name: 'skip', required: false, description: 'Number of results to skip', type: Number })
+  @ApiQuery({ name: 'select', required: false, description: 'Fields to select', type: String })
+  @ApiResponse({
+      status: 200,
+      description: 'List of users.',
+      type: [Number],  // Assuming the return type is an array of numbers based on the provided example.
+  })
+  @ApiResponse({
+      status: 401,
+      description: 'Unauthorized.',
+  })
   @UseGuards(JwtAuthGuard, RolesGuard)
   @SetMetadata('roles', 'admin')
   @Get('/users')
@@ -250,14 +372,19 @@ export class RootController {
     // console.log(req.query.where, req.query.find);
     if (req.query.find || req.query.where)
       where = JSON.parse(req.query.find || req.query.where);
+    console.log('where', where);
     const limit = req.query.limit || 50;
     const skip = req.query.skip || 0;
     const select =
       req.query.select ||
       'sub profile username email_confirmed fullname email ext times scopes active';
-    return res.json(
-      await this.userService.findUsersbyCount(where, select, +skip, +limit),
-    );
+    return res.json(await this.userService.findUsersbyCount(
+      where,
+      select,
+      skip,
+      null, // TODO: is null the right approach for optional sort parameter
+      limit,
+    ));
   }
 
   /**
@@ -273,6 +400,18 @@ export class RootController {
    *     [ 1,2,3 ]
    */
 
+  @ApiTags('User')
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Get groups associated with a user by their ID' })
+  @ApiParam({ name: 'id', description: 'User ID', type: String })  // to specify path variable
+  @ApiHeader({
+    name: 'authorization',
+    description: 'A valid JWT token (Bearer: xxxxx)'
+  })
+  @ApiResponse({ status: 200, description: 'Returns an array of group IDs associated with the user' })
+  @ApiResponse({ status: 404, description: 'User not found' })
+  @ApiResponse({ status: 401, description: 'Unauthorized' })
+
   @UseGuards(JwtAuthGuard, RolesGuard)
   @SetMetadata('roles', 'admin')
   @Get('/user/groups/:id')
@@ -285,9 +424,9 @@ export class RootController {
     //https://github.com/brainlife/auth/blob/c6e6f9e9eea82ab4c8dfd1dac2445aa040879a86/api/controllers/root.js#L189
     const query = {
       $or: [{ admins: user }, { members: user }],
-      id: 1,
     };
-    const groups = await this.groupService.findBy(query);
+    const groups = await this.groupService.findBy(query, 'id');
+    console.log(groups);
     const gids = groups.map((g) => g.id);
     return res.json(gids);
   }
@@ -298,6 +437,16 @@ export class RootController {
    *
    * @apiGroup User
    **/
+  @ApiTags('User')
+  @ApiBearerAuth()
+  @SetMetadata('roles', 'admin')
+  @Get('/user/:id')
+
+  @ApiOperation({ summary: 'Get details of a specific user by their ID' })
+  @ApiParam({ name: 'id', description: 'User ID', type: String })  // to specify path variable
+  @ApiResponse({ status: 200, description: 'Returns details of the specified user' })
+  @ApiResponse({ status: 404, description: 'User not found' })
+  @ApiResponse({ status: 401, description: 'Unauthorized' })
   @UseGuards(JwtAuthGuard, RolesGuard)
   @SetMetadata('roles', 'admin')
   @Get('/user/:id')
@@ -337,6 +486,17 @@ export class RootController {
    *     HTTP/1.1 200 OK
    *     [ 1,2,3 ]
    */
+  @ApiOperation({ summary: 'Issue user JWT (admin only)' })
+  @ApiParam({ name: 'id', description: 'User ID', type: String }) 
+
+  @ApiQuery({ name: 'gids', description: 'gids to append', type: [String], required: false }) 
+  @ApiQuery({ name: 'claim', description: 'Claim for JWT', type: String, required: false })
+
+  @ApiBearerAuth()
+  @ApiResponse({ status: 200, description: 'Returns JWT for the specified user' })
+  @ApiResponse({ status: 404, description: 'User not found' })
+  @ApiResponse({ status: 401, description: 'Unauthorized' })
+  @ApiResponse({ status: 403, description: 'Forbidden' })
   @UseGuards(JwtAuthGuard, RolesGuard)
   @SetMetadata('roles', 'admin')
   @Get('/jwt/:id')
@@ -365,6 +525,25 @@ export class RootController {
    * @apiDescription      (admin only)
    * @apiGroup User
    * */
+  @ApiTags('User')
+  @SetMetadata('roles', 'admin')
+  @Put('/user/:id')
+
+  @ApiOperation({ summary: 'Update user details (admin only)' })
+
+  @ApiParam({ name: 'id', description: 'User ID', type: String }) 
+
+  @ApiBearerAuth()
+
+  @ApiBody({ 
+    description: 'User details to update', 
+    type: Object // You might want to replace 'Object' with a specific DTO or type if you have one 
+  })
+
+  @ApiResponse({ status: 200, description: 'User Updated Successfully' })
+  @ApiResponse({ status: 404, description: 'User not found' })
+  @ApiResponse({ status: 401, description: 'Unauthorized' })
+  @ApiResponse({ status: 403, description: 'Forbidden' })
   @UseGuards(JwtAuthGuard, RolesGuard)
   @SetMetadata('roles', 'admin')
   @Put('/user/:id')
@@ -388,6 +567,18 @@ export class RootController {
    * returns groups with count for admin and just the group for user who are not auth-admin
    * @apiGroup User
    * */
+
+  @ApiTags('Group')
+  @ApiOperation({ summary: 'Query all groups with basic info' })
+  @ApiBearerAuth() 
+  @ApiQuery({ name: 'find', required: false, description: 'Optional query to filter groups', type: 'string' })
+  @ApiQuery({ name: 'limit', required: false, description: 'Limit number of results', type: 'number' })
+  @ApiQuery({ name: 'skip', required: false, description: 'Skip number of results', type: 'number' })
+  
+  @ApiResponse({ status: 200, description: 'Successfully retrieved groups' })
+  @ApiResponse({ status: 401, description: 'Unauthorized' })
+  @ApiResponse({ status: 404, description: 'User not found' })
+  @ApiResponse({ status: 500, description: 'Internal server error' })
 
   @UseGuards(JwtAuthGuard)
   @Get('/groups')
@@ -431,6 +622,37 @@ export class RootController {
    * @api POST /groups
    * @apiDescription  create a new group
    * */
+  @ApiTags('Group')
+  @ApiOperation({ summary: 'Create a new group' })
+  @ApiBearerAuth()
+  
+  @ApiBody({
+    description: 'Group data',
+    type: Object,
+    schema: {
+        type: 'object',
+        required: ['name', 'members', 'admins'],  // Specify the required properties here
+        properties: {
+            name: { type: 'string', description: 'Name of the group' },
+            description: { type: 'string', description: 'Description of the group' },
+            members: { type: 'array', items: { type: 'number' }, description: 'List of member sub IDs' },
+            admins: { type: 'array', items: { type: 'number' }, description: 'List of admin sub IDs' },
+            // add other properties as required...
+        },
+        example: {
+          name: 'Sample Group',
+          description: 'This is a sample group description.',
+          members: [1, 2],
+          admins: [1],
+          // ... other sample values ...
+      }
+    }
+})
+
+  @ApiResponse({ status: 201, description: 'Group created successfully' })
+  @ApiResponse({ status: 400, description: 'Bad Request' })
+  @ApiResponse({ status: 401, description: 'Unauthorized' })
+  @ApiResponse({ status: 500, description: 'Internal server error' })
 
   @UseGuards(JwtAuthGuard)
   @Post('/group')
@@ -455,6 +677,32 @@ export class RootController {
    * @apiDescription  update a group
    * the user must be an admin of the group or have admin scope
    * */
+  @ApiTags('Group')
+  @ApiOperation({ summary: 'Update a group' })
+  @ApiBearerAuth()
+  @ApiParam({ name: 'id', description: 'group ID', type: String })  // to specify path variable
+  @ApiBody({
+      description: 'Group update data',
+      type: Object,
+      schema: {
+          type: 'object',
+          required: ['name', 'members', 'admins'],  // Specify the required properties for updating
+          properties: {
+              name: { type: 'string', description: 'Name of the group' },
+              description: { type: 'string', description: 'Description of the group' },
+              members: { type: 'array', items: { type: 'number' }, description: 'List of member sub IDs' },
+              admins: { type: 'array', items: { type: 'number' }, description: 'List of admin sub IDs' },
+              // add other properties as required...
+          },
+          example: {
+            name: 'Updated Sample Group',
+            description: 'This is an updated sample group description.',
+            members: [2, 3],
+            admins: [2],
+            // ... other sample values ...
+        }
+      }
+  })
   @UseGuards(JwtAuthGuard)
   @Put('/group/:id')
   async updateGroup(@Req() req, @Res() res) {

@@ -369,6 +369,7 @@ describe('RootController', () => {
         defaultWhere,
         defaultSelect,
         defaultSkip,
+        null,
         defaultLimit,
       );
       expect(res.json).toHaveBeenCalledWith({ users, count: 2 });
@@ -378,8 +379,8 @@ describe('RootController', () => {
       const req = {
         query: {
           where: JSON.stringify({ username: 'testuser' }),
-          limit: '20',
-          skip: '10',
+          limit: 20,
+          skip: 10,
           select: 'sub username',
         },
       };
@@ -389,8 +390,9 @@ describe('RootController', () => {
       expect(userService.findUsersbyCount).toHaveBeenCalledWith(
         JSON.parse(req.query.where),
         req.query.select,
-        Number(req.query.skip),
-        Number(req.query.limit),
+        req.query.skip,
+        null,
+        req.query.limit,
       );
       expect(res.json).toHaveBeenCalledWith({ users, count: 2 });
     });
@@ -422,10 +424,10 @@ describe('RootController', () => {
 
         const query = {
           $or: [{ admins: user }, { members: user }],
-          id: 1,
         };
+        const select = 'id';
 
-        expect(groupService.findBy).toHaveBeenCalledWith(query);
+        expect(groupService.findBy).toHaveBeenCalledWith(query,select);
         expect(res.json).toHaveBeenCalledWith(groups.map((g) => g.id));
       });
     });
