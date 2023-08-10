@@ -12,6 +12,7 @@ import { positionGroups } from '../auth/constants';
 import { User } from '../schema/user.schema';
 import { hasScope, decodeJWT } from '../utils/common.utils';
 import { RabbitMQ } from '../rabbitmq/rabbitmq.service';
+import { ApiTags, ApiOperation, ApiQuery, ApiResponse, ApiBearerAuth, ApiParam, ApiBody } from '@nestjs/swagger';
 
 //TODO: should i move it to constants / utils ?
 export const safe_fields = [
@@ -23,6 +24,7 @@ export const safe_fields = [
   'profile.public' /*, "times.register" - collide with times*/,
 ];
 
+@ApiTags('Profile')
 @Controller('/profile')
 export class ProfileController {
   constructor(
@@ -42,6 +44,16 @@ export class ProfileController {
    * @apiParam {Number} offset    Optional Record offset for pagination
    *
    */
+
+  @ApiOperation({ summary: 'Query auth profiles (public api)' })
+  @ApiQuery({ name: 'where', required: false, type: String, description: 'Optional sequelize where query - defaults to {} (can only query certain fields)' })
+  @ApiQuery({ name: 'find', required: false, type: String, description: 'Similar to where query' })
+  @ApiQuery({ name: 'order', required: false, type: String, description: 'Optional sequelize sort object'})
+  @ApiQuery({ name: 'limit', required: false, type: Number, description: 'Optional Maximum number of records to return - defaults to 100' })
+  @ApiQuery({ name: 'offset', required: false, type: Number, description: 'Optional Record offset for pagination' })
+  @ApiResponse({ status: 200, description: 'Returns the list of profiles.' })
+  @ApiResponse({ status: 401, description: 'Unauthorized.' })
+  @ApiBearerAuth()
   //TODO - https://github.com/brainlife/auth/blob/c6e6f9e9eea82ab4c8dfd1dac2445aa040879a86/api/controllers/profile.js#L79-L80
 
   // @UseGuards(JwtAuthGuard)
@@ -100,10 +112,39 @@ export class ProfileController {
    *
    * @apiSuccess {Object}     updated user object
    */
-
+  @ApiOperation({ summary: 'Update user\'s auth profile. :sub? can be set by admin to update user\'s profile.' })
+  @ApiParam({ name: 'sub', required: false, type: Number, description: ':sub? can be set by admin to update user\'s profile' })
+  @ApiBearerAuth()
+  @ApiResponse({ status: 200, description: 'Returns the updated user object.' })
+  @ApiResponse({ status: 404, description: 'No such active user.' })
+  @ApiResponse({ status: 401, description: 'Unauthorized.' })
+  @ApiBody({ 
+    description: 'Profile data to update', 
+    type: Object, 
+    schema: {
+      properties: {
+        fullname: { type: 'string', description: 'Full Name of the user' },
+        profile: {
+          type: 'object',
+          properties: {
+            public: { type: 'object', description: 'Public profile data' },
+            private: { type: 'object', description: 'Private profile data' },
+          }
+        }
+      },
+      example: {
+        fullname: 'John Doe',
+        profile: {
+          public: { bio: 'Hello, I am John' },
+          private: { address: '123 Main St' }
+        }
+      }
+    } 
+  })
   @UseGuards(JwtAuthGuard, RolesGuard)
   @SetMetadata('roles', 'admin')
   @Patch('/:sub?')
+  
   async updateProfile(@Req() req: Request, @Res() res: Response) {
     const select = [...safe_fields, 'profile.private'];
     const user = await this.userService.findOnebySub(
@@ -144,6 +185,12 @@ export class ProfileController {
    * @description count number of users based of private position
    * @apiName GetPositionCount
    * */
+  @ApiOperation({ summary: 'Count number of users based on private position.' })
+  @ApiBearerAuth()
+  @ApiResponse({ status: 200, description: 'Returns the count of users based on private position.' })
+  @ApiResponse({ status: 401, description: 'Unauthorized.' })
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @SetMetadata('roles', 'admin')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @SetMetadata('roles', 'admin')
   @Get('/poscount')
@@ -179,6 +226,12 @@ export class ProfileController {
    * @apiHeader {String}          Authorization A valid JWT token "Bearer: xxxxx"
    *
    */
+  @ApiOperation({ summary: "Get user's private profile." })
+  @ApiParam({ name: 'sub', required: false, description: "User's ID. Admin can specify to retrieve other user's private profile." })
+  @ApiBearerAuth()
+  @ApiResponse({ status: 200, description: "Returns the user's private profile." })
+  @ApiResponse({ status: 401, description: 'Unauthorized.' })
+  @ApiResponse({ status: 404, description: 'No such active user.' })
   @UseGuards(JwtAuthGuard, RolesGuard)
   @SetMetadata('roles', 'admin')
   @Get(':sub?')
@@ -200,11 +253,15 @@ export class ProfileController {
    * @description Get user registration count for last :days days
    * @apiName GetRegistrationCount
    **/
+  @ApiOperation({ summary: "Get user registration count for last :days days." })
+  @ApiParam({ name: 'days', required: true, description: "Number of past days to retrieve the registration count for." })
+  @ApiResponse({ status: 200, description: "Returns the count of users registered in the last :days days." })
   @Get('/recreg/:days')
   async getRecentUsers(@Req() req: Request, @Res() res: Response) {
     const daysInPast = Number(req.params.days); //Number is es6
     const targetDate = new Date();
     targetDate.setDate(targetDate.getDate() - daysInPast);
+    console.log('targetDate', targetDate);
     const users = await this.userService.findAll(
       { 'times.register': { $gt: targetDate }, email_confirmed: true },
       safe_fields,
