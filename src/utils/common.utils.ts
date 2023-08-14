@@ -4,7 +4,7 @@ import zxcvbn from 'zxcvbn-typescript';
 import * as nodemailer from 'nodemailer';
 import { uuid } from 'uuidv4';
 import { Message } from '../schema/message';
-import { private_key } from '../auth/constants';
+import { private_key, ttl } from '../auth/constants';
 
 import {
   ClientOptions,
@@ -249,7 +249,7 @@ export async function createClaim(
   // console.log('User in create claim', user);
   return {
     iss: process.env.ISSUER,
-    exp: (Date.now() + 24 * 3600 * 1000 * 7) / 1000,
+    exp: (Date.now() + ttl) / 1000,
     scopes: user?.scopes,
     sub: user?.sub,
     gids,

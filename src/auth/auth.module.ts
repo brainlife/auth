@@ -9,6 +9,7 @@ import { RedisModule } from 'src/redis/redis.module';
 import { FailedLoginModule } from 'src/failedLogins/failedLogin.module';
 import { JwtModule } from '@nestjs/jwt';
 import { JwtStrategy } from './jwt.strategy';
+import { GithubStrategy } from './github.strategy';
 
 @Module({
   imports: [
@@ -22,6 +23,6 @@ import { JwtStrategy } from './jwt.strategy';
     }),
     PassportModule.register({ defaultStrategy: 'jwt' }),
   ],
-  providers: [AuthService, LocalStrategy, JwtStrategy],
+  providers: [AuthService, LocalStrategy, JwtStrategy, GithubStrategy],
 })
 export class AuthModule {}

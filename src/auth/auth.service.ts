@@ -45,6 +45,13 @@ export class AuthService {
     return user;
   }
 
+  async verifyGithubUser(profile: any): Promise<any> {
+    const user = await this.userService.findOne({
+      'ext.github': profile.id,
+    });
+    return { user, profile };
+  }
+
   // async login(user: any,req:any) {
   //   console.log("Login was called",user);
   //   const payload = { username: user.username, sub: user.userId };

@@ -12,6 +12,8 @@ import { FailedLoginModule } from 'src/failedLogins/failedLogin.module';
 import { GroupModule } from 'src/groups/group.module';
 import { ProfileController } from 'src/controller/profile.controller';
 import { RabbitMqModule } from 'src/rabbitmq/rabbitmq.module';
+import { GithubController } from 'src/controller/github.controller';
+import { AuthModule } from '../auth/auth.module';
 @Module({
   imports: [
     GroupModule,
@@ -31,6 +33,7 @@ import { RabbitMqModule } from 'src/rabbitmq/rabbitmq.module';
     RootController,
     LocalController,
     ProfileController,
+    GithubController
   ],
   providers: [AppService, UserService],
   exports: [UserService], // Make sure to export the UserService

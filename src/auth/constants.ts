@@ -25,6 +25,13 @@ export const positionGroups = {
 
 export const emailConfirmSubject = 'Account Confirmation';
 export const passwordResetSubject = 'Password reset instruction';
+export const settingsCallback = "http://localhost:8080/settings/account";
+
+export const github = {
+  autoRegister: true,
+}
+
+export const ttl = 24 * 3600 * 1000 * 7; // 7 days
 
 //TODO- is it better regex ?
 // Added \b to the start and end of the expressions, which denotes word boundaries. This helps to ensure that we are matching whole words and not parts of words.
