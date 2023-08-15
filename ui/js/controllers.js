@@ -165,6 +165,7 @@ function($scope, $route, toaster, $http, $routeParams, scaMessage, $location, $r
     $scope.submit = async function() {
         //new registration (or do registration complete with temp jwt)
         try {
+            $scope.form.profile.private.aup = new Date();
             let res = await $http.post($scope.appconf.api+'/signup', $scope.form, postconfig)
             if(res.data.jwt) {
                 //set the real jwt! (in case email confirmation is disabled)
