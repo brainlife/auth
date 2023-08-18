@@ -144,13 +144,16 @@ export class ProfileController {
   @UseGuards(JwtAuthGuard, RolesGuard)
   @SetMetadata('roles', 'admin')
   @Patch('/:sub?')
-  
   async updateProfile(@Req() req: Request, @Res() res: Response) {
     const select = [...safe_fields, 'profile.private'];
-    const user = await this.userService.findOnebySub(
-      parseInt(req.params.sub),
+    let userPasedJwt = req.user as User;
+    let userSub = userPasedJwt.sub;
+  
+    if(req.params.sub && hasScope(req.user,"admin")) userSub = parseInt(req.params.sub); 
+    const user = await this.userService.findOnebySub(userSub,
       select,
     );
+
     if (!user) {
       throw new HttpException('no such active user', HttpStatus.NOT_FOUND);
     }
@@ -239,7 +242,7 @@ export class ProfileController {
     const select = [...safe_fields, 'profile.private'];
     const userParsed = req.user as User; //err if using directly
     let sub = userParsed.sub;
-    if (req.params.sub) sub = parseInt(req.params.sub);
+    if (req.params.sub && hasScope(req.user,"admin")) sub = parseInt(req.params.sub);
     const user = await this.userService.findOnebySub(sub, select);
     if (!user) {
       throw new HttpException('no such active user', HttpStatus.NOT_FOUND);

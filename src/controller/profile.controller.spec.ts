@@ -234,6 +234,7 @@ describe('ProfileController', () => {
             private: { privateKey: 'newPrivateValue' },
           },
         },
+        user: { sub: 123 }
       };
       const user = {
         sub: 123,
@@ -277,6 +278,7 @@ describe('ProfileController', () => {
             private: { privateKey: 'newPrivateValue' },
           },
         },
+        user: { sub: 123 }
       };
       userService.findOnebySub.mockResolvedValue(null);
 
