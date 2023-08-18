@@ -49,6 +49,15 @@ export class AuthService {
     const user = await this.userService.findOne({
       'ext.github': profile.id,
     });
+    console.log('verifyGithubUser', profile);
+    return { user, profile };
+  }
+
+  async verifyGoogleUser(profile: any): Promise<any> {
+    const user = await this.userService.findOne({
+      'ext.google': profile.id,
+    });
+    console.log('verifyGoogleUser', profile);
     return { user, profile };
   }
 
