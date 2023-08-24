@@ -13,6 +13,7 @@ import { GroupModule } from 'src/groups/group.module';
 import { ProfileController } from 'src/controller/profile.controller';
 import { RabbitMqModule } from 'src/rabbitmq/rabbitmq.module';
 import { GithubController } from 'src/controller/github.controller';
+import { GoogleController } from 'src/controller/google.controller';
 import { AuthModule } from '../auth/auth.module';
 @Module({
   imports: [
@@ -33,7 +34,8 @@ import { AuthModule } from '../auth/auth.module';
     RootController,
     LocalController,
     ProfileController,
-    GithubController
+    GithubController,
+    GoogleController
   ],
   providers: [AppService, UserService],
   exports: [UserService], // Make sure to export the UserService

@@ -9,6 +9,7 @@ import { GroupService } from "../groups/group.service";
 import { JwtAuthGuard } from "../auth/jwt-auth.guard";
 import { checkUser, decodeJWT, createClaim, signJWT } from "../utils/common.utils";
 import { github, settingsCallback, ttl } from "../auth/constants";
+import { GithubOauthGuard } from "src/auth/guards/oauth.guards";
 
 @Controller('github')
 export class GithubController {
@@ -27,18 +28,28 @@ export class GithubController {
   }
 
 
+
+//this will redirect them on error to 
+// res.redirect('/auth/#!/signin?msg='+"Failed to authenticate");
 @Get('callback')
-@UseGuards(AuthGuard('github'))
+@UseGuards(GithubOauthGuard)
 async callback(@Req() req: Request, @Res() res: Response) {
     // This route is protected by GitHub authentication
     // NestJS will automatically redirect the user to GitHub for authentication
-    const { user: { user: userParsedfromGithub, profile } } = req.user as any;
+    
+    // TODO NEEDS DISCUSSION
+    //req.user is usually parsed by jwt guard 
+    //but in this case, we are using github oauth guard which doesn't parse jwt but wraps 
+    //user object inside req.user.user
 
+    // but we see that the original api uses cookie and uses it to parse jwt
+    
+    const { user: { user: userParsedfromGithub, profile } } = req.user as any;
 
     let userParsedfromCookie = null;
     if(req.cookies['associate_jwt']) userParsedfromCookie = decodeJWT(req.cookies['associate_jwt']);
     console.log("github callback", userParsedfromGithub);
-        
+    
     if(userParsedfromCookie) {
         res.clearCookie('associate_jwt');
         if(userParsedfromGithub) {
@@ -64,7 +75,7 @@ async callback(@Req() req: Request, @Res() res: Response) {
         if(!userParsedfromGithub) {
             if(github.autoRegister) this.registerNewUser(profile, res);
             else {
-                res.redirect('http://localhost:8080/auth/#!/signin?msg='+"Your github account is not yet registered. Please login using your username/password first, then associate your github account inside account settings.");
+                res.redirect('/auth/#!/signin?msg='+"Your github account is not yet registered. Please login using your username/password first, then associate your github account inside account settings.");
             }
             return;
         }
@@ -87,7 +98,7 @@ registerNewUser(profile: any, res: Response) {
         }
         if(profile.emails && profile.emails[0]) _default.email = profile.emails[0].value; //some user doesn't have email in profile..
     
-        var temp_jwt = signJWT({ exp: (Date.now() + ttl)/1000, ext, _default})
+        const temp_jwt = signJWT({ exp: (Date.now() + ttl)/1000, ext, _default})
         console.info("signed temporary jwt token for github signup:"+temp_jwt);
         // res.redirect('/auth/#!/signup/'+temp_jwt);
         res.redirect('http://localhost:8080/auth/#!/signup/'+temp_jwt);
@@ -116,6 +127,7 @@ async associateWithGithub(@Param('jwt') jwt: string, @Res() res: Response) {
 }
 
 
+//uses param based jwt
 @Put('disconnect')
 @UseGuards(JwtAuthGuard)
 async disconnectGithub(@Req() req, @Res() res) {
@@ -127,5 +139,3 @@ async disconnectGithub(@Req() req, @Res() res) {
 }
 
 }
-
-
