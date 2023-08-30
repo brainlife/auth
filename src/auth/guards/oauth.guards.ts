@@ -34,6 +34,7 @@ export class OrcidOauthGuard extends AuthGuard('orcid') {
             res.redirect('/auth/#!/signin?msg='+"Failed to authenticate");
             return;
         }
+        console.log("orcidOauthGuard", user);
         return user;
     }
 }

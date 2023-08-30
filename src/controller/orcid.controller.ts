@@ -37,7 +37,10 @@ export class OrcidController {
     async callback(@Req() req: Request, @Res() res: Response) {
         // This route is protected by Orcid authentication
         // NestJS will automatically redirect the user to Orcid for authentication
-        const { user: { user: userParsedfromOrcid, profile } } = req.user as any;
+
+        const { user: { user: userParsedfromOrcid, profile } } = req?.user as any;
+
+        console.log("orcid callback", userParsedfromOrcid);
 
         let userParsedfromCookie = null;
         if(req.cookies['associate_jwt']) userParsedfromCookie = decodeJWT(req.cookies['associate_jwt']);
@@ -61,27 +64,15 @@ export class OrcidController {
             res.redirect(settingsCallback);
         } else {
             if(!userParsedfromOrcid) {
+                console.log("orcid.autoRegister", profile);
                 if(orcid.autoRegister) this.registerNewUser(profile,res);
                 else {
-                    const messages = [{
-                        type: 'error',
-                        message: "Couldn't find an account associated with your orcid account. Please signoff / login with your orcid account."
-                    }];
-                    res.cookie('messages', JSON.stringify(messages), { path: '/' });
                     res.redirect('/auth/#!/signin?msg='+"Your ORCID account("+profile.orcid+") is not yet registered. Please login using your username/password first, then associate your InCommon account inside the account settings.");
-                }
-                return;
-            }
-            if(!userParsedfromOrcid) {
-                if(orcid.autoRegister) this.registerNewUser(profile,res);
-                else {
-                    res.redirect('/auth/#!/signin?msg='+"Your github account is not yet registered. Please login using your username/password first, then associate your github account inside account settings.");
                 }
                 return;
             }
             if(checkUser(userParsedfromOrcid, req)?.message) return new Error(checkUser(userParsedfromOrcid, req).message);
 
-            (checkUser(userParsedfromOrcid, req).message);
             const claim = await createClaim(userParsedfromOrcid, this.userService, this.groupService);
             userParsedfromOrcid.times.orcid_login = new Date();
             userParsedfromOrcid.reqHeaders = req.headers;
@@ -95,7 +86,7 @@ export class OrcidController {
 
     async registerNewUser(profile: any, res: Response) {
         try {
-          const detail = await axios.get(`https://pub.orcid.org/v2.1/${profile.orcid}/record`);
+          const detail = await axios.get('https://pub.orcid.org/v2.1/'+profile.orcid+'/record')
     
           const ext = {
             orcid: profile.orcid,
