@@ -10,7 +10,7 @@ import { JwtAuthGuard } from "../auth/jwt-auth.guard";
 import { checkUser, decodeJWT, createClaim, signJWT } from "../utils/common.utils";
 import { github, google, settingsCallback, ttl } from "../auth/constants";
 import { GoogleOauthGuard } from "../auth/guards/oauth.guards";
-import { User } from "src/schema/user.schema";
+import { User } from "../schema/user.schema";
 
 @Controller('google')
 

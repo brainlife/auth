@@ -35,6 +35,10 @@ export const google = {
   autoRegister: true,
 }
 
+export const orcid = {
+  autoRegister: true,
+}
+
 export const ttl = 24 * 3600 * 1000 * 7; // 7 days
 
 //TODO- is it better regex ?

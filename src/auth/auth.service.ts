@@ -61,6 +61,14 @@ export class AuthService {
     return { user, profile };
   }
 
+  async verifyOrcidUser(profile: any): Promise<any> {
+    const user = await this.userService.findOne({
+      'ext.orcid': profile.id,
+    });
+    console.log('verifyOrcidUser', profile);
+    return { user, profile };
+  }
+
   // async login(user: any,req:any) {
   //   console.log("Login was called",user);
   //   const payload = { username: user.username, sub: user.userId };

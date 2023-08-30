@@ -15,6 +15,7 @@ import { RabbitMqModule } from 'src/rabbitmq/rabbitmq.module';
 import { GithubController } from 'src/controller/github.controller';
 import { GoogleController } from 'src/controller/google.controller';
 import { AuthModule } from '../auth/auth.module';
+import { OrcidController } from 'src/controller/orcid.controller';
 @Module({
   imports: [
     GroupModule,
@@ -35,7 +36,8 @@ import { AuthModule } from '../auth/auth.module';
     LocalController,
     ProfileController,
     GithubController,
-    GoogleController
+    GoogleController,
+    OrcidController
   ],
   providers: [AppService, UserService],
   exports: [UserService], // Make sure to export the UserService

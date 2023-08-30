@@ -25,3 +25,15 @@ export class GithubOauthGuard extends AuthGuard('github') {
         return user;
     }
 }
+
+@Injectable()
+export class OrcidOauthGuard extends AuthGuard('orcid') {
+    handleRequest<TUser = any>(err: any, user: any, info: any, context: ExecutionContext, status?: any) {
+        if (err || !user) {
+            const res: Response = context.switchToHttp().getResponse();
+            res.redirect('/auth/#!/signin?msg='+"Failed to authenticate");
+            return;
+        }
+        return user;
+    }
+}

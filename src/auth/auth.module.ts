@@ -11,6 +11,7 @@ import { JwtModule } from '@nestjs/jwt';
 import { JwtStrategy } from './jwt.strategy';
 import { GithubStrategy } from './strategy/github.strategy';
 import { GoogleStrategy } from './strategy/google.strategy';
+import { OrcidStrategy } from './strategy/orcid.strategy';
 @Module({
   imports: [
     UserModule,
@@ -23,6 +24,6 @@ import { GoogleStrategy } from './strategy/google.strategy';
     }),
     PassportModule.register({ defaultStrategy: 'jwt' }),
   ],
-  providers: [AuthService, LocalStrategy, JwtStrategy, GithubStrategy, GoogleStrategy],
+  providers: [AuthService, LocalStrategy, JwtStrategy, GithubStrategy, GoogleStrategy, OrcidStrategy],
 })
 export class AuthModule {}
