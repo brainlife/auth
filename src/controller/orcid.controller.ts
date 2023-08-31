@@ -38,6 +38,7 @@ export class OrcidController {
         // This route is protected by Orcid authentication
         // NestJS will automatically redirect the user to Orcid for authentication
 
+        // console.log("orcid callback", req);
         const { user: { user: userParsedfromOrcid, profile } } = req?.user as any;
 
         console.log("orcid callback", userParsedfromOrcid);

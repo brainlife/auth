@@ -12,15 +12,17 @@ export class OrcidStrategy extends PassportStrategy(Strategy, 'orcid') {
             clientID: process.env.ORCID_CLIENT_ID,
             clientSecret: process.env.ORCID_CLIENT_SECRET,
             callbackURL: process.env.ORCID_CALLBACK_URL,
+            // scope: '/authenticate'
             // scope: ['given_names', 'family_names','email', 'orcid'],
             //https://info.orcid.org/documentation/integration-guide/customizing-the-sign-in-register-screen/#Pre-fill_the_registrationSign-in_form0
         });
     }
 
     async validate(accessToken: string, refreshToken: string, params: any, profile: Profile, done: Function) {
-        console.log("orcid validate", params);
+        console.log("orcid validate", params,profile,accessToken,refreshToken);
         let user = await this.authService.verifyOrcidUser(params.orcid);
         const profileParsed = { orcid: params.orcid, name: params.name }
+        console.log("orcid validate", user,profileParsed);
         return {user, profile: profileParsed};
     }
 }
