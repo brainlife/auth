@@ -427,7 +427,7 @@ describe('RootController', () => {
         };
         const select = 'id';
 
-        expect(groupService.findBy).toHaveBeenCalledWith(query,select);
+        expect(groupService.findBy).toHaveBeenCalledWith(query, select);
         expect(res.json).toHaveBeenCalledWith(groups.map((g) => g.id));
       });
     });

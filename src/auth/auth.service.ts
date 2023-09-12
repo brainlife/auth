@@ -62,10 +62,10 @@ export class AuthService {
   }
 
   async verifyOrcidUser(profile: any): Promise<any> {
+    console.log('verifyOrcidUser', profile);
     const user = await this.userService.findOne({
       'ext.orcid': profile.id,
     });
-    console.log('verifyOrcidUser', profile);
     return { user, profile };
   }
 

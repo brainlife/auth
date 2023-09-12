@@ -39,8 +39,8 @@ export class GroupService {
     return this.groupModel.find().exec();
   }
 
-  async findBy(item: any,select?: any): Promise<Group[]> {
-    if(select) return this.groupModel.find(item).select(select);
+  async findBy(item: any, select?: any): Promise<Group[]> {
+    if (select) return this.groupModel.find(item).select(select);
     return this.groupModel.find(item);
   }
 

@@ -24,6 +24,13 @@ import { OrcidStrategy } from './strategy/orcid.strategy';
     }),
     PassportModule.register({ defaultStrategy: 'jwt' }),
   ],
-  providers: [AuthService, LocalStrategy, JwtStrategy, GithubStrategy, GoogleStrategy, OrcidStrategy],
+  providers: [
+    AuthService,
+    LocalStrategy,
+    JwtStrategy,
+    GithubStrategy,
+    GoogleStrategy,
+    OrcidStrategy,
+  ],
 })
 export class AuthModule {}

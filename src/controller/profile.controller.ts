@@ -12,7 +12,15 @@ import { positionGroups } from '../auth/constants';
 import { User } from '../schema/user.schema';
 import { hasScope, decodeJWT } from '../utils/common.utils';
 import { RabbitMQ } from '../rabbitmq/rabbitmq.service';
-import { ApiTags, ApiOperation, ApiQuery, ApiResponse, ApiBearerAuth, ApiParam, ApiBody } from '@nestjs/swagger';
+import {
+  ApiTags,
+  ApiOperation,
+  ApiQuery,
+  ApiResponse,
+  ApiBearerAuth,
+  ApiParam,
+  ApiBody,
+} from '@nestjs/swagger';
 
 //TODO: should i move it to constants / utils ?
 export const safe_fields = [
@@ -46,11 +54,38 @@ export class ProfileController {
    */
 
   @ApiOperation({ summary: 'Query auth profiles (public api)' })
-  @ApiQuery({ name: 'where', required: false, type: String, description: 'Optional sequelize where query - defaults to {} (can only query certain fields)' })
-  @ApiQuery({ name: 'find', required: false, type: String, description: 'Similar to where query' })
-  @ApiQuery({ name: 'order', required: false, type: String, description: 'Optional sequelize sort object'})
-  @ApiQuery({ name: 'limit', required: false, type: Number, description: 'Optional Maximum number of records to return - defaults to 100' })
-  @ApiQuery({ name: 'offset', required: false, type: Number, description: 'Optional Record offset for pagination' })
+  @ApiQuery({
+    name: 'where',
+    required: false,
+    type: String,
+    description:
+      'Optional sequelize where query - defaults to {} (can only query certain fields)',
+  })
+  @ApiQuery({
+    name: 'find',
+    required: false,
+    type: String,
+    description: 'Similar to where query',
+  })
+  @ApiQuery({
+    name: 'order',
+    required: false,
+    type: String,
+    description: 'Optional sequelize sort object',
+  })
+  @ApiQuery({
+    name: 'limit',
+    required: false,
+    type: Number,
+    description:
+      'Optional Maximum number of records to return - defaults to 100',
+  })
+  @ApiQuery({
+    name: 'offset',
+    required: false,
+    type: Number,
+    description: 'Optional Record offset for pagination',
+  })
   @ApiResponse({ status: 200, description: 'Returns the list of profiles.' })
   @ApiResponse({ status: 401, description: 'Unauthorized.' })
   @ApiBearerAuth()
@@ -112,15 +147,23 @@ export class ProfileController {
    *
    * @apiSuccess {Object}     updated user object
    */
-  @ApiOperation({ summary: 'Update user\'s auth profile. :sub? can be set by admin to update user\'s profile.' })
-  @ApiParam({ name: 'sub', required: false, type: Number, description: ':sub? can be set by admin to update user\'s profile' })
+  @ApiOperation({
+    summary:
+      "Update user's auth profile. :sub? can be set by admin to update user's profile.",
+  })
+  @ApiParam({
+    name: 'sub',
+    required: false,
+    type: Number,
+    description: ":sub? can be set by admin to update user's profile",
+  })
   @ApiBearerAuth()
   @ApiResponse({ status: 200, description: 'Returns the updated user object.' })
   @ApiResponse({ status: 404, description: 'No such active user.' })
   @ApiResponse({ status: 401, description: 'Unauthorized.' })
-  @ApiBody({ 
-    description: 'Profile data to update', 
-    type: Object, 
+  @ApiBody({
+    description: 'Profile data to update',
+    type: Object,
     schema: {
       properties: {
         fullname: { type: 'string', description: 'Full Name of the user' },
@@ -129,30 +172,29 @@ export class ProfileController {
           properties: {
             public: { type: 'object', description: 'Public profile data' },
             private: { type: 'object', description: 'Private profile data' },
-          }
-        }
+          },
+        },
       },
       example: {
         fullname: 'John Doe',
         profile: {
           public: { bio: 'Hello, I am John' },
-          private: { address: '123 Main St' }
-        }
-      }
-    } 
+          private: { address: '123 Main St' },
+        },
+      },
+    },
   })
   @UseGuards(JwtAuthGuard, RolesGuard)
   @SetMetadata('roles', 'admin')
   @Patch('/:sub?')
   async updateProfile(@Req() req: Request, @Res() res: Response) {
     const select = [...safe_fields, 'profile.private'];
-    let userPasedJwt = req.user as User;
+    const userPasedJwt = req.user as User;
     let userSub = userPasedJwt.sub;
-  
-    if(req.params.sub && hasScope(req.user,"admin")) userSub = parseInt(req.params.sub); 
-    const user = await this.userService.findOnebySub(userSub,
-      select,
-    );
+
+    if (req.params.sub && hasScope(req.user, 'admin'))
+      userSub = parseInt(req.params.sub);
+    const user = await this.userService.findOnebySub(userSub, select);
 
     if (!user) {
       throw new HttpException('no such active user', HttpStatus.NOT_FOUND);
@@ -190,7 +232,10 @@ export class ProfileController {
    * */
   @ApiOperation({ summary: 'Count number of users based on private position.' })
   @ApiBearerAuth()
-  @ApiResponse({ status: 200, description: 'Returns the count of users based on private position.' })
+  @ApiResponse({
+    status: 200,
+    description: 'Returns the count of users based on private position.',
+  })
   @ApiResponse({ status: 401, description: 'Unauthorized.' })
   @UseGuards(JwtAuthGuard, RolesGuard)
   @SetMetadata('roles', 'admin')
@@ -230,9 +275,17 @@ export class ProfileController {
    *
    */
   @ApiOperation({ summary: "Get user's private profile." })
-  @ApiParam({ name: 'sub', required: false, description: "User's ID. Admin can specify to retrieve other user's private profile." })
+  @ApiParam({
+    name: 'sub',
+    required: false,
+    description:
+      "User's ID. Admin can specify to retrieve other user's private profile.",
+  })
   @ApiBearerAuth()
-  @ApiResponse({ status: 200, description: "Returns the user's private profile." })
+  @ApiResponse({
+    status: 200,
+    description: "Returns the user's private profile.",
+  })
   @ApiResponse({ status: 401, description: 'Unauthorized.' })
   @ApiResponse({ status: 404, description: 'No such active user.' })
   @UseGuards(JwtAuthGuard, RolesGuard)
@@ -242,7 +295,8 @@ export class ProfileController {
     const select = [...safe_fields, 'profile.private'];
     const userParsed = req.user as User; //err if using directly
     let sub = userParsed.sub;
-    if (req.params.sub && hasScope(req.user,"admin")) sub = parseInt(req.params.sub);
+    if (req.params.sub && hasScope(req.user, 'admin'))
+      sub = parseInt(req.params.sub);
     const user = await this.userService.findOnebySub(sub, select);
     if (!user) {
       throw new HttpException('no such active user', HttpStatus.NOT_FOUND);
@@ -256,9 +310,17 @@ export class ProfileController {
    * @description Get user registration count for last :days days
    * @apiName GetRegistrationCount
    **/
-  @ApiOperation({ summary: "Get user registration count for last :days days." })
-  @ApiParam({ name: 'days', required: true, description: "Number of past days to retrieve the registration count for." })
-  @ApiResponse({ status: 200, description: "Returns the count of users registered in the last :days days." })
+  @ApiOperation({ summary: 'Get user registration count for last :days days.' })
+  @ApiParam({
+    name: 'days',
+    required: true,
+    description: 'Number of past days to retrieve the registration count for.',
+  })
+  @ApiResponse({
+    status: 200,
+    description:
+      'Returns the count of users registered in the last :days days.',
+  })
   @Get('/recreg/:days')
   async getRecentUsers(@Req() req: Request, @Res() res: Response) {
     const daysInPast = Number(req.params.days); //Number is es6

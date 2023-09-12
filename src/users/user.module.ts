@@ -37,7 +37,7 @@ import { OrcidController } from 'src/controller/orcid.controller';
     ProfileController,
     GithubController,
     GoogleController,
-    OrcidController
+    OrcidController,
   ],
   providers: [AppService, UserService],
   exports: [UserService], // Make sure to export the UserService

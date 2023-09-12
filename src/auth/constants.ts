@@ -25,19 +25,19 @@ export const positionGroups = {
 
 export const emailConfirmSubject = 'Account Confirmation';
 export const passwordResetSubject = 'Password reset instruction';
-export const settingsCallback = "http://localhost:8080/settings/account";
+export const settingsCallback = 'http://localhost:8080/settings/account';
 
 export const github = {
   autoRegister: true,
-}
+};
 
 export const google = {
   autoRegister: true,
-}
+};
 
 export const orcid = {
   autoRegister: true,
-}
+};
 
 export const ttl = 24 * 3600 * 1000 * 7; // 7 days
 

@@ -29,8 +29,18 @@ import { GroupService } from '../groups/group.service';
 import { RolesGuard } from '../auth/roles.guard';
 import { SetMetadata } from '@nestjs/common';
 import { RabbitMQ } from '../rabbitmq/rabbitmq.service';
-import { ApiTags, ApiOperation, ApiBody, ApiParam, ApiCookieAuth, ApiUnauthorizedResponse, ApiForbiddenResponse,
-ApiInternalServerErrorResponse, ApiNotFoundResponse, ApiBearerAuth, ApiOkResponse
+import {
+  ApiTags,
+  ApiOperation,
+  ApiBody,
+  ApiParam,
+  ApiCookieAuth,
+  ApiUnauthorizedResponse,
+  ApiForbiddenResponse,
+  ApiInternalServerErrorResponse,
+  ApiNotFoundResponse,
+  ApiBearerAuth,
+  ApiOkResponse,
 } from '@nestjs/swagger';
 
 @Controller('/local')
@@ -64,7 +74,9 @@ export class LocalController {
    * @apiSuccess {Object} message Containing success message
    */
 
-  @ApiOperation({ summary: 'Handle both resetpass request and fulfillment request' })
+  @ApiOperation({
+    summary: 'Handle both resetpass request and fulfillment request',
+  })
   @ApiBody({
     description: 'Reset Password Information',
     required: true,
@@ -90,7 +102,8 @@ export class LocalController {
   @ApiParam({
     name: 'password_reset',
     type: 'string',
-    description: '(mode2) [via cookie] browser secret token to verify user is using the same browser to reset password',
+    description:
+      '(mode2) [via cookie] browser secret token to verify user is using the same browser to reset password',
   })
   @Post('/resetpass')
   async resetPass(
@@ -171,7 +184,10 @@ export class LocalController {
    *
    * @apiSuccess {Object} jwt JWT token
    */
-  @ApiOperation({ summary: 'Perform authentication using username(or email) and password to get JWT token.' })
+  @ApiOperation({
+    summary:
+      'Perform authentication using username(or email) and password to get JWT token.',
+  })
   @ApiBody({
     description: 'Authentication Payload',
     required: true,
@@ -267,7 +283,6 @@ export class LocalController {
     return res.json({ message: 'Login Success', jwt, sub: user.sub });
   }
 
-  
   @ApiOperation({ summary: 'Set a new password for a user.' })
   @ApiBody({
     description: 'Set Password Payload',
@@ -288,7 +303,7 @@ export class LocalController {
   })
   @ApiInternalServerErrorResponse({ description: 'Internal Server Error' })
   @ApiNotFoundResponse({ description: 'User Not Found' })
-  @ApiBearerAuth()  
+  @ApiBearerAuth()
   @UseGuards(JwtAuthGuard)
   @Put('/setpass')
   async setPass(@Req() req, @Res() res, @Body() { password, password_old }) {
@@ -329,10 +344,12 @@ export class LocalController {
   }
 
   @ApiOperation({ summary: 'Unlock a specific user.' })
-  @ApiBearerAuth() 
+  @ApiBearerAuth()
   @ApiUnauthorizedResponse({ description: 'Unauthorized' })
   @ApiOkResponse({ description: 'Account unlocked successfully' })
-  @ApiNotFoundResponse({ description: 'No such user registered or account already unlocked' })
+  @ApiNotFoundResponse({
+    description: 'No such user registered or account already unlocked',
+  })
   @UseGuards(JwtAuthGuard, RolesGuard)
   @SetMetadata('roles', 'admin')
   @Post('/unlockuser/:id')
