@@ -11,7 +11,6 @@ import { JwtModule } from '@nestjs/jwt';
 import { JwtStrategy } from './jwt.strategy';
 import { GithubStrategy } from './strategy/github.strategy';
 import { GoogleStrategy } from './strategy/google.strategy';
-import { OrcidStrategy } from './strategy/orcid.strategy';
 @Module({
   imports: [
     UserModule,
@@ -30,7 +29,6 @@ import { OrcidStrategy } from './strategy/orcid.strategy';
     JwtStrategy,
     GithubStrategy,
     GoogleStrategy,
-    OrcidStrategy,
   ],
 })
 export class AuthModule {}

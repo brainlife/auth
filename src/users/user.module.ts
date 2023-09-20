@@ -14,14 +14,19 @@ import { ProfileController } from 'src/controller/profile.controller';
 import { RabbitMqModule } from 'src/rabbitmq/rabbitmq.module';
 import { GithubController } from 'src/controller/github.controller';
 import { GoogleController } from 'src/controller/google.controller';
-import { AuthModule } from '../auth/auth.module';
 import { OrcidController } from 'src/controller/orcid.controller';
+import { OrcidService } from 'src/auth/orcid.service';
+import * as passport from 'passport';
+import { MiddlewareConsumer } from '@nestjs/common';
+import { PassportModule } from '@nestjs/passport';
+
 @Module({
   imports: [
     GroupModule,
     RabbitMqModule,
     RedisModule,
     FailedLoginModule,
+    PassportModule,
     ConfigModule.forRoot(),
     MongooseModule.forFeature([
       {
@@ -39,7 +44,11 @@ import { OrcidController } from 'src/controller/orcid.controller';
     GoogleController,
     OrcidController,
   ],
-  providers: [AppService, UserService],
+  providers: [AppService, UserService, OrcidService],
   exports: [UserService], // Make sure to export the UserService
 })
-export class UserModule {}
+export class UserModule {
+  configure(consumer: MiddlewareConsumer) {
+    consumer.apply(passport.initialize()).forRoutes('*');
+  }
+}
