@@ -19,6 +19,7 @@ import axios from 'axios';
 import passport = require('passport');
 import { PassportStrategy } from '@nestjs/passport';
 import { Strategy as OAuth2Strategy } from 'passport-oauth2';
+import { RabbitMQ } from '../rabbitmq/rabbitmq.service';
 
 interface DefaultData {
   fullname?: string;
@@ -33,6 +34,7 @@ export class OrcidController {
   constructor(
     private readonly userService: UserService,
     private readonly groupService: GroupService,
+    private queuePublisher: RabbitMQ,
   ) {
     // Here we'll initialize your orcidStrategy
     this.orcidStrategy = new OAuth2Strategy(
@@ -161,7 +163,16 @@ export class OrcidController {
           user.times.orcid_login = new Date();
           user.reqHeaders = req.headers;
           await this.userService.updatebySub(user.sub, user);
-
+          // publish to rabbitmq
+          await this.queuePublisher.publishToQueue(
+            'user.login.' + user.sub,
+            JSON.stringify({
+              type: 'orcid',
+              username: user.username,
+              exp: claim.exp,
+              headers: req.headers,
+            }),
+          );
           const jwt = signJWT(claim);
           res.redirect('/auth/#!/success/' + jwt);
         }

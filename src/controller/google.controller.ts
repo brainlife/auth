@@ -16,12 +16,14 @@ import {
 import { github, google, settingsCallback, ttl } from '../auth/constants';
 import { GoogleOauthGuard } from '../auth/guards/oauth.guards';
 import { User } from '../schema/user.schema';
+import { RabbitMQ } from '../rabbitmq/rabbitmq.service';
 
 @Controller('google')
 export class GoogleController {
   constructor(
     private readonly userService: UserService,
     private readonly groupService: GroupService,
+    private queuePublisher: RabbitMQ,
   ) {}
 
   @Get('signin')
@@ -43,7 +45,7 @@ export class GoogleController {
     let userParsedfromCookie = null;
     if (req.cookies['associate_jwt'])
       userParsedfromCookie = decodeJWT(req.cookies['associate_jwt']);
-    console.log('github callback', userParsedfromGoogle);
+    console.log('google_callback', userParsedfromGoogle);
 
     if (userParsedfromCookie) {
       res.clearCookie('associate_jwt');
@@ -52,7 +54,7 @@ export class GoogleController {
           {
             type: 'error',
             message:
-              'Your github account is already associated to another account. Please signoff / login with your github account.',
+              'Your google account is already associated to another account. Please signoff / login with your github account.',
           },
         ];
         res.cookie('messages', JSON.stringify(messages), { path: '/' });
@@ -75,7 +77,7 @@ export class GoogleController {
         else {
           res.redirect(
             '/auth/#!/signin?msg=' +
-              'Your github account is not yet registered. Please login using your username/password first, then associate your github account inside account settings.',
+              'Your google account is not yet registered. Please login using your username/password first, then associate your github account inside account settings.',
           );
         }
         return;
@@ -94,6 +96,15 @@ export class GoogleController {
       await this.userService.updatebySub(
         userParsedfromGoogle.sub,
         userParsedfromGoogle,
+      );
+      this.queuePublisher.publishToQueue(
+        'user.login.' + userParsedfromGoogle.sub,
+        JSON.stringify({
+          type: 'google',
+          username: userParsedfromGoogle.username,
+          exp: claim.exp,
+          reqHeaders: req.headers,
+        }),
       );
       const jwt = signJWT(claim);
       res.redirect('/auth/#!/success/' + jwt);

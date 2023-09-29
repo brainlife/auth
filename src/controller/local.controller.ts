@@ -278,7 +278,17 @@ export class LocalController {
     user.reqHeaders = req.headers;
     await this.userService.updatebySub(user.sub, user);
 
-    // queuePublisher.publishToQueue("user.login."+user.sub, {type: "userpass", username: user.username, exp: claim.exp, headers: req.headers});
+    //TODO: Discuss with team to improve it to use username or email while publishing message
+    // publish to rabbitmq using JSON instead of object ?
+    await this.queuePublisher.publishToQueue(
+      'user.login.' + user.sub,
+      JSON.stringify({
+        type: 'userpass',
+        username: user.username,
+        exp: claim.exp,
+        headers: req.headers,
+      }),
+    );
 
     return res.json({ message: 'Login Success', jwt, sub: user.sub });
   }
@@ -339,6 +349,11 @@ export class LocalController {
       if (!user.times) user.times = {};
       user.times.password_reset_token = new Date();
       await this.userService.updatebySub(user.sub, user);
+      // publish to rabbitmq
+      this.queuePublisher.publishToQueue(
+        'user.setpass.' + user.sub,
+        JSON.stringify({ username: user.username }),
+      );
       res.json({ message: 'Password reset successfully' });
     }
   }

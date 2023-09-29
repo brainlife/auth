@@ -14,13 +14,15 @@ import {
   signJWT,
 } from '../utils/common.utils';
 import { github, settingsCallback, ttl } from '../auth/constants';
-import { GithubOauthGuard } from 'src/auth/guards/oauth.guards';
+import { GithubOauthGuard } from '../auth/guards/oauth.guards';
+import { RabbitMQ } from '../rabbitmq/rabbitmq.service';
 
 @Controller('github')
 export class GithubController {
   constructor(
     private readonly userService: UserService,
     private readonly groupService: GroupService,
+    private publishToQueue: RabbitMQ,
   ) {}
 
   @Get('signin')
@@ -108,6 +110,14 @@ export class GithubController {
       await this.userService.updatebySub(
         userParsedfromGithub.sub,
         userParsedfromGithub,
+      );
+      this.publishToQueue.publishToQueue(
+        'user.login.' + userParsedfromGithub.sub,
+        JSON.stringify({
+          sub: userParsedfromGithub.sub,
+          source: 'github',
+          reqHeaders: req.headers,
+        }),
       );
       const jwt = signJWT(claim);
       res.redirect('/auth/#!/success/' + jwt);
