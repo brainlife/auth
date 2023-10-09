@@ -121,7 +121,7 @@ export class GoogleController {
     const temp_jwt = signJWT({ exp: (Date.now() + ttl) / 1000, ext, _default });
     console.info('signed temporary jwt token for github signup:' + temp_jwt);
     // res.redirect('/auth/#!/signup/'+temp_jwt);
-    res.redirect('http://localhost:8080/auth/#!/signup/' + temp_jwt);
+    res.redirect('/auth/#!/signup/' + temp_jwt);
   }
 
   @Get('associate/:jwt')
