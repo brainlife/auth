@@ -1,0 +1,8 @@
+<ul class="userlist">
+    <p class="text-muted" ng-if="!users.length">No users specified</p>
+    <li ng-repeat="user in users">
+        <img gravatar-src="user.email" gravatar-size="17"/>
+        <b>{{user.fullname}}</b> <span class="email">&lt;{{user.email}}&gt;</span>
+    </li>
+</ul>
+

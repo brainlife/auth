@@ -1,0 +1,116 @@
+<style>
+body {
+    /*TODO Let background image customizable? */
+    background-color: #aaa;
+}
+</style>
+<div class="container">
+    <div class="center-block">
+        <!--<img class="logo" ng-src="{{appconf.logo_400_url}}"/>-->
+        <div class="login-header">LOGIN <i style="opacity: 0.8; font-weight: normal">with ...</i></div>
+
+        <div class="form-group" ng-if="appconf.show.x509">
+            <button type="button" class="btn btn-warning btn-block" ng-click="begin_x509()">
+                <i class="fa fa-certificate" style="font-size: 150%"></i> X509 Certificate
+            </button>
+        </div>
+        <div class="form-group" ng-if="appconf.show.google">
+            <button type="button" class="btn btn-primary btn-block" ng-click="begin('google')">
+                <i class="fa fa-google" style="font-size: 150%"></i> Google
+            </button>
+        </div>
+        <div class="form-group" ng-if="appconf.show.orcid">
+            <button type="button" class="btn btn-success btn-block" ng-click="begin('orcid')">
+                <img src="images/orcid.ico"/> ORCID
+            </button>
+        </div>
+        <div class="form-group" ng-if="appconf.show.globus">
+            <button type="button" class="btn btn-primary btn-block" ng-click="begin('globus')">
+                <img src="images/globus.png"/> Globus
+            </button>
+        </div>
+        <div class="form-group" ng-if="appconf.show.logingov">
+            <button type="button" class="btn btn-success btn-block" ng-click="begin('globus')">
+                <img src="images/logingov.png"/> Login.gov
+            </button>
+        </div>
+        <div class="form-group" ng-if="appconf.show.github">
+            <button type="button" class="btn btn-info btn-block" ng-click="begin('github')">
+                <i class="fa fa-github" style="font-size: 150%"></i> Github
+            </button>
+        </div>
+        <div class="form-group" ng-if="appconf.show.facebook">
+            <button type="button" class="btn btn-primary btn-block" ng-click="begin('facebook')">
+                <i class="fa fa-facebook" style="font-size: 150%"></i> Facebook
+            </button>
+        </div>
+        <div class="form-group" ng-if="appconf.show.iucas">
+            <button type="button" class="btn btn-danger btn-block" ng-click="begin_iucas()">
+                <img src="images/trident.png"/>&nbsp;&nbsp;&nbsp;IU Account
+            </button>
+        </div>
+
+        <div ng-if="appconf.show.oidc">
+            <!--no selector-->
+            <div class="form-group" ng-if="!appconf.show.oidc_selector">
+                <button type="button" class="btn btn-default btn-block" ng-click="begin('oidc')">
+                    <img ng-src="{{appconf.oidc_logo}}" width="20px"/>&nbsp;&nbsp;&nbsp;
+                    {{appconf.oidc_label||'Your Institution'}}
+                </button>
+            </div>
+
+            <!--with selector-->
+            <div class="form-group" ng-if="appconf.show.oidc_selector">
+                <ui-select ng-model="notused_but_needed" on-select="begin_oidc($select.selected.idp)">
+                    <ui-select-match placeholder="Enter your institution name to login">
+                        Redirecting to <b>{{$select.selected.org}}</b>
+                    </ui-select-match>
+                    <ui-select-choices limit="10" refresh-delay="200" refresh="refreshIDPs($select.search)" repeat="idp in oidc_idps">
+                        <b>{{idp.org}}</b> <code>{{idp.home}}</code>
+                    </ui-select-choices>
+                </ui-select>
+            </div>
+        </div>
+        <div ng-if="appconf.show.local || appconf.show.ldap">
+            <form ng-submit="submit()" style="margin-top: 20px; padding: 10px; border-radius: 3px; box-shadow: 2px 2px 4px rgba(0,0,0,0.3); background-color: #f0f0f0;">
+                <div class="form-group" 
+                    ng-if="appconf.show.x509 || appconf.show.git || appconf.show.iucas || appconf.show.facebook || appconf.show.google || appconf.show.oidc || appconf.show.orcid || appconfig.show.globus || appconfig.show.logingov">
+                    <center style="opacity: 0.8">or <b>LOGIN</b> with email/username</center>
+                </div>
+                <div class="form-group">
+                    <div class="input-group" ng-if="appconf.show.local && !appconf.show.ldap">
+                        <span class="input-group-addon"><i class="fa fa-envelope" style="width: 30px;"></i></span>
+                        <input class="form-control" name="username" type="text" placeholder="Username or Email" ng-model="userpass.username" required/>
+                    </div>
+                    <div class="input-group" ng-if="appconf.show.ldap">
+                        <span class="input-group-addon">
+                            <i ng-if="!appconf.ldap_logo" class="fa fa-envelope" style="width: 30px;"></i>
+                            <img ng-if="appconf.ldap_logo" ng-src="{{appconf.ldap_logo}}" style="margin: 0 8px 0 7px" height="15"></img>
+                        </span>
+                        <input class="form-control" name="username" type="text" placeholder="{{appconf.ldap_label || 'Username'}}" ng-model="userpass.username" required/>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <div class="input-group">
+                        <span class="input-group-addon"><i class="fa fa-lock" style="width: 30px;"></i></span>
+                        <input class="form-control" name="password" type="password" placeholder="Password" ng-model="userpass.password" required/>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <input class="btn btn-block btn-default" type="submit" value="Login"/>
+                </div>
+                <center class="text-muted">
+                    <a href="#!/forgotpass">Forgot Password?</a>
+                </center>
+            </form>
+            <br>
+            <div>
+                <div ng-if="appconf.show.signup !== false">
+                    <center>First time here? &nbsp;&nbsp;<a href="#!/signup"><b>Sign Up</b></a></center>
+                    <br>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+

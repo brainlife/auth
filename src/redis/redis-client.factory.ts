@@ -7,7 +7,8 @@ export const redisClientFactory: FactoryProvider<Promise<RedisClient>> = {
   useFactory: async () => {
     const client = createClient({
       // url: 'redis://redis:6379',
-      url: 'redis://localhost:6379',
+      // url: 'redis://localhost:6379',
+      url: 'redis://brainlife_redis:6379',
     });
     await client.connect();
     return client;

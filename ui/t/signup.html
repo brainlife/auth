@@ -1,0 +1,76 @@
+<div class="container">
+    <div id="page-wrapper">
+        <h1 class="page-header">SIGNUP</h1>
+        <p><small style="opacity: 0.5">* required fields</small></p>
+        <form ng-submit="submit();">
+            <p class="help-block" ng-if="jwt">This is your first time you have accessed this site. Please complete our registration form.</p>
+            <div class="form-group">
+                <label>Username *</label>
+                <input type="text" class="form-control" ng-model="form.username" name="username" placeholder="Pick a username" required ng-disabled="username_readonly"/>
+            </div>
+            <div class="form-group">
+                <label>Email *</label>
+                <input type="email" class="form-control" ng-model="form.email" name="email" placeholder="Enter your email address" required ng-disabled="email_readonly"/>
+            </div>
+            <div class="form-group">
+                <label>Full Name *</label>
+                <input type="text" class="form-control" ng-model="form.fullname" name="fullname" placeholder="Enter your full name" required/>
+            </div>
+            <div class="panel panel-default">
+                <div class="panel-body">
+                    <p class="help-block" ng-if="jwt">Please choose a secure password to login in case login using a 3rd-party identity provider is not working for you.</p>
+                    <div class="form-group">
+                        <label>Password *</label>
+                        <input type="password" class="form-control" ng-model="form.password" placeholder="Choose your password" required/>
+                        <password-strength password="form.password" user="form"></password-strength>
+                    </div>
+                    <div class="form-group">
+                        <label>Password (Confirm) *</label>
+                        <input type="password" class="form-control" 
+                            ng-model="form.password_confirm" 
+                            placeholder="Enter the same password" 
+                            match="form.password_confirm != form.password ? 'Passwords don\'t match' : ''"/>
+                    </div>
+                </div>
+            </div>
+            <!--<img class="logo" ng-src="{{appconf.logo_400_url}}"/>-->
+            <div ng-if="appconf.profile" class="row">
+                <div class="col-md-6" style="border-right: 1px solid #ddd;">
+                    <h5><b>Public Profile</b></h5>
+                    <p class="help-block">This information maybe shared among other users.</p>
+                    <div ng-repeat="field in appconf.profile.public" class="form-group">
+                        <label>{{field.name}} <span ng-if="field.required">*</span></label>
+                        <input ng-if="field.autocomplete" class="form-control" type="text" ng-autocomplete placeholder="{{field.desc}}" ng-model="form.profile.public[field.id]" name="{{field.id}}" rows="{{field.rows}}" ng-required="field.required"></input>
+                        <textarea ng-if="!field.autocomplete" class="form-control" placeholder="{{field.desc}}" ng-model="form.profile.public[field.id]" name="{{field.id}}" rows="{{field.rows}}" ng-required="field.required"></textarea>
+                    </div>
+                </div>
+
+                <div class="col-md-6">
+                    <h5><b>Private Profile</b></h5>
+                    <p class="help-block">This information will be kept private and only shared with the administrators for reporting and project management purposes. </p>
+                    <div ng-repeat="field in appconf.profile.private" class="form-group">
+                        <label>{{field.name}} <span ng-if="field.required">*</span></label>
+                        <textarea class="form-control" placeholder="{{field.desc}}" ng-model="form.profile.private[field.id]" name="{{field.id}}" rows="{{field.rows}}" ng-required="field.required"></textarea>
+                    </div>
+                </div>
+            </div>
+
+            <p style="background-color: #ddd; padding: 10px;">The information provided in your profile is used to screen and prevent violations of the user agreements, registrations of fake accounts, or access by bots. If your profile does not contain sufficient and meaningful information, we may request additional information and may temporarily disable your account. We thank you for your understanding and cooperation.</p>
+            </p>
+
+            <center ng-if="appconf.show_aup" style="background-color: #f8f8f8; padding-top: 20px; margin: 20px 0;">
+                <iframe src="{{aup}}" style="border: none; width: 900px; height: 1050px;"></iframe>
+                <iframe src="{{privacy}}" style="border: none; width: 900px; height: 5410px;"></iframe>
+            </center>
+            <p>
+                <input type="checkbox" ng-model="form.profile.private.aup" required/> I have read and consent to <a href="{{appconf.aup}}" target="_blank">Acceptable Use Policy</a> and <a href="{{appconf.privacy}}">Privacy Policy</a>
+            </p>
+            <br>
+
+            <input type="button" class="btn" value="Cancel" ng-click="cancel()"/>
+            <input type="submit" class="btn btn-primary" value="Submit"/>
+        </form>
+    </div>
+    <ng-include src="'t/footer.html'"></ng-include> <!--should this be part of view?-->
+</div>
+

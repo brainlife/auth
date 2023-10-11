@@ -1,0 +1,135 @@
+'use strict';
+
+angular.module('app.config', [])
+    .constant('appconf', {
+
+        title: 'Authentication Service',
+
+        admin_email: 'hayashis@iu.edu',
+        logo_400_url: 'images/soichidev.jpg',
+
+        ldap_logo: 'images/iulogo.png',
+        ldap_label: 'IU Username',
+
+        oauth2_logo: 'images/cilogon.png',
+        oauth2_label: 'InCommon Institutional',
+
+        oidc_logo: 'images/cilogon.png',
+
+        //URL for auth service API
+        // api: 'http://localhost:8080/api/auth',
+        api: 'http://localhost:8080/api/auth',
+
+        //URL for x509 validation API base
+        //x509api: 'https://dev1.soichi.us:9443',
+
+        //default location to redirect after successful login
+        //default_redirect_url: 'http://localhost:8080',
+
+        jwt_id: 'jwt',
+        //iucas_url: 'https://cas.iu.edu/cas/login',
+
+        //list of domains to allow jwtInterceptor to send jwt to
+        jwt_whitelist: [
+            //'dev1.soichi.us'
+        ],
+
+        //show/hide various login options
+        show: {
+            local: true,
+            //x509: true,
+            //google: true,
+            //github: true,
+            //iucas: true,
+            //facebook: true,
+            //orcid: true, 
+            //globus: true, 
+
+            //oidc: true, //cilogon openid-connect service
+            //oidc_selector: false, //show idp selector
+
+            signup: true,
+        },
+
+        //optional config to add any profile information
+        profile: {
+            public: [
+                {
+                    id: "institution", //id used to store the profile in session storage
+                    name: "Institution",
+                    autocomplete: true,
+                    desc: "Name of your institution/lab that you are part of.",
+                    rows: 1, //textarea row size
+                    required: true,
+                },
+
+                {
+                    id: "url",
+                    name: "URL",
+                    desc: "Please enter a URL for your homepage / project / institution, etc",
+                    rows: 1,
+                    required: false,
+                },
+
+                {
+                    id: "bio",
+                    name: "Biography",
+                    desc: "Please provide a brief introduction about you.",
+                    rows: 4,
+                    required: false,
+                },
+
+            ],
+
+            private: [
+                {
+                    id: "position",
+                    name: "Position",
+                    desc: "What is your primary role within your institution?",
+                    rows: 1,
+                    required: true,
+                },
+
+                {
+                    id: "orcid",
+                    name: "ORCID",
+                    desc: "Please enter your ORCID (https://orcid.org/) if you have one.",
+                    rows: 1,
+                    required: false,
+                },
+
+                {
+                    id: "purpose",
+                    name: "Purpose / Expectations",
+                    desc: "Please describe how you'd like to use brainlife.io, and your expectations for this platform. Brainlife.io is funded by NSF and NIH. We will use this information for annual reporting purposes (anonymously) and to help us better support our users and to meet their expectations.",
+                    rows: 4,
+                    required: false,
+                },
+
+            ],
+        },
+
+        show_aup: true,
+        aup: "https://brainlife.io/docs/aup",
+        privacy: "https://brainlife.io/docs/privacy",
+
+        //approved cross domain apps to send jwt token
+        cross_domain: {
+            "dev": {
+                auth_redirect: "http://localhost:8080",
+            },
+        },
+
+        //for geocoding lookup (replace it with real google api key)
+        googleApiKey: ".......................................",
+    })
+
+///DEPRECATED
+var sca = angular.module('sca-shared.menu', []);
+sca.constant('scaSharedConfig', {
+    shared_url: '/shared',  //path to shared ui resources (defaults to "../shared")
+});
+sca.constant('scaMenu', []);
+sca.constant('scaSettingsMenu', []);
+sca.constant('scaAdminMenu', []);
+

@@ -1,0 +1,45 @@
+<div class="fixed-top">
+    <div class="header">
+        <div class="container">
+            <h2>Settings</h2>
+        </div>
+    </div>
+    <sca-menutab menu="settings_menu" active="'users'" user="menu.user"></sca-menutab>
+</div>
+<div class="container" style="margin-top: 130px;">
+    <!--<p class="alert alert-warning">This is a prototype</p>-->
+    <ul class="list-group">
+        <li class="list-group-item" ng-repeat="user in users">
+            <div class="pull-right edit_button">
+                <button type="button" ng-click="edit(user.sub)" class="btn btn-xs pull-right"><i class="fa fa-pencil-square-o"></i></button>
+            </div>
+            <p class="alert alert-danger" ng-if="!user.active">Account disabled (user can not issue new jwt token)</p>
+            <h4><small class="text-muted">{{user.sub}}</small> {{user.username}} 
+                <span class="label label-danger" ng-if="user.active == false">Inactive</span>
+            </h4>
+            <p>
+                <span>{{user.fullname}} | </span>
+                <span> {{user.email}} <span class="label label-success" ng-if="user.email_confirmed">Confirmed</span> | </span>
+
+                <span ng-if="user.password_hash" class="label label-warning">password set</span>
+            </p>
+            
+            <div class="row">
+                <div class="col-md-6">
+                    <b>Profiles</b>
+                    <small><pre>{{user.profile|json}}</pre></small>
+                    <b>Scopes</b>
+                    <small><pre>{{user.scopes|json}}</pre></small>
+                </div>
+                <div class="col-md-6">
+                    <b>Timestamps</b>
+                    <small><pre>{{user.times|json}}</pre></small>
+                    <b>Ext</b>
+                    <small><pre>{{user.ext|json}}</pre></small>
+                </div>
+            </div><!--row-->
+        </li>
+    </ul>
+    <ng-include src="'t/footer.html'"></ng-include> <!--should this be part of view?-->
+</div>
+

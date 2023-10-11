@@ -33,6 +33,7 @@ import {
   ApiResponse,
   ApiParam,
 } from '@nestjs/swagger';
+import { response } from 'express';
 
 @Controller('/')
 export class RootController {
@@ -319,6 +320,20 @@ export class RootController {
    *         "iucas": "hayashis"
    *     }
    */
+
+  @ApiOperation({
+    summary: 'Get health',
+    description: 'Check if server is responding.',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Ok.',
+    type: String,
+  })
+  @Get('/health')
+  async health(@Req() req, @Res() res) {
+    return res.send('ok');
+  }
 
   @ApiBearerAuth()
   @ApiOperation({

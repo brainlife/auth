@@ -1,16 +1,19 @@
-FROM node:18-alpine AS dev-stage
-WORKDIR /usr/src/app
-COPY package.json yarn.lock ./
-RUN yarn install
+FROM node:18-alpine
+
+RUN apk add curl
+
+WORKDIR /app
+COPY package.json ./
 COPY . .
+RUN npm install
 
-CMD ["sh", "-c", "yarn install && yarn run start:dev"]
+CMD ["sh", "-c", "npm install && npm run start:dev"]
 
-FROM node:18-alpine AS prod-stage
-WORKDIR /usr/src/app
-COPY package.json yarn.lock ./
-RUN yarn install
-RUN yarn run build
-COPY . .
+# FROM node:18-alpine AS prod-stage
+# WORKDIR /app
+# COPY package.json ./
+# RUN npm install
+# COPY . .
+# RUN npm run build
 
-CMD ["yarn", "run", "start:prod"]
+# CMD ["npm", "run", "start:prod"]
