@@ -3,7 +3,6 @@ import { Get, UseGuards, Param, Put } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
 import { Req, Res } from '@nestjs/common';
 import { Request, Response } from 'express';
-import { AuthService } from '../auth/auth.service';
 import { UserService } from '../users/user.service';
 import { GroupService } from '../groups/group.service';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
@@ -28,6 +27,7 @@ export class GithubController {
   @Get('signin')
   @UseGuards(AuthGuard('github'))
   signIn() {
+    console.log('signin github');
     // This route is protected by GitHub authentication
     // NestJS will automatically redirect the user to GitHub for authentication
   }
@@ -40,13 +40,13 @@ export class GithubController {
     // This route is protected by GitHub authentication
     // NestJS will automatically redirect the user to GitHub for authentication
 
-    // TODO NEEDS DISCUSSION
+    //TODO NEEDS DISCUSSION
     //req.user is usually parsed by jwt guard
     //but in this case, we are using github oauth guard which doesn't parse jwt but wraps
     //user object inside req.user.user
 
     // but we see that the original api uses cookie and uses it to parse jwt
-
+    console.log('callback github');
     const {
       user: { user: userParsedfromGithub, profile },
     } = req.user as any;

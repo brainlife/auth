@@ -34,7 +34,6 @@ export class OrcidService {
     );
     passport.use(this.orcidStrategy);
     this.orcidStrategy.name = 'oauth2-orcid';
-
     OAuth2Strategy.prototype.authorizationParams = function (options) {
       return { selected_idp: options.idp };
     };

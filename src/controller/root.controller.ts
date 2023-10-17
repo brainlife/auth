@@ -18,6 +18,8 @@ import {
   signJWT,
   hasScope,
   intersect_scopes,
+  ttl as ttl_config,
+  decodeJWT,
 } from '../utils/common.utils';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { GroupService } from '../groups/group.service';
@@ -266,6 +268,11 @@ export class RootController {
   @UseGuards(JwtAuthGuard)
   @Post('/refresh')
   async refresh(@Req() req, @Res() res) {
+    //
+    // console.log('Incoming JWT:', req.headers.authorization);
+    // req.user = decodeJWT(req.headers.authorization.split(' ')[1]);
+
+    console.log('Incoming JWT:', req.user);
     const user = await this.userService.findOnebySub(req.user.sub);
     if (!user) {
       throw new HttpException(
@@ -283,12 +290,10 @@ export class RootController {
     // console.log(claim.scopes, req.body.scopes);
 
     // //intersect gids with requested gids
-    if (req.body?.gids)
-      claim.gids = claim.gids.filter((id) => req.body.gids.includes(id));
-
-    if (req.body?.clearProfile) delete claim.profile;
-
-    if (req.body?.ttl) claim.exp = (Date.now() + req.body.ttl) / 1000;
+    let total_time_to_live: number;
+    if (req.body?.ttl) total_time_to_live = req.body.ttl;
+    else total_time_to_live = ttl_config;
+    claim.exp = (Date.now() + total_time_to_live) / 1000;
 
     const jwt = signJWT(claim);
     // console.log("/refresh, claim v/s req.user",claim, req.user);

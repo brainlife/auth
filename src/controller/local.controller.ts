@@ -18,6 +18,7 @@ import {
   sendPasswordReset,
   checkUser,
   checkPassword,
+  decodeJWT,
 } from '../utils/common.utils';
 import { Response, Request } from 'express';
 import { AuthGuard } from '@nestjs/passport';
@@ -42,6 +43,7 @@ import {
   ApiBearerAuth,
   ApiOkResponse,
 } from '@nestjs/swagger';
+import { private_key, public_key } from 'src/auth/constants';
 
 @Controller('/local')
 export class LocalController {
@@ -269,7 +271,25 @@ export class LocalController {
     //create claim
 
     const claim = await createClaim(user, this.userService, this.groupService);
-    if (ttl) claim.exp = Math.floor(Date.now() / 1000) + ttl;
+
+    if (typeof ttl === 'number' && ttl > 0) {
+      console.log('ttl is number', ttl)
+      claim.exp = Math.floor(Date.now() / 1000) + ttl;
+    } else {
+      console.log('ttl is not number', ttl)
+      claim.exp = Math.floor(Date.now() / 1000) + 3600 * 24 * 7; // Default to 7 days
+      console.log('claim.exp', claim.exp,"expiryDate", new Date(claim.exp * 1000))
+    }
+
+    // Data to sign
+    const data = {
+      data: 'data',
+    };
+    // Sign data using private key
+    const signature = signJWT(data);
+    // Verify signature using public key
+    const verified = decodeJWT(signature);
+    console.log("VERIFYUING",verified); // true
 
     const jwt = signJWT(claim);
     console.log(user);

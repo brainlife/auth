@@ -4,7 +4,7 @@ import zxcvbn from 'zxcvbn-typescript';
 import * as nodemailer from 'nodemailer';
 import { uuid } from 'uuidv4';
 import { Message } from '../schema/message';
-import { private_key, ttl } from '../auth/constants';
+import { private_key, public_key, ttl } from '../auth/constants';
 
 import {
   ClientOptions,
@@ -78,7 +78,7 @@ export function decodeJWT(token: string) {
     algorithms: [process.env.JWT_ALGORITHM as jwt.Algorithm], // add the assertion here
     // add other options as required
   };
-  return jwt.verify(token, private_key, options);
+  return jwt.verify(token, public_key, options);
 }
 
 export function hashPassword(password: string): any {
@@ -273,3 +273,5 @@ export function hasScope(user: any, role: string): boolean {
   if (!~user.scopes.auth.indexOf(role)) return false;
   return true;
 }
+
+export { ttl };
