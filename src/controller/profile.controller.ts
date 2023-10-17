@@ -184,8 +184,7 @@ export class ProfileController {
       },
     },
   })
-  @UseGuards(JwtAuthGuard, RolesGuard)
-  @SetMetadata('roles', 'admin')
+  @UseGuards(JwtAuthGuard)
   @Patch('/:sub?')
   async updateProfile(@Req() req: Request, @Res() res: Response) {
     const select = [...safe_fields, 'profile.private'];
@@ -237,8 +236,6 @@ export class ProfileController {
     description: 'Returns the count of users based on private position.',
   })
   @ApiResponse({ status: 401, description: 'Unauthorized.' })
-  @UseGuards(JwtAuthGuard, RolesGuard)
-  @SetMetadata('roles', 'admin')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @SetMetadata('roles', 'admin')
   @Get('/poscount')
