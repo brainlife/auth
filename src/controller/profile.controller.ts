@@ -288,8 +288,7 @@ export class ProfileController {
   })
   @ApiResponse({ status: 401, description: 'Unauthorized.' })
   @ApiResponse({ status: 404, description: 'No such active user.' })
-  @UseGuards(JwtAuthGuard, RolesGuard)
-  @SetMetadata('roles', 'admin')
+  @UseGuards(JwtAuthGuard)
   @Get(':sub?')
   async getProfile(@Req() req: Request, @Res() res: Response) {
     const select = [...safe_fields, 'profile.private'];
