@@ -68,6 +68,7 @@ export class GithubController {
           res.cookie('messages', JSON.stringify(message), { path: '/' });
           return res.redirect(settingsCallback);
         }
+        // Case 4 : user A is already logged in (with local) and trying to associate github, but the github account it already associated to a brainlife user B it should send an error
         this.userService.findOnebySub(loggedinUser.sub).then((user) => {
           if (user.ext.github) {
             const message = [
@@ -95,8 +96,42 @@ export class GithubController {
       });
 
     // Case 2 : user is not logged in and trying to login with github account and has no account in brainlife (register) will point to register page
+    if (!loggedinUser) {
+      //check if there is existing user with github id
+      this.userService
+        .findbyQuery({ 'ext.github': githubUser?.user?.profile?.id })
+        .then((users) => {
+          if (users.length > 0) {
+            const message = [
+              {
+                type: 'error',
+                message:
+                  'Your github account is already associated to another account. Please signoff / login with your github account.',
+              },
+            ];
+            res.cookie('messages', JSON.stringify(message), { path: '/' });
+            return res.redirect(settingsCallback);
+          }
+          this.registerNewUser(githubUser.user.profile, res);
+        });
+    }
     // Case 3 : if user has already an account linked in brainlife, it will just login and point to home page
-    // Case 4 : user A is already logged in (with local) and trying to associate github, but the github account it already associated to a brainlife user B it should send an error
+    if (githubUser?.user?.profile?.id && !loggedinUser) {
+      this.userService
+        .findbyQuery({ 'ext.github': githubUser?.user?.profile?.id })
+        .then(async (users) => {
+          if (users.length > 0) {
+            const user = users[0];
+            const claim = await createClaim(
+              user,
+              this.userService,
+              this.groupService,
+            );
+            const jwt = signJWT(claim);
+            return res.redirect('/auth/#!/success/' + jwt);
+          }
+        });
+    }
   }
 
   registerNewUser(profile: any, res: Response) {
