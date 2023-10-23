@@ -15,6 +15,9 @@ import {
 import { github, settingsCallback, ttl } from '../auth/constants';
 import { GithubOauthGuard } from '../auth/guards/oauth.guards';
 import { RabbitMQ } from '../rabbitmq/rabbitmq.service';
+import { parse } from 'path';
+import { use } from 'passport';
+import { User } from 'src/schema/user.schema';
 
 @Controller('github')
 export class GithubController {
@@ -22,7 +25,7 @@ export class GithubController {
     private readonly userService: UserService,
     private readonly groupService: GroupService,
     private publishToQueue: RabbitMQ,
-  ) {}
+  ) { }
 
   @Get('signin')
   @UseGuards(AuthGuard('github'))
@@ -44,11 +47,53 @@ export class GithubController {
     //but in this case, we are using github oauth guard which doesn't parse jwt but wraps
     //user object inside req.user.user
     // Case 1 : user is already logged in (with jwt) and trying to associate github account with brainlife account (associate) from the account page -> associate it and point to account page
-    console.log("JWT", req.cookies.associate_jwt);
-    console.log("------------------------------------------------");
-    if (req.user) {
-      console.log('logged in user', req.user);
-    }
+    const loggedinUser = decodeJWT(req.cookies.associate_jwt) as any;
+    console.log('loggedinUser', loggedinUser);
+    const githubUser = req.user as any;
+    if (githubUser) githubUser.profile = githubUser.user.profile;
+    console.log('githubUser', githubUser);
+
+    //check if there is existing user with github id
+    this.userService
+      .findbyQuery({ 'ext.github': githubUser?.user?.profile?.id })
+      .then((users) => {
+        if (users.length > 0) {
+          const message = [
+            {
+              type: 'error',
+              message:
+                'Your github account is already associated to another account. Please signoff / login with your github account.',
+            },
+          ];
+          res.cookie('messages', JSON.stringify(message), { path: '/' });
+          return res.redirect(settingsCallback);
+        }
+        this.userService.findOnebySub(loggedinUser.sub).then((user) => {
+          if (user.ext.github) {
+            const message = [
+              {
+                type: 'error',
+                message:
+                  'Your account is already associated to another github account. Please signoff / login with your github account.',
+              },
+            ];
+            res.cookie('messages', JSON.stringify(message), { path: '/' });
+            return res.redirect(settingsCallback);
+          }
+          user.ext.github = githubUser.profile.id;
+          this.userService.updatebySub(user.sub, user).then(() => {
+            const message = [
+              {
+                type: 'success',
+                message: 'Successfully associated github account.',
+              },
+            ];
+            res.cookie('messages', JSON.stringify(message), { path: '/' });
+            return res.redirect(settingsCallback);
+          });
+        });
+      });
+
     // Case 2 : user is not logged in and trying to login with github account and has no account in brainlife (register) will point to register page
     // Case 3 : if user has already an account linked in brainlife, it will just login and point to home page
     // Case 4 : user A is already logged in (with local) and trying to associate github, but the github account it already associated to a brainlife user B it should send an error
