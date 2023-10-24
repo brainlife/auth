@@ -83,12 +83,6 @@ export class GithubController {
       const jwt = signJWT(claim);
       return res.redirect('/auth/#!/success/' + jwt);
     }
-
-    // User is trying to associate GitHub account while logged in with another account
-    if (loggedinUser && existingUserWithGithubId) {
-      sendErrorMessage(res, 'Your github account is already associated to another account. Please signoff / login with your github account.');
-      return res.redirect(settingsCallback);
-    }
   }
 
   registerNewUser(profile: any, res: Response) {
