@@ -12,6 +12,7 @@ import {
   createClaim,
   signJWT,
   sendErrorMessage,
+  sendSuccessMessage,
 } from '../utils/common.utils';
 import { github, settingsCallback, ttl } from '../auth/constants';
 import { GithubOauthGuard } from '../auth/guards/oauth.guards';
@@ -60,7 +61,7 @@ export class GithubController {
       }
       user.ext.github = githubUser.profile.id;
       await this.userService.updatebySub(user.sub, user);
-      sendErrorMessage(res, 'Successfully associated github account.');
+      sendSuccessMessage(res, 'Successfully associated github account.');
       return res.redirect(settingsCallback);
     }
 
