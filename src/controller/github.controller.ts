@@ -13,9 +13,9 @@ import {
   signJWT,
   sendErrorMessage,
   sendSuccessMessage,
+  ACCOUNT_ALREADY_ASSOCIATED_ERROR,
 } from '../utils/common.utils';
 import {
-  ACCOUNT_ALREADY_ASSOCIATED_ERROR,
   cookieConfig,
   github,
   githubSigninUrl,
@@ -60,29 +60,23 @@ export class GithubController {
 
     //CASE 1 : User trying to associate GitHub account while already logged in
     if (loggedinUser) {
-      // check if logged in user and github user are same
-      // if (loggedinUser.sub != existingUserWithGithubId?.sub) {
-      //   // logged in user and github user are different
-      //   console.log("User logged in diff w github user")
-      //   sendErrorMessage(
-      //     res,
-      //     'You are already logged in with a different account. Please logout and try again.',
-      //   );
-      //   return res.redirect(settingsCallback);
-      // }
+      if (loggedinUser.sub != existingUserWithGithubId?.sub) {
+        // logged in user and github user are different
+        sendErrorMessage(
+          res,
+          'You are already logged in with a different account. Please logout and try again.',
+        );
+        return res.redirect(settingsCallback);
+      }
       res.clearCookie('associate_jwt');
 
       if (existingUserWithGithubId) {
-        console.log(ACCOUNT_ALREADY_ASSOCIATED_ERROR('github'));
         sendErrorMessage(res, ACCOUNT_ALREADY_ASSOCIATED_ERROR('github'));
         return res.redirect(settingsCallback);
       }
       const user = await this.userService.findOnebySub(loggedinUser.sub);
       if (user.ext.github) {
-        sendErrorMessage(
-          res,
-          'Your account is already associated to another github account. Please signoff / login with your github account.',
-        );
+        sendErrorMessage(res, ACCOUNT_ALREADY_ASSOCIATED_ERROR('github'));
         return res.redirect(settingsCallback);
       }
       user.ext.github = githubUser.profile.id;

@@ -26,7 +26,9 @@ class QueuePublisher {
       transport: Transport.RMQ,
       options: {
         // urls: ['amqp://guest:guest@localhost:5672/brainlife?heartbeat=30'],
-        urls: ['amqp://guest:guest@brainlife_rabbitmq:5672/brainlife?heartbeat=30'],
+        urls: [
+          'amqp://guest:guest@brainlife_rabbitmq:5672/brainlife?heartbeat=30',
+        ],
         queue: 'user-messages',
         queueOptions: {
           durable: false,
@@ -274,4 +276,32 @@ export function hasScope(user: any, role: string): boolean {
   return true;
 }
 
+export function sendSuccessMessage(res, messageText) {
+  const message = [
+    {
+      type: 'success',
+      message: messageText,
+    },
+  ];
+  res.cookie('messages', JSON.stringify(message), { path: '/' });
+}
+
+export function sendErrorMessage(res, messageText) {
+  const message = [
+    {
+      type: 'error',
+      message: messageText,
+    },
+  ];
+  res.cookie('messages', JSON.stringify(message), { path: '/' });
+}
+export function ACCOUNT_ALREADY_ASSOCIATED_ERROR(provider: string): string {
+  return (
+    'Your account is already associated to another ' +
+    provider +
+    ' account. Please signoff / login with your ' +
+    provider +
+    ' account.'
+  );
+}
 export { ttl };
