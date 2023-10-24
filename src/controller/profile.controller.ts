@@ -123,14 +123,15 @@ export class ProfileController {
       select.push('profile.private');
     }
 
+    const userswithCount = await this.userService.findUsersbyCount(
+      find,
+      select,
+      offset,
+      order,
+      limit,
+    );
     res.json(
-      await this.userService.findUsersbyCount(
-        find,
-        select,
-        offset,
-        order,
-        limit,
-      ),
+      {profiles: userswithCount.users, count: userswithCount.count}
     );
   }
 
