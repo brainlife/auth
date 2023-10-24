@@ -268,11 +268,6 @@ export class RootController {
   @UseGuards(JwtAuthGuard)
   @Post('/refresh')
   async refresh(@Req() req, @Res() res) {
-    //
-    // console.log('Incoming JWT:', req.headers.authorization);
-    // req.user = decodeJWT(req.headers.authorization.split(' ')[1]);
-
-    console.log('Incoming JWT:', req.user);
     const user = await this.userService.findOnebySub(req.user.sub);
     if (!user) {
       throw new HttpException(
@@ -435,7 +430,8 @@ export class RootController {
     if (req.query.find || req.query.where)
       where = JSON.parse(req.query.find || req.query.where);
     console.log('where', where);
-    const limit = req.query.limit || 50;
+    let limit = 50;
+    if(req.query.limit > 0) limit = req.query.limit;
     const skip = req.query.skip || 0;
     const select =
       req.query.select ||
