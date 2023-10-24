@@ -11,6 +11,7 @@ import {
   decodeJWT,
   createClaim,
   signJWT,
+  sendErrorMessage,
 } from '../utils/common.utils';
 import { github, settingsCallback, ttl } from '../auth/constants';
 import { GithubOauthGuard } from '../auth/guards/oauth.guards';
@@ -40,97 +41,54 @@ export class GithubController {
   @Get('callback')
   @UseGuards(GithubOauthGuard)
   async callback(@Req() req: Request, @Res() res: Response) {
-    // This route is protected by GitHub authentication
-    // NestJS will automatically redirect the user to GitHub for authentication
-    //TODO NEEDS DISCUSSION
-    //req.user is usually parsed by jwt guard
-    //but in this case, we are using github oauth guard which doesn't parse jwt but wraps
-    //user object inside req.user.user
-    // Case 1 : user is already logged in (with jwt) and trying to associate github account with brainlife account (associate) from the account page -> associate it and point to account page
-    const loggedinUser = decodeJWT(req.cookies.associate_jwt) as any;
-    console.log('loggedinUser', loggedinUser);
-    const githubUser = req.user as any;
-    if (githubUser) githubUser.profile = githubUser.user.profile;
-    console.log('githubUser', githubUser);
+    let loggedinUser = null;
+    if(req.cookies.associate_jwt) loggedinUser = decodeJWT(req.cookies.associate_jwt) as any;
+    const githubUser = this.getGithubUser(req);
 
-    //check if there is existing user with github id
-    this.userService
-      .findbyQuery({ 'ext.github': githubUser?.user?.profile?.id })
-      .then((users) => {
-        if (users.length > 0) {
-          const message = [
-            {
-              type: 'error',
-              message:
-                'Your github account is already associated to another account. Please signoff / login with your github account.',
-            },
-          ];
-          res.cookie('messages', JSON.stringify(message), { path: '/' });
-          return res.redirect(settingsCallback);
-        }
-        // Case 4 : user A is already logged in (with local) and trying to associate github, but the github account it already associated to a brainlife user B it should send an error
-        this.userService.findOnebySub(loggedinUser.sub).then((user) => {
-          if (user.ext.github) {
-            const message = [
-              {
-                type: 'error',
-                message:
-                  'Your account is already associated to another github account. Please signoff / login with your github account.',
-              },
-            ];
-            res.cookie('messages', JSON.stringify(message), { path: '/' });
-            return res.redirect(settingsCallback);
-          }
-          user.ext.github = githubUser.profile.id;
-          this.userService.updatebySub(user.sub, user).then(() => {
-            const message = [
-              {
-                type: 'success',
-                message: 'Successfully associated github account.',
-              },
-            ];
-            res.cookie('messages', JSON.stringify(message), { path: '/' });
-            return res.redirect(settingsCallback);
-          });
-        });
-      });
+    const existingUserWithGithubId = await this.userService.findOne({
+      'ext.github': githubUser?.user?.profile?.id,
+    });
 
-    // Case 2 : user is not logged in and trying to login with github account and has no account in brainlife (register) will point to register page
-    if (!loggedinUser) {
-      //check if there is existing user with github id
-      this.userService
-        .findbyQuery({ 'ext.github': githubUser?.user?.profile?.id })
-        .then((users) => {
-          if (users.length > 0) {
-            const message = [
-              {
-                type: 'error',
-                message:
-                  'Your github account is already associated to another account. Please signoff / login with your github account.',
-              },
-            ];
-            res.cookie('messages', JSON.stringify(message), { path: '/' });
-            return res.redirect(settingsCallback);
-          }
-          this.registerNewUser(githubUser.user.profile, res);
-        });
+    //CASE 1 : User trying to associate GitHub account while already logged in
+    if(loggedinUser) {
+      if(existingUserWithGithubId) {
+        sendErrorMessage(res, 'Your github account is already associated to another account. Please signoff / login with your github account.');
+        return res.redirect(settingsCallback);
+      }
+      const user = await this.userService.findOnebySub(loggedinUser.sub);
+      if(user.ext.github) {
+        sendErrorMessage(res, 'Your account is already associated to another github account. Please signoff / login with your github account.');
+        return res.redirect(settingsCallback);
+      }
+      user.ext.github = githubUser.profile.id;
+      await this.userService.updatebySub(user.sub, user);
+      sendErrorMessage(res, 'Successfully associated github account.');
+      return res.redirect(settingsCallback);
     }
-    // Case 3 : if user has already an account linked in brainlife, it will just login and point to home page
-    if (githubUser?.user?.profile?.id && !loggedinUser) {
-      this.userService
-        .findbyQuery({ 'ext.github': githubUser?.user?.profile?.id })
-        .then(async (users) => {
-          if (users.length > 0) {
-            const user = users[0];
-            const claim = await createClaim(
-              user,
-              this.userService,
-              this.groupService,
-            );
-            const jwt = signJWT(claim);
-            return res.redirect('/auth/#!/success/' + jwt);
-          }
-        });
+
+    //User trying to register with GitHub account
+    if (!loggedinUser && !existingUserWithGithubId) {
+      this.registerNewUser(githubUser.user.profile, res);
+      return;
+    }
+
+    //User has an account linked in Brainlife and is trying to login with GitHub
+    if (!loggedinUser && existingUserWithGithubId) {
+      console.log("    //User has an account linked in Brainlife and is trying to login with GitHub      ");
+      const user = existingUserWithGithubId;
+      const claim = await createClaim(
+        user,
+        this.userService,
+        this.groupService,
+      );
+      const jwt = signJWT(claim);
+      return res.redirect('/auth/#!/success/' + jwt);
+    }
+
+    // User is trying to associate GitHub account while logged in with another account
+    if (loggedinUser && existingUserWithGithubId) {
+      sendErrorMessage(res, 'Your github account is already associated to another account. Please signoff / login with your github account.');
+      return res.redirect(settingsCallback);
     }
   }
 
@@ -194,11 +152,17 @@ export class GithubController {
     const user = await this.userService.findOnebySub(req.user.sub);
     if (!user)
       throw new Error("couldn't find user record with sub:" + req.user.sub);
-    user.ext.github = null;
+    user.ext.github = undefined;
     await this.userService.updatebySub(user.sub, user);
     return res.json({
       message: 'Successfully disconnected github account.',
       user: user,
     });
+  }
+
+  getGithubUser(req: Request): any {
+    const githubUser = req.user as any;
+    if (githubUser) githubUser.profile = githubUser.user.profile;
+    return githubUser;
   }
 }
