@@ -85,8 +85,8 @@ export class UserService {
       let query = this.userModel.find(find).lean();
       if (select) query = query.select(select);
       if (sort) query = query.sort(sort);
-      if (limit) query = query.limit(limit);
-      if (skip) query = query.skip(skip);
+      if (limit > 0) query = query.limit(limit);
+      if (skip > 0) query = query.skip(skip);
       return query.exec();
     }
     return this.userModel.find().exec();
@@ -151,11 +151,12 @@ export class UserService {
     limit?: number,
   ): Promise<{ users: User[]; count: number }> {
     try {
+      console.log(limit);
       let query = this.userModel.find(find).lean();
       if (select) query = query.select(select);
       if (sort) query = query.sort(sort);
-      if (limit) query = query.limit(limit);
-      if (skip) query = query.skip(skip);
+      if (limit > 0) query = query.limit(limit);
+      if (skip > 0) query = query.skip(skip);
       const users = await query.exec();
       const count = await this.userModel.countDocuments(query).exec();
       // const users = await this.userModel
