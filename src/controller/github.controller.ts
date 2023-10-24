@@ -16,9 +16,7 @@ import {
 import { github, settingsCallback, ttl } from '../auth/constants';
 import { GithubOauthGuard } from '../auth/guards/oauth.guards';
 import { RabbitMQ } from '../rabbitmq/rabbitmq.service';
-import { parse } from 'path';
-import { use } from 'passport';
-import { User } from 'src/schema/user.schema';
+
 
 @Controller('github')
 export class GithubController {
@@ -104,7 +102,6 @@ export class GithubController {
 
     const temp_jwt = signJWT({ exp: (Date.now() + ttl) / 1000, ext, _default });
     console.info('signed temporary jwt token for github signup:' + temp_jwt);
-    // res.redirect('/auth/#!/signup/'+temp_jwt);
     res.redirect('/auth/#!/signup/' + temp_jwt);
   }
 
@@ -123,8 +120,6 @@ export class GithubController {
       // Do any further checks if necessary, for example, you might check if a user exists in your system
       const user = await this.userService.findOne({ sub: decodedToken.sub });
       if (!user) throw new Error('User not found');
-
-      console.log('setting Cookie');
       res.cookie('associate_jwt', jwt, {
         httpOnly: false,
         // secure: true,
@@ -136,9 +131,7 @@ export class GithubController {
       // This is where you'd typically continue with the GitHub association process...
       // After setting cookies, manually redirect to GitHub for authentication
       // Handle errors from the JWT decoding process, for example:
-
       // redirect to github for authentication where it goes to callback
-
       res.redirect('/api/auth/github/signin');
     } catch (err) {
       res.status(401).send({ error: 'Invalid or expired token' });
