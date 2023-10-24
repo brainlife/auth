@@ -14,7 +14,16 @@ import {
   sendErrorMessage,
   sendSuccessMessage,
 } from '../utils/common.utils';
-import { github, settingsCallback, ttl } from '../auth/constants';
+import {
+  ACCOUNT_ALREADY_ASSOCIATED_ERROR,
+  cookieConfig,
+  github,
+  githubSigninUrl,
+  settingsCallback,
+  signUpUrl,
+  successUrl,
+  ttl,
+} from '../auth/constants';
 import { GithubOauthGuard } from '../auth/guards/oauth.guards';
 import { RabbitMQ } from '../rabbitmq/rabbitmq.service';
 
@@ -40,8 +49,9 @@ export class GithubController {
   @UseGuards(GithubOauthGuard)
   async callback(@Req() req: Request, @Res() res: Response) {
     let loggedinUser = null;
-    if (req.cookies.associate_jwt)
+    if (req.cookies.associate_jwt) {
       loggedinUser = decodeJWT(req.cookies.associate_jwt) as any;
+    }
     const githubUser = this.getGithubUser(req);
 
     const existingUserWithGithubId = await this.userService.findOne({
@@ -50,12 +60,21 @@ export class GithubController {
 
     //CASE 1 : User trying to associate GitHub account while already logged in
     if (loggedinUser) {
+      // check if logged in user and github user are same
+      // if (loggedinUser.sub != existingUserWithGithubId?.sub) {
+      //   // logged in user and github user are different
+      //   console.log("User logged in diff w github user")
+      //   sendErrorMessage(
+      //     res,
+      //     'You are already logged in with a different account. Please logout and try again.',
+      //   );
+      //   return res.redirect(settingsCallback);
+      // }
       res.clearCookie('associate_jwt');
+
       if (existingUserWithGithubId) {
-        sendErrorMessage(
-          res,
-          'Your github account is already associated to another account. Please signoff / login with your github account.',
-        );
+        console.log(ACCOUNT_ALREADY_ASSOCIATED_ERROR('github'));
+        sendErrorMessage(res, ACCOUNT_ALREADY_ASSOCIATED_ERROR('github'));
         return res.redirect(settingsCallback);
       }
       const user = await this.userService.findOnebySub(loggedinUser.sub);
@@ -80,9 +99,6 @@ export class GithubController {
 
     //User has an account linked in Brainlife and is trying to login with GitHub
     if (!loggedinUser && existingUserWithGithubId) {
-      console.log(
-        '    //User has an account linked in Brainlife and is trying to login with GitHub      ',
-      );
       const user = existingUserWithGithubId;
       const claim = await createClaim(
         user,
@@ -90,13 +106,12 @@ export class GithubController {
         this.groupService,
       );
       const jwt = signJWT(claim);
-      return res.redirect('/auth/#!/success/' + jwt);
+      return res.redirect(successUrl + jwt);
     }
   }
 
   registerNewUser(profile: any, res: Response) {
     const ext = { github: profile.id };
-    console.log('on registerNewUser', profile);
     const _default: any = {
       username: profile.username, //default to github username.. (user can change it)
       fullname: profile.displayName,
@@ -106,7 +121,7 @@ export class GithubController {
 
     const temp_jwt = signJWT({ exp: (Date.now() + ttl) / 1000, ext, _default });
     console.info('signed temporary jwt token for github signup:' + temp_jwt);
-    res.redirect('/auth/#!/signup/' + temp_jwt);
+    res.redirect(signUpUrl + temp_jwt);
   }
 
   @Get('associate/:jwt')
@@ -124,11 +139,7 @@ export class GithubController {
       // Do any further checks if necessary, for example, you might check if a user exists in your system
       const user = await this.userService.findOne({ sub: decodedToken.sub });
       if (!user) throw new Error('User not found');
-      res.cookie('associate_jwt', jwt, {
-        httpOnly: false,
-        // secure: true,
-        maxAge: 1000 * 60 * 5, //5 minutes
-      });
+      res.cookie('associate_jwt', jwt, cookieConfig);
 
       // confirm the cookie is set
       console.log('cookie SET', res.cookie);
@@ -136,7 +147,7 @@ export class GithubController {
       // After setting cookies, manually redirect to GitHub for authentication
       // Handle errors from the JWT decoding process, for example:
       // redirect to github for authentication where it goes to callback
-      res.redirect('/api/auth/github/signin');
+      res.redirect(githubSigninUrl);
     } catch (err) {
       res.status(401).send({ error: 'Invalid or expired token' });
     }
