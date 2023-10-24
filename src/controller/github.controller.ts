@@ -18,14 +18,13 @@ import { github, settingsCallback, ttl } from '../auth/constants';
 import { GithubOauthGuard } from '../auth/guards/oauth.guards';
 import { RabbitMQ } from '../rabbitmq/rabbitmq.service';
 
-
 @Controller('github')
 export class GithubController {
   constructor(
     private readonly userService: UserService,
     private readonly groupService: GroupService,
     private publishToQueue: RabbitMQ,
-  ) { }
+  ) {}
 
   @Get('signin')
   @UseGuards(AuthGuard('github'))
@@ -41,7 +40,8 @@ export class GithubController {
   @UseGuards(GithubOauthGuard)
   async callback(@Req() req: Request, @Res() res: Response) {
     let loggedinUser = null;
-    if(req.cookies.associate_jwt) loggedinUser = decodeJWT(req.cookies.associate_jwt) as any;
+    if (req.cookies.associate_jwt)
+      loggedinUser = decodeJWT(req.cookies.associate_jwt) as any;
     const githubUser = this.getGithubUser(req);
 
     const existingUserWithGithubId = await this.userService.findOne({
@@ -49,15 +49,21 @@ export class GithubController {
     });
 
     //CASE 1 : User trying to associate GitHub account while already logged in
-    if(loggedinUser) {
+    if (loggedinUser) {
       res.clearCookie('associate_jwt');
-      if(existingUserWithGithubId) {
-        sendErrorMessage(res, 'Your github account is already associated to another account. Please signoff / login with your github account.');
+      if (existingUserWithGithubId) {
+        sendErrorMessage(
+          res,
+          'Your github account is already associated to another account. Please signoff / login with your github account.',
+        );
         return res.redirect(settingsCallback);
       }
       const user = await this.userService.findOnebySub(loggedinUser.sub);
-      if(user.ext.github) {
-        sendErrorMessage(res, 'Your account is already associated to another github account. Please signoff / login with your github account.');
+      if (user.ext.github) {
+        sendErrorMessage(
+          res,
+          'Your account is already associated to another github account. Please signoff / login with your github account.',
+        );
         return res.redirect(settingsCallback);
       }
       user.ext.github = githubUser.profile.id;
@@ -74,7 +80,9 @@ export class GithubController {
 
     //User has an account linked in Brainlife and is trying to login with GitHub
     if (!loggedinUser && existingUserWithGithubId) {
-      console.log("    //User has an account linked in Brainlife and is trying to login with GitHub      ");
+      console.log(
+        '    //User has an account linked in Brainlife and is trying to login with GitHub      ',
+      );
       const user = existingUserWithGithubId;
       const claim = await createClaim(
         user,
