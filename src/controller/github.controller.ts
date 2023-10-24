@@ -50,6 +50,7 @@ export class GithubController {
 
     //CASE 1 : User trying to associate GitHub account while already logged in
     if(loggedinUser) {
+      res.clearCookie('associate_jwt');
       if(existingUserWithGithubId) {
         sendErrorMessage(res, 'Your github account is already associated to another account. Please signoff / login with your github account.');
         return res.redirect(settingsCallback);
