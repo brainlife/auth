@@ -123,7 +123,6 @@ export class OrcidController {
         if (req.cookies['associate_jwt']) {
           loggedInUser = decodeJWT(req.cookies['associate_jwt']);
         }
-        console.log('loggedInUser-parsing jwt', loggedInUser);
 
         const existingUserWithOrcidId = await this.userService.findOne({
           'ext.orcid': profile.orcid,
@@ -131,6 +130,7 @@ export class OrcidController {
 
         //CASE 1 : User trying to associate Orcid account while already logged in
         if (loggedInUser) {
+          res.clearCookie('associate_jwt');
           if (loggedInUser.sub != existingUserWithOrcidId?.sub) {
             sendErrorMessage(
               res,
@@ -139,24 +139,31 @@ export class OrcidController {
           }
 
           if (existingUserWithOrcidId) {
+            console.log(
+              '---------existingUserWithOrcidId EXISTS-------',
+              existingUserWithOrcidId,
+            );
             sendErrorMessage(
               res,
               ANOTHER_ACCOUNT_ALREADY_ASSOCIATED_ERROR('orcid'),
             );
             return res.redirect(settingsCallback);
           }
-          console.log('loggedInUser Now should getFull Details', loggedInUser);
+
           const loggedInUserDetails = await this.userService.findOnebySub(
             loggedInUser.sub,
           );
+
           if (loggedInUserDetails.ext.orcid) {
             sendErrorMessage(res, ACCOUNT_ALREADY_ASSOCIATED_ERROR('orcid'));
           }
           loggedInUserDetails.ext.orcid = profile.orcid;
+
           await this.userService.updatebySub(
             loggedInUserDetails.sub,
-            loggedInUser,
+            loggedInUserDetails,
           );
+
           sendSuccessMessage(res, 'Successfully associated orcid account.');
           return res.redirect(settingsCallback);
         }
@@ -194,94 +201,6 @@ export class OrcidController {
           const jwt = signJWT(claim);
           res.redirect(successUrl + jwt);
         }
-
-        let userParsedfromCookie = null;
-        if (req.cookies['associate_jwt']) {
-          userParsedfromCookie = decodeJWT(req.cookies['associate_jwt']);
-        }
-        console.log('userParsedFromCookie', userParsedfromCookie);
-
-        // if (userParsedfromCookie) {
-        //   res.clearCookie('associate_jwt');
-        //   if (user) {
-        //     // sub is the unique identifier for the user and found in another account
-        //     const messages = [
-        //       {
-        //         type: 'error',
-        //         message:
-        //           'There is another account with the same ORCID registered. Please contact support.',
-        //       },
-        //     ];
-
-        //     res.cookie('messages', JSON.stringify(messages), { path: '/' });
-        //     return res.redirect(settingsCallback);
-        //   } else {
-        //     const userRecord = await this.userService.findOne({
-        //       sub: userParsedfromCookie.sub,
-        //     });
-
-        //     if (!userRecord) {
-        //       throw new Error(
-        //         "Couldn't find user record with sub:" +
-        //           userParsedfromCookie.sub,
-        //       );
-        //     }
-
-        //     userRecord.ext.orcid = profile.orcid;
-        //     await this.userService.updatebySub(userRecord.sub, userRecord);
-
-        //     const messages = [
-        //       {
-        //         type: 'success',
-        //         message: 'Successfully associated your ORCID account',
-        //       },
-        //     ];
-
-        //     res.cookie('messages', JSON.stringify(messages), { path: '/' });
-        //     return res.redirect(settingsCallback);
-        //   }
-        // } else {
-        //   console.info('handling orcid callback');
-        //   if (!user) {
-        //     console.info('new user - registering');
-        //     if (orcid.autoRegister) {
-        //       console.info('auto registering', profile);
-        //       this.registerNewUser(profile, res);
-        //     } else {
-        //       console.info('redirecting to signin');
-        //       res.redirect(
-        //         '/auth/#!/signin?msg=' +
-        //           'Your ORCID account(' +
-        //           profile.orcid +
-        //           ') is not yet registered. Please login using your username/password first, then associate your InCommon account inside the account settings.',
-        //       );
-        //     }
-        //   }
-        //   if (checkUser(user, req)?.message) {
-        //     return new Error(checkUser(user, req).message);
-        //   }
-
-        //   const claim = await createClaim(
-        //     user,
-        //     this.userService,
-        //     this.groupService,
-        //   );
-        //   user.times.orcid_login = new Date();
-        //   user.reqHeaders = req.headers;
-        //   await this.userService.updatebySub(user.sub, user);
-        //   // publish to rabbitmq
-        //   await this.queuePublisher.publishToQueue(
-        //     'user.login.' + user.sub,
-        //     JSON.stringify({
-        //       type: 'orcid',
-        //       username: user.username,
-        //       exp: claim.exp,
-        //       headers: req.headers,
-        //     }),
-        //   );
-        //   const jwt = signJWT(claim);
-        //   res.redirect(successUrl + jwt);
-        // }
       },
     )(req, res);
   }
