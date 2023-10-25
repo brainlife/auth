@@ -12,11 +12,23 @@ import {
   decodeJWT,
   createClaim,
   signJWT,
+  sendErrorMessage,
+  ACCOUNT_ALREADY_ASSOCIATED_ERROR,
+  sendSuccessMessage,
 } from '../utils/common.utils';
-import { github, google, settingsCallback, ttl } from '../auth/constants';
+import {
+  cookieConfig,
+  github,
+  google,
+  settingsCallback,
+  successUrl,
+  ttl,
+} from '../auth/constants';
 import { GoogleOauthGuard } from '../auth/guards/oauth.guards';
 import { User } from '../schema/user.schema';
 import { RabbitMQ } from '../rabbitmq/rabbitmq.service';
+import { send } from 'process';
+import { check } from 'prettier';
 
 @Controller('google')
 export class GoogleController {
@@ -24,7 +36,7 @@ export class GoogleController {
     private readonly userService: UserService,
     private readonly groupService: GroupService,
     private queuePublisher: RabbitMQ,
-  ) {}
+  ) { }
 
   @Get('signin')
   @UseGuards(GoogleOauthGuard)
@@ -38,76 +50,79 @@ export class GoogleController {
   async callback(@Req() req: Request, @Res() res: Response) {
     // This route is protected by Google authentication
     // NestJS will automatically redirect the user to Google for authentication
-    const {
-      user: { user: userParsedfromGoogle, profile },
-    } = req.user as any;
+    let loggedinUser = null;
+    if (req.cookies['associate_jwt']) {
+      loggedinUser = decodeJWT(req.cookies['associate_jwt']);
+    }
+    const googleUser = this.getGoogleUser(req);
 
-    let userParsedfromCookie = null;
-    if (req.cookies['associate_jwt'])
-      userParsedfromCookie = decodeJWT(req.cookies['associate_jwt']);
-    console.log('google_callback', userParsedfromGoogle);
+    console.log('google callback', googleUser.user.profile.id, loggedinUser);
+    const existingUserwithGoogleId = await this.userService.findOne({
+      'ext.googleid': googleUser?.user?.profile?.id,
+    });
 
-    if (userParsedfromCookie) {
+    if (loggedinUser) {
       res.clearCookie('associate_jwt');
-      if (userParsedfromGoogle) {
-        const messages = [
-          {
-            type: 'error',
-            message:
-              'Your google account is already associated to another account. Please signoff / login with your github account.',
-          },
-        ];
-        res.cookie('messages', JSON.stringify(messages), { path: '/' });
-        res.redirect('/auth/#!/signin');
-        return;
-      }
-      const userRecord = await this.userService.findOne({
-        sub: userParsedfromCookie.sub,
-      });
-      if (!userRecord)
-        throw new Error(
-          "Couldn't find user record with sub:" + userParsedfromCookie.sub,
-        );
-      userRecord.profile = profile;
-      await this.userService.updatebySub(userRecord.sub, userRecord);
-      res.redirect(settingsCallback);
-    } else {
-      if (!userParsedfromGoogle) {
-        if (google.autoRegister) this.registerNewUser(profile, res);
-        else {
-          res.redirect(
-            '/auth/#!/signin?msg=' +
-              'Your google account is not yet registered. Please login using your username/password first, then associate your github account inside account settings.',
+      if (existingUserwithGoogleId) {
+        if (loggedinUser.sub != existingUserwithGoogleId.sub) {
+          sendErrorMessage(
+            res,
+            'You are already logged in with a different account. Please logout and try again.',
           );
+          return res.redirect(settingsCallback);
         }
-        return;
+        sendErrorMessage(res, ACCOUNT_ALREADY_ASSOCIATED_ERROR('Google'));
+        return res.redirect(settingsCallback);
       }
-      if (checkUser(userParsedfromGoogle, req)?.message)
-        return new Error(checkUser(userParsedfromGoogle, req).message);
 
-      checkUser(userParsedfromGoogle, req).message;
+      const user = await this.userService.findOnebySub(loggedinUser.sub);
+      if (user.ext.googleid) {
+        sendErrorMessage(res, ACCOUNT_ALREADY_ASSOCIATED_ERROR('Google'));
+        return res.redirect(settingsCallback);
+      }
+
+      user.ext.googleid = googleUser.profile.id;
+      await this.userService.updatebySub(user.sub, user);
+      sendSuccessMessage(res, 'Successfully associated Google account.');
+      return res.redirect(settingsCallback);
+    }
+
+    if (!loggedinUser && !existingUserwithGoogleId) {
+      this.registerNewUser(googleUser.profile, res);
+      return;
+    }
+
+    if (!loggedinUser && existingUserwithGoogleId) {
+      const userInactive = checkUser(existingUserwithGoogleId, req).message;
+      if (userInactive) {
+        return Error(userInactive.message);
+      }
       const claim = await createClaim(
-        userParsedfromGoogle,
+        existingUserwithGoogleId,
         this.userService,
         this.groupService,
       );
-      userParsedfromGoogle.times.google_login = new Date();
-      userParsedfromGoogle.reqHeaders = req.headers;
+
+      existingUserwithGoogleId.times.google_login = new Date();
+      existingUserwithGoogleId.reqHeaders = req.headers;
       await this.userService.updatebySub(
-        userParsedfromGoogle.sub,
-        userParsedfromGoogle,
+        existingUserwithGoogleId.sub,
+        existingUserwithGoogleId,
       );
+
+
       this.queuePublisher.publishToQueue(
-        'user.login.' + userParsedfromGoogle.sub,
+        'user.login' + existingUserwithGoogleId.sub,
         JSON.stringify({
           type: 'google',
-          username: userParsedfromGoogle.username,
+          username: existingUserwithGoogleId.username,
           exp: claim.exp,
-          reqHeaders: req.headers,
+          headers: req.headers,
         }),
       );
+
       const jwt = signJWT(claim);
-      res.redirect('/auth/#!/success/' + jwt);
+      res.redirect(successUrl + jwt);
     }
   }
 
@@ -125,12 +140,12 @@ export class GoogleController {
   }
 
   @Get('associate/:jwt')
-  @UseGuards(GoogleOauthGuard)
+  // @UseGuards(GoogleOauthGuard)
   async associate(
-    @Req() req: Request,
-    @Res() res: Response,
+    @Res({ passthrough: true }) res: Response,
     @Param('jwt') jwt: string,
   ) {
+    console.log('--------GOOGLE associate--------');
     try {
       const decodedToken = decodeJWT(jwt);
       if (!decodedToken) throw new Error('Invalid token');
@@ -141,13 +156,9 @@ export class GoogleController {
           "Couldn't find user record with sub:" + decodedToken.sub,
         );
 
-      res.cookie('associate_jwt', jwt, {
-        httpOnly: true,
-        secure: true,
-        maxAge: 1000 * 60 * 5, //5 minutes
-      });
-
-      this.signIn();
+      res.cookie('associate_jwt', jwt, cookieConfig);
+      console.log('--------GOOGLE cookie SET--------');
+      res.redirect('/api/auth/google/signin');
     } catch (e) {
       res.status(401).send(e.message);
     }
@@ -166,5 +177,11 @@ export class GoogleController {
       message: 'Successfully disconnected google account.',
       user: user,
     });
+  }
+
+  getGoogleUser(req: Request): any {
+    const googleUser = req.user as any;
+    if (googleUser) googleUser.profile = googleUser.user.profile;
+    return googleUser;
   }
 }

@@ -131,18 +131,15 @@ export class OrcidController {
         //CASE 1 : User trying to associate Orcid account while already logged in
         if (loggedInUser) {
           res.clearCookie('associate_jwt');
-          if (loggedInUser.sub != existingUserWithOrcidId?.sub) {
-            sendErrorMessage(
-              res,
-              'You are already logged in with a different account. Please logout and try again.',
-            );
-          }
 
           if (existingUserWithOrcidId) {
-            console.log(
-              '---------existingUserWithOrcidId EXISTS-------',
-              existingUserWithOrcidId,
-            );
+            if (loggedInUser.sub != existingUserWithOrcidId?.sub) {
+              sendErrorMessage(
+                res,
+                'You are already logged in with a different account. Please logout and try again.',
+              );
+              return res.redirect(settingsCallback);
+            }
             sendErrorMessage(
               res,
               ANOTHER_ACCOUNT_ALREADY_ASSOCIATED_ERROR('orcid'),

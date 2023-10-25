@@ -33,7 +33,8 @@ export class GithubController {
     private readonly userService: UserService,
     private readonly groupService: GroupService,
     private publishToQueue: RabbitMQ,
-  ) {}
+    // eslint-disable-next-line prettier/prettier
+  ) { }
 
   @Get('signin')
   @UseGuards(AuthGuard('github'))
@@ -60,17 +61,17 @@ export class GithubController {
 
     //CASE 1 : User trying to associate GitHub account while already logged in
     if (loggedinUser) {
-      if (loggedinUser.sub != existingUserWithGithubId?.sub) {
-        // logged in user and github user are different
-        sendErrorMessage(
-          res,
-          'You are already logged in with a different account. Please logout and try again.',
-        );
-        return res.redirect(settingsCallback);
-      }
       res.clearCookie('associate_jwt');
 
       if (existingUserWithGithubId) {
+        if (loggedinUser.sub != existingUserWithGithubId?.sub) {
+          // logged in user and github user are different
+          sendErrorMessage(
+            res,
+            'You are already logged in with a different account. Please logout and try again.',
+          );
+          return res.redirect(settingsCallback);
+        }
         sendErrorMessage(res, ACCOUNT_ALREADY_ASSOCIATED_ERROR('github'));
         return res.redirect(settingsCallback);
       }
