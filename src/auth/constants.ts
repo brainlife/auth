@@ -23,11 +23,12 @@ export const positionGroups = {
   'Student (unspecified)': /student/,
 };
 
-const five_minutes = 5 * 60 * 1000;
+const five_minutes = 5 * 60 * 10000;
 export const cookieConfig = {
-  httpOnly: true,
+  httpOnly: false,
   secure: false,
   maxAge: five_minutes,
+  // domain: 'localhost:8080',
 };
 
 export const emailConfirmSubject = 'Account Confirmation';
@@ -49,16 +50,6 @@ export const orcid = {
 export const signUpUrl = '/auth/#!/signup/';
 export const successUrl = '/auth/#!/success/';
 export const githubSigninUrl = '/api/auth/github/signin';
-
-export function ACCOUNT_ALREADY_ASSOCIATED_ERROR(provider: string): string {
-  return (
-    'Your account is already associated to another ' +
-    provider +
-    ' account. Please signoff / login with your ' +
-    provider +
-    ' account.'
-  );
-}
 
 export const ttl = 24 * 3600 * 1000 * 7; // 7 days
 
