@@ -98,20 +98,10 @@ export class OrcidController {
     // This route is protected by Orcid authentication
     // NestJS will automatically redirect the user to Orcid for authentication
     // check cookies
-    console.log(
-      'orcid callback ---------- COOKIE CHECK',
-      req.cookies['associate_jwt'],
-    );
     (passport.authenticate as any)(
       this.orcidStrategy.name,
       async (err, user, profile) => {
-        console.debug(
-          'orcid callback',
-          'User parsed',
-          user,
-          'His profile',
-          profile,
-        );
+
         if (err) {
           console.error(err);
           return res.redirect(
@@ -257,14 +247,12 @@ export class OrcidController {
     @Req() req: Request,
   ) {
     const userParsedfromCookie = decodeJWT(jwt);
-    console.log('userParsedFromCookie', userParsedfromCookie);
 
     if (!userParsedfromCookie) {
       throw new Error('Failed to parse jwt');
     }
 
     res.cookie('associate_jwt', jwt, cookieConfig);
-    console.log('cookie SET', req.cookies['associate_jwt']);
     res.redirect('/api/auth/orcid/signin');
     // (passport.authenticate as any)(this.orcidStrategy.name)(req, res);
   }

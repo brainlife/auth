@@ -14,9 +14,6 @@ export class JwtAuthGuard extends AuthGuard('jwt') {
 
     // Call the parent canActivate method
     const canActivateResult = super.canActivate(context);
-    console.log('canActivateResult', canActivateResult);
-    console.log('JwtAuthGuard: After authentication check');
-
     return canActivateResult;
   }
 }

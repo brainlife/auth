@@ -130,9 +130,7 @@ export class ProfileController {
       order,
       limit,
     );
-    res.json(
-      {profiles: userswithCount.users, count: userswithCount.count}
-    );
+    res.json({ profiles: userswithCount.users, count: userswithCount.count });
   }
 
   /**

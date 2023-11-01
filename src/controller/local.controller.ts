@@ -273,24 +273,12 @@ export class LocalController {
     const claim = await createClaim(user, this.userService, this.groupService);
 
     if (typeof ttl === 'number' && ttl > 0) {
-      console.log('ttl is number', ttl)
+      console.log('ttl is number', ttl);
       claim.exp = Math.floor(Date.now() / 1000) + ttl;
     } else {
-      console.log('ttl is not number', ttl)
+      console.log('ttl is not number', ttl);
       claim.exp = Math.floor(Date.now() / 1000) + 3600 * 24 * 7; // Default to 7 days
-      console.log('claim.exp', claim.exp,"expiryDate", new Date(claim.exp * 1000))
     }
-
-    // Data to sign
-    const data = {
-      data: 'data',
-    };
-    // Sign data using private key
-    const signature = signJWT(data);
-    // Verify signature using public key
-    const verified = decodeJWT(signature);
-    console.log("VERIFYUING",verified); // true
-
     const jwt = signJWT(claim);
     console.log(user);
     if (!user.times) user.times = {};

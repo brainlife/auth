@@ -25,7 +25,6 @@ export class OrcidService {
         profile: any,
         cb,
       ) => {
-        console.log('orcid callback', profile);
         const user = await this.userService.findOne({
           'ext.orcid': profile.id,
         });

@@ -430,8 +430,7 @@ export class RootController {
     if (req.query.find || req.query.where)
       where = JSON.parse(req.query.find || req.query.where);
     console.log('where', where);
-    let limit = 50;
-    if(req.query.limit > 0) limit = req.query.limit;
+    const limit = req.query.limit || 0;
     const skip = req.query.skip || 0;
     const select =
       req.query.select ||

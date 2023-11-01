@@ -304,4 +304,14 @@ export function ACCOUNT_ALREADY_ASSOCIATED_ERROR(provider: string): string {
     ' account.'
   );
 }
+
+export function ANOTHER_ACCOUNT_ALREADY_ASSOCIATED_ERROR(
+  provider: string,
+): string {
+  return (
+    'There is another account with the same ' +
+    provider +
+    ' account registered. Please contact support.'
+  );
+}
 export { ttl };

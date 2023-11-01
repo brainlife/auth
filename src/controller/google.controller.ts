@@ -36,7 +36,7 @@ export class GoogleController {
     private readonly userService: UserService,
     private readonly groupService: GroupService,
     private queuePublisher: RabbitMQ,
-  ) { }
+  ) {}
 
   @Get('signin')
   @UseGuards(GoogleOauthGuard)
@@ -109,7 +109,6 @@ export class GoogleController {
         existingUserwithGoogleId.sub,
         existingUserwithGoogleId,
       );
-
 
       this.queuePublisher.publishToQueue(
         'user.login' + existingUserwithGoogleId.sub,

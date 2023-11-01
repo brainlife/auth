@@ -17,7 +17,9 @@ export class RabbitMQ implements OnModuleInit {
       transport: Transport.RMQ,
       options: {
         // urls: ['amqp://guest:guest@localhost:5672/brainlife?heartbeat=30'],
-        urls: ['amqp://guest:guest@brainlife_rabbitmq:5672/brainlife?heartbeat=30'],
+        urls: [
+          'amqp://guest:guest@brainlife_rabbitmq:5672/brainlife?heartbeat=30',
+        ],
         queue: 'user-messages',
         queueOptions: {
           durable: false,
