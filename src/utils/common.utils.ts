@@ -295,6 +295,27 @@ export function sendErrorMessage(res, messageText) {
   ];
   res.cookie('messages', JSON.stringify(message), { path: '/' });
 }
+
+export function sendSuccessMessageInUrl(res, messageText) {
+  const message = [
+    {
+      type: 'success',
+      message: messageText,
+    },
+  ];
+  return `successMessages=${encodeURIComponent(JSON.stringify(message))}`;
+}
+
+export function sendErrorMessageInURL(res, messageText) {
+  const message = [
+    {
+      type: 'error',
+      message: messageText,
+    },
+  ];
+  return `errorMessages=${encodeURIComponent(JSON.stringify(message))}`;
+}
+
 export function ACCOUNT_ALREADY_ASSOCIATED_ERROR(provider: string): string {
   return (
     'Your account is already associated to another ' +
