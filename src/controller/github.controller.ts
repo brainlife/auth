@@ -33,7 +33,6 @@ export class GithubController {
     private readonly userService: UserService,
     private readonly groupService: GroupService,
     private publishToQueue: RabbitMQ,
-  ) // eslint-disable-next-line prettier/prettier
   ) { }
 
   @Get('signin')
