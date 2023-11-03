@@ -98,10 +98,20 @@ export class OrcidController {
     // This route is protected by Orcid authentication
     // NestJS will automatically redirect the user to Orcid for authentication
     // check cookies
+    console.log(
+      'orcid callback ---------- COOKIE CHECK',
+      req.cookies['associate_jwt'],
+    );
     (passport.authenticate as any)(
       this.orcidStrategy.name,
       async (err, user, profile) => {
-
+        console.debug(
+          'orcid callback',
+          'User parsed',
+          user,
+          'His profile',
+          profile,
+        );
         if (err) {
           console.error(err);
           return res.redirect(
@@ -194,40 +204,37 @@ export class OrcidController {
 
   async registerNewUser(profile: any, res: Response) {
     try {
-      const baseOrcidURL =
-        process.env.NODE_ENV === 'development'
-          ? 'https://pub.sandbox.orcid.org/v2.1/'
-          : 'https://pub.orcid.org/v2.1/';
+      const detail = await axios.get(
+        'https://pub.orcid.org/v2.1/' + profile.orcid + '/record',
+      );
 
-      const detailURL = `${baseOrcidURL}${profile.orcid}/person`;
-
-      const detail = await axios.get(detailURL, {
-        headers: {
-          Accept: 'application/json',
-        },
-      });
-
-      const extractedData =
-        process.env.NODE_ENV === 'development'
-          ? detail.data
-          : detail.data.person;
-
-      const fullName = `${extractedData?.name?.['given-names']?.value || ''} ${extractedData?.name?.['family-name']?.value || ''
-        }`.trim();
-      const primaryEmail = extractedData?.emails?.email.find(
-        (email: any) => email.primary,
-      )?.email;
-
-      const defaultData: DefaultData = {
-        fullname: fullName || undefined,
-        email: primaryEmail || undefined,
-        username: primaryEmail?.split('@')[0] || undefined,
+      const ext = {
+        orcid: profile.orcid,
       };
+
+      const _default: DefaultData = {};
+
+      if (detail.data.person) {
+        if (detail.data.person.name) {
+          _default.fullname = `${detail.data.person.name['given-names'].value} ${detail.data.person.name['family-name'].value}`;
+        }
+
+        if (detail.data.person.emails) {
+          detail.data.person.emails.email.forEach((email) => {
+            if (email.primary) _default.email = email.email;
+          });
+        }
+      }
+
+      // guest user id from email
+      if (_default.email) {
+        _default.username = _default.email.split('@')[0];
+      }
 
       const temp_jwt = signJWT({
         exp: (Date.now() + ttl) / 1000,
-        ext: { orcid: profile.orcid },
-        _default: defaultData,
+        ext,
+        _default,
       });
 
       console.info(`signed temporary jwt token for orcid signup: ${temp_jwt}`);
@@ -235,8 +242,7 @@ export class OrcidController {
 
       res.redirect(signUpUrl + temp_jwt);
     } catch (error) {
-      console.error(`Failed to get orcid detail: ${error.message}`);
-      res.status(500).send('Error registering new user.');
+      throw new Error(`Failed to get orcid detail: ${error.message}`);
     }
   }
 
@@ -247,12 +253,14 @@ export class OrcidController {
     @Req() req: Request,
   ) {
     const userParsedfromCookie = decodeJWT(jwt);
+    console.log('userParsedFromCookie', userParsedfromCookie);
 
     if (!userParsedfromCookie) {
       throw new Error('Failed to parse jwt');
     }
 
     res.cookie('associate_jwt', jwt, cookieConfig);
+    console.log('cookie SET', req.cookies['associate_jwt']);
     res.redirect('/api/auth/orcid/signin');
     // (passport.authenticate as any)(this.orcidStrategy.name)(req, res);
   }
@@ -265,8 +273,12 @@ export class OrcidController {
       // throw new Error(`Couldn't find user record with sub: ${req.user.sub}`);
       return res.status(401).send(`Couldn't find user record`);
     }
+    console.log('users with sub', await this.userService.findbyQuery({ sub: user.sub }));
+    console.log('disconnecting orcid account', user.ext);
 
-    user.ext.orcid = null;
+
+    //user.ext.orcid = null giving error in mongo duplication error
+    user.ext.orcid = undefined;
     await this.userService.updatebySub(user.sub, user);
 
     return res.json({
