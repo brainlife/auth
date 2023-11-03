@@ -98,10 +98,6 @@ export class OrcidController {
     // This route is protected by Orcid authentication
     // NestJS will automatically redirect the user to Orcid for authentication
     // check cookies
-    console.log(
-      'orcid callback ---------- COOKIE CHECK',
-      req.cookies['associate_jwt'],
-    );
     (passport.authenticate as any)(
       this.orcidStrategy.name,
       async (err, user, profile) => {
@@ -257,14 +253,12 @@ export class OrcidController {
     @Req() req: Request,
   ) {
     const userParsedfromCookie = decodeJWT(jwt);
-    console.log('userParsedFromCookie', userParsedfromCookie);
 
     if (!userParsedfromCookie) {
       throw new Error('Failed to parse jwt');
     }
 
     res.cookie('associate_jwt', jwt, cookieConfig);
-    console.log('cookie SET', req.cookies['associate_jwt']);
     res.redirect('/api/auth/orcid/signin');
     // (passport.authenticate as any)(this.orcidStrategy.name)(req, res);
   }
@@ -277,9 +271,6 @@ export class OrcidController {
       // throw new Error(`Couldn't find user record with sub: ${req.user.sub}`);
       return res.status(401).send(`Couldn't find user record`);
     }
-    console.log('users with sub', await this.userService.findbyQuery({ sub: user.sub }));
-    console.log('disconnecting orcid account', user.ext);
-
 
     //user.ext.orcid = null giving error in mongo duplication error
     user.ext.orcid = undefined;
