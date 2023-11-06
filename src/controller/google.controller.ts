@@ -13,8 +13,11 @@ import {
   createClaim,
   signJWT,
   sendErrorMessage,
-  ACCOUNT_ALREADY_ASSOCIATED_ERROR,
+  YOUR_ACCOUNT_ALREADY_ASSOCIATED_ERROR,
   sendSuccessMessage,
+  sendErrorMessageInURL,
+  sendSuccessMessageInUrl,
+  LOGGED_IN_W_DIFFERENT_ACCOUNT_ERROR_SAME_PROVIDER,
 } from '../utils/common.utils';
 import {
   cookieConfig,
@@ -36,7 +39,7 @@ export class GoogleController {
     private readonly userService: UserService,
     private readonly groupService: GroupService,
     private queuePublisher: RabbitMQ,
-  ) {}
+  ) { }
 
   @Get('signin')
   @UseGuards(GoogleOauthGuard)
@@ -65,29 +68,24 @@ export class GoogleController {
       res.clearCookie('associate_jwt');
       if (existingUserwithGoogleId) {
         if (loggedinUser.sub != existingUserwithGoogleId.sub) {
-          sendErrorMessage(
-            res,
-            'You are already logged in with a different account. Please logout and try again.',
-          );
-          return res.redirect(settingsCallback);
+          return res.redirect(settingsCallback + sendErrorMessageInURL(LOGGED_IN_W_DIFFERENT_ACCOUNT_ERROR_SAME_PROVIDER));
         }
-        sendErrorMessage(res, ACCOUNT_ALREADY_ASSOCIATED_ERROR('Google'));
-        return res.redirect(settingsCallback);
+        return res.redirect(settingsCallback + sendErrorMessageInURL(YOUR_ACCOUNT_ALREADY_ASSOCIATED_ERROR('Google')));
       }
 
       const user = await this.userService.findOnebySub(loggedinUser.sub);
       if (user.ext.googleid) {
-        sendErrorMessage(res, ACCOUNT_ALREADY_ASSOCIATED_ERROR('Google'));
-        return res.redirect(settingsCallback);
+        return res.redirect(settingsCallback + sendErrorMessageInURL(YOUR_ACCOUNT_ALREADY_ASSOCIATED_ERROR('Google')));
       }
 
       user.ext.googleid = googleUser.profile.id;
       await this.userService.updatebySub(user.sub, user);
       sendSuccessMessage(res, 'Successfully associated Google account.');
-      return res.redirect(settingsCallback);
+      return res.redirect(settingsCallback + sendSuccessMessageInUrl('Successfully associated Google account.'));
     }
 
     if (!loggedinUser && !existingUserwithGoogleId) {
+      console.log('registering new user as no loggedIN USER and no existing user with google id');
       this.registerNewUser(googleUser.profile, res);
       return;
     }
@@ -144,7 +142,6 @@ export class GoogleController {
     @Res({ passthrough: true }) res: Response,
     @Param('jwt') jwt: string,
   ) {
-    console.log('--------GOOGLE associate--------');
     try {
       const decodedToken = decodeJWT(jwt);
       if (!decodedToken) throw new Error('Invalid token');
@@ -156,7 +153,6 @@ export class GoogleController {
         );
 
       res.cookie('associate_jwt', jwt, cookieConfig);
-      console.log('--------GOOGLE cookie SET--------');
       res.redirect('/api/auth/google/signin');
     } catch (e) {
       res.status(401).send(e.message);
