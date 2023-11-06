@@ -296,27 +296,15 @@ export function sendErrorMessage(res, messageText) {
   res.cookie('messages', JSON.stringify(message), { path: '/' });
 }
 
-export function sendSuccessMessageInUrl(res, messageText) {
-  const message = [
-    {
-      type: 'success',
-      message: messageText,
-    },
-  ];
-  return `successMessages=${encodeURIComponent(JSON.stringify(message))}`;
+export function sendSuccessMessageInUrl(messageText) {
+  return `?successMessage=${encodeURIComponent(JSON.stringify(messageText))}`;
 }
 
-export function sendErrorMessageInURL(res, messageText) {
-  const message = [
-    {
-      type: 'error',
-      message: messageText,
-    },
-  ];
-  return `errorMessages=${encodeURIComponent(JSON.stringify(message))}`;
+export function sendErrorMessageInURL(messageText) {
+  return `?errorMessage=${encodeURIComponent(messageText)}`;
 }
 
-export function ACCOUNT_ALREADY_ASSOCIATED_ERROR(provider: string): string {
+export function YOUR_ACCOUNT_ALREADY_ASSOCIATED_ERROR(provider: string): string {
   return (
     'Your account is already associated to another ' +
     provider +
@@ -334,5 +322,13 @@ export function ANOTHER_ACCOUNT_ALREADY_ASSOCIATED_ERROR(
     provider +
     ' account registered. Please contact support.'
   );
+}
+
+export const LOGGED_IN_W_DIFFERENT_ACCOUNT_ERROR = 'You are already logged in with a different account. Please logout and try again.';
+
+export const LOGGED_IN_W_DIFFERENT_ACCOUNT_ERROR_SAME_PROVIDER = 'You are already logged in with a different account with same provider. Please logout and try again.';
+
+export function ACCOUNT_SUCCESSFULLY_ASSOCIATED(provider: string): string {
+  return 'Successfully associated ' + provider + ' account.';
 }
 export { ttl };

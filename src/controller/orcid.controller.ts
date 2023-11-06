@@ -14,9 +14,14 @@ import {
   signJWT,
   queuePublisher,
   sendErrorMessage,
-  ACCOUNT_ALREADY_ASSOCIATED_ERROR,
+  YOUR_ACCOUNT_ALREADY_ASSOCIATED_ERROR,
   ANOTHER_ACCOUNT_ALREADY_ASSOCIATED_ERROR,
   sendSuccessMessage,
+  sendErrorMessageInURL,
+  sendSuccessMessageInUrl,
+  ACCOUNT_SUCCESSFULLY_ASSOCIATED,
+  LOGGED_IN_W_DIFFERENT_ACCOUNT_ERROR,
+  LOGGED_IN_W_DIFFERENT_ACCOUNT_ERROR_SAME_PROVIDER,
 } from '../utils/common.utils';
 import {
   settingsCallback,
@@ -84,10 +89,6 @@ export class OrcidController {
 
   @Get('signin')
   signIn(@Req() req, @Res() res, @Next() next: any) {
-    console.log(
-      'orcid signin ---------- COOKIE CHECK',
-      req.cookies['associate_jwt'],
-    );
     (passport.authenticate as any)(this.orcidStrategy.name, {
       idp: req.query.idp,
     })(req, res, next);
@@ -101,13 +102,7 @@ export class OrcidController {
     (passport.authenticate as any)(
       this.orcidStrategy.name,
       async (err, user, profile) => {
-        console.debug(
-          'orcid callback',
-          'User parsed',
-          user,
-          'His profile',
-          profile,
-        );
+
         if (err) {
           console.error(err);
           return res.redirect(
@@ -130,17 +125,10 @@ export class OrcidController {
 
           if (existingUserWithOrcidId) {
             if (loggedInUser.sub != existingUserWithOrcidId?.sub) {
-              sendErrorMessage(
-                res,
-                'You are already logged in with a different account. Please logout and try again.',
-              );
-              return res.redirect(settingsCallback);
+              return res.redirect(settingsCallback + sendErrorMessageInURL(LOGGED_IN_W_DIFFERENT_ACCOUNT_ERROR_SAME_PROVIDER));
             }
-            sendErrorMessage(
-              res,
-              ANOTHER_ACCOUNT_ALREADY_ASSOCIATED_ERROR('orcid'),
-            );
-            return res.redirect(settingsCallback);
+            //TODO: ASK anibal if this is needed or not
+            return res.redirect(settingsCallback + sendErrorMessageInURL(ANOTHER_ACCOUNT_ALREADY_ASSOCIATED_ERROR('orcid')));
           }
 
           const loggedInUserDetails = await this.userService.findOnebySub(
@@ -148,17 +136,18 @@ export class OrcidController {
           );
 
           if (loggedInUserDetails.ext.orcid) {
-            sendErrorMessage(res, ACCOUNT_ALREADY_ASSOCIATED_ERROR('orcid'));
+            sendErrorMessage(res, YOUR_ACCOUNT_ALREADY_ASSOCIATED_ERROR('orcid'));
+            return res.redirect(settingsCallback + sendErrorMessageInURL(YOUR_ACCOUNT_ALREADY_ASSOCIATED_ERROR('orcid')));
           }
-          loggedInUserDetails.ext.orcid = profile.orcid;
 
+          loggedInUserDetails.ext.orcid = profile.orcid;
           await this.userService.updatebySub(
             loggedInUserDetails.sub,
             loggedInUserDetails,
           );
 
           sendSuccessMessage(res, 'Successfully associated orcid account.');
-          return res.redirect(settingsCallback);
+          return res.redirect(settingsCallback + sendSuccessMessageInUrl(ACCOUNT_SUCCESSFULLY_ASSOCIATED('orcid')));
         }
 
         //User trying to register with Orcid account
