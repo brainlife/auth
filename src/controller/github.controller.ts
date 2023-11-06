@@ -13,7 +13,9 @@ import {
   signJWT,
   sendErrorMessage,
   sendSuccessMessage,
-  ACCOUNT_ALREADY_ASSOCIATED_ERROR,
+  YOUR_ACCOUNT_ALREADY_ASSOCIATED_ERROR,
+  sendErrorMessageInURL,
+  sendSuccessMessageInUrl,
 } from '../utils/common.utils';
 import {
   cookieConfig,
@@ -65,24 +67,17 @@ export class GithubController {
       if (existingUserWithGithubId) {
         if (loggedinUser.sub != existingUserWithGithubId?.sub) {
           // logged in user and github user are different
-          sendErrorMessage(
-            res,
-            'You are already logged in with a different account. Please logout and try again.',
-          );
-          return res.redirect(settingsCallback);
+          return res.redirect(settingsCallback + sendErrorMessageInURL(YOUR_ACCOUNT_ALREADY_ASSOCIATED_ERROR('github')));
         }
-        sendErrorMessage(res, ACCOUNT_ALREADY_ASSOCIATED_ERROR('github'));
-        return res.redirect(settingsCallback);
+        return res.redirect(settingsCallback + sendErrorMessageInURL(YOUR_ACCOUNT_ALREADY_ASSOCIATED_ERROR('github')));
       }
       const user = await this.userService.findOnebySub(loggedinUser.sub);
       if (user.ext.github) {
-        sendErrorMessage(res, ACCOUNT_ALREADY_ASSOCIATED_ERROR('github'));
-        return res.redirect(settingsCallback);
+        return res.redirect(settingsCallback + sendErrorMessageInURL(YOUR_ACCOUNT_ALREADY_ASSOCIATED_ERROR('github')));
       }
       user.ext.github = githubUser.profile.id;
       await this.userService.updatebySub(user.sub, user);
-      sendSuccessMessage(res, 'Successfully associated github account.');
-      return res.redirect(settingsCallback);
+      return res.redirect(settingsCallback + sendSuccessMessageInUrl('Successfully associated github account.'));
     }
 
     //User trying to register with GitHub account
@@ -129,14 +124,12 @@ export class GithubController {
     console.log('associateWithGithub', jwt);
     try {
       const decodedToken = decodeJWT(jwt);
-      console.log('decodedToken', decodedToken);
       // Do any further checks if necessary, for example, you might check if a user exists in your system
       const user = await this.userService.findOne({ sub: decodedToken.sub });
       if (!user) throw new Error('User not found');
       res.cookie('associate_jwt', jwt, cookieConfig);
 
       // confirm the cookie is set
-      console.log('cookie SET', res.cookie);
       // This is where you'd typically continue with the GitHub association process...
       // After setting cookies, manually redirect to GitHub for authentication
       // Handle errors from the JWT decoding process, for example:
