@@ -10,32 +10,38 @@ export class OrganizationController {
         private readonly organizationService: OrganizationService
     ) { }
 
-    //add access control
+
+    // brainlife admin can access this and get all organizations
+    // admin of the organization can access this and get all organizations
+    // if not admin then only get the organizations that the user is a member of
     @Get('/all')
     findAll() {
         console.log('Finding all organizations');
         return this.organizationService.findAll();
     }
 
-    //add access control
+    // brainlife admin can access any organization
+    // organization admin can access their organization
+    // if not admin then only get the organization that the user is a member of
     @Get(':id')
     findOne(@Param('id') id: string) {
         return this.organizationService.findOne(id);
     }
 
+    // any user can create an organization
     @Post()
     create(@Body() createOrganizationDto: CreateOrganizationDto) {
         return this.organizationService.create(createOrganizationDto);
     }
 
 
-    //add access control
+    // admin of the organization and brainlife admin can update an organization
     @Put(':id')
     update(@Param('id') id: string, @Body() updateOrganizationDto: UpdateOrganizationDto) {
         return this.organizationService.update(id, updateOrganizationDto);
     }
 
-    //add access control
+    // admin of the organization and brainlife admin can delete an organization
     @Delete(':id')
     remove(@Param('id') id: string) {
         return this.organizationService.remove(id);
