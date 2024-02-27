@@ -10,12 +10,14 @@ export class OrganizationController {
         private readonly organizationService: OrganizationService
     ) { }
 
+    //add access control
     @Get('/all')
     findAll() {
         console.log('Finding all organizations');
         return this.organizationService.findAll();
     }
 
+    //add access control
     @Get(':id')
     findOne(@Param('id') id: string) {
         return this.organizationService.findOne(id);
@@ -26,11 +28,14 @@ export class OrganizationController {
         return this.organizationService.create(createOrganizationDto);
     }
 
+
+    //add access control
     @Put(':id')
     update(@Param('id') id: string, @Body() updateOrganizationDto: UpdateOrganizationDto) {
         return this.organizationService.update(id, updateOrganizationDto);
     }
 
+    //add access control
     @Delete(':id')
     remove(@Param('id') id: string) {
         return this.organizationService.remove(id);
