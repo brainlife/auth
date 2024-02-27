@@ -22,6 +22,9 @@ export class Organization extends Document {
 
     @Prop({ type: [Object], default: [] })
     roles: Role[];
+
+    @Prop({ default: false })
+    removed: boolean;
 }
 
 export const OrganizationSchema = SchemaFactory.createForClass(Organization);
