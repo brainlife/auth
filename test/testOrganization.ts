@@ -17,7 +17,6 @@ const signupUser = async (userData) => {
     }
 };
 
-// Function to login a user
 const loginUser = async (userData) => {
     try {
         const response = await axios.post(`${host}/local/auth`, {
@@ -31,7 +30,6 @@ const loginUser = async (userData) => {
     }
 };
 
-// Function to handle the signup and login process
 const handleSignupAndLogin = async () => {
     const usersLoggedIN = [];
     for (const user of users) {
@@ -52,7 +50,6 @@ const handleSignupAndLogin = async () => {
     return usersLoggedIN;
 };
 
-// const host = 'http://localhost:8080/api/auth';
 const signupUrl = `${host}/signup`;
 
 const user1 = {
@@ -64,7 +61,7 @@ const user1 = {
 const user2 = {
     email: 'user2@example.com',
     username: 'user2',
-    password: 'password456TEST'
+    password: 'password456TEST',
 };
 
 const signUpAndLogin = async (user) => {
@@ -165,6 +162,8 @@ const deleteOrganization = async (jwt, organizationId) => {
 };
 
 
+
+
 const executeWorkflow = async () => {
     const users = await handleSignupAndLogin();
     const user1_loggedIn = users[0];
@@ -203,6 +202,60 @@ const executeWorkflow = async () => {
     if (deletedOrg.removed === true) {
         console.log('Organization deleted successfully');
     }
+
+    const organizationsData = [
+        {
+            name: 'Organization One',
+            owner: user1_loggedIn.sub,
+            roles: [
+                {
+                    role: 'admin',
+                    members: [user1_loggedIn.sub]
+                }
+            ]
+        },
+        {
+            name: 'Organization Two',
+            owner: user1_loggedIn.sub,
+            roles: [
+                {
+                    role: 'admin',
+                    members: [user1_loggedIn.sub]
+                }
+            ]
+        }
+    ];
+
+    const organizations = await Promise.all(organizationsData.map(org => createOrganization(user1_loggedIn.jwt, org)));
+
+    const brainlifeAdmin = {
+        jwt: 'eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE3MDk4NDE1MDUsInNjb3BlcyI6eyJicmFpbmxpZmUiOlsiYWRtaW4iXX0sInN1YiI6MTAsImdpZHMiOlswXSwicHJvZmlsZSI6eyJ1c2VybmFtZSI6InRlc3ROYW1lIiwiZW1haWwiOiJ0ZXN0TmFtZUB0ZXN0LmlvIn0sImlhdCI6MTcwOTIzNjcwNX0.fGYNnD9Keks55DHd_pu99hmWBoj50FV5zqGc-2w-4EtRyFM8f2gSpOJJgzOeYPHnS_0zRxDEkjEKGH8eT6CaYNfU0JYtMAmV9eOc3ricDIyzcSy_wDTE5aoTkpWOkQmNxIiEOi04STAX29iUXvIpSU5CwCbTweR89PD9_PYezDBtFJmp1Oxhy0i2e2anH41GA4IYgTZIDgc0UHa88fCCyk1x-kQWSWBaiECw4Bz0stVlAb_4JBmpkal62ra9vqG4uM2jYJSpDum4ilxI5keKt2uUi6DWD9ZyuieGZ8DueIqKeuP8hCFE62eHWdzysxoHd6-6LnV9lp_SCEwmJ4n6uw'
+    }
+
+    const allOrganizations = await axios.get(`${host}/organization`, {
+        headers: {
+            Authorization: `Bearer ${brainlifeAdmin.jwt}`
+        }
+    });
+
+    console.log('All organizations:', allOrganizations.data);
+
+    updateOrganization(brainlifeAdmin.jwt, organizations[0]._id, { name: 'Updated Organization One' });
+
+    const updatedOrgOne = await getOrganization(brainlifeAdmin.jwt, organizations[0]._id);
+
+    if (updatedOrgOne.name === 'Updated Organization One') {
+        console.log('Organization One updated successfully');
+    }
+
+    deleteOrganization(brainlifeAdmin.jwt, organizations[1]._id);
+
+    const deletedOrgTwo = await getOrganization(brainlifeAdmin.jwt, organizations[1]._id);
+
+    if (deletedOrgTwo.removed === true) {
+        console.log('Organization Two deleted successfully');
+    }
+
 };
 
 

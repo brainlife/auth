@@ -14,10 +14,6 @@ export class OrganizationController {
         private readonly organizationService: OrganizationService
     ) { }
 
-
-    // brainlife admin can access this and get all organizations
-    // if not bl admin then only get the organizations that the user is a member of
-    // as a admin or as a user
     @Get()
     @UseGuards(JwtAuthGuard)
     async findAll(@Req() req, @Res() res) {
@@ -43,11 +39,6 @@ export class OrganizationController {
             ));
     }
 
-
-
-    // brainlife admin can access any organization
-    // organization admin can access their organization
-    // if not admin then only get the organization that the user is a member of
     @UseGuards(JwtAuthGuard)
     @Get(':id')
     async findOne(@Req() req, @Param('id') id: string) {
@@ -61,13 +52,9 @@ export class OrganizationController {
     }
 
 
-    // any authenticated user can create an organization
     @UseGuards(JwtAuthGuard)
     @Post('create')
     create(@Req() req, @Body() createOrganizationDto: CreateOrganizationDto) {
-        // validate the user is admin of the organization
-        // validate that the owner is the user
-
 
         if (createOrganizationDto.owner != req.user.sub) {
             throw new Error('The owner of the organization must be the user');
@@ -82,7 +69,6 @@ export class OrganizationController {
     }
 
 
-    // admin of the organization and brainlife admin can update an organization
     @Put(':id')
     @UseGuards(JwtAuthGuard)
     async update(@Req() req, @Param('id') id: string, @Body() updateOrganizationDto: UpdateOrganizationDto) {
@@ -103,7 +89,6 @@ export class OrganizationController {
     }
 
 
-    // admin of the organization and brainlife admin can delete an organization
     @Delete(':id')
     @UseGuards(JwtAuthGuard)
     async remove(@Req() req, @Param('id') id: string) {

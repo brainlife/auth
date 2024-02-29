@@ -268,8 +268,8 @@ export async function createClaim(
 export function hasScope(user: any, role: string): boolean {
   if (!user) return false;
   if (!user.scopes) return false;
-  //TODO what about brainlife admin ?
-  // if (user.scopes.brainlife) return true;
+  //TODO what about brainlife admin should I keep this ?
+  if (user.scopes.brainlife) return true;
   if (!user.scopes.auth) return false;
   if (!~user.scopes.auth.indexOf(role)) return false;
   return true;
