@@ -55,7 +55,6 @@ export class OrganizationService {
     }
 
     isUserOwner(organization: Organization, user: string): boolean {
-        console.log(organization.owner, user);
         return organization.owner == user;
     }
 
