@@ -54,4 +54,17 @@ export class OrganizationService {
         return this.organizationModel.findByIdAndUpdate(id, { removed: true, modified: new Date() }, { new: true });
     }
 
+    isUserOwner(organization: Organization, user: string): boolean {
+        console.log(organization.owner, user);
+        return organization.owner == user;
+    }
+
+    isUserAdmin(organization: Organization, userID: string): boolean {
+        return organization.roles.some(role => role.members.includes(userID) && role.role === 'admin');
+    }
+
+    isUserMember(organization: Organization, userID: string): boolean {
+        return organization.roles.some(role => role.members.includes(userID));
+    }
+
 }

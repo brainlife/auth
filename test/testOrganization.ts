@@ -174,6 +174,10 @@ const executeWorkflow = async () => {
         roles: [
             {
                 role: 'admin',
+                members: [user1_loggedIn.sub]
+            },
+            {
+                role: 'member',
                 members: [user2_loggedIN.sub]
             }
         ],

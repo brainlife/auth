@@ -47,7 +47,7 @@ export class OrganizationController {
 
         if (hasScope(req.user, "admin")) return organization;
 
-        const isMember = organization.roles.some(role => role.members.includes(req.user.sub));
+        const isMember = this.organizationService.isUserMember(organization, req.user.sub);
         if (isMember) return organization;
         throw new HttpException('Forbidden', HttpStatus.FORBIDDEN);
     }
@@ -57,12 +57,12 @@ export class OrganizationController {
     @Post('create')
     create(@Req() req, @Body() createOrganizationDto: CreateOrganizationDto) {
 
-        if (createOrganizationDto.owner != req.user.sub) {
+        if (!this.organizationService.isUserOwner(createOrganizationDto, req.user.sub)) {
             throw new HttpErrorByCode[403]('The user must be the owner of the organization to create it');
         }
 
-        const isAdmin = createOrganizationDto.roles.some(role => role.role === 'admin' && role.members.includes(req.user.sub));
-        if (!isAdmin) {
+        const isAdminOfOrganization = this.organizationService.isUserAdmin(createOrganizationDto, req.user.sub);
+        if (!isAdminOfOrganization) {
             throw new HttpErrorByCode[403]('The user must be the admin of the organization to create it');
         }
 
@@ -77,10 +77,9 @@ export class OrganizationController {
 
 
         const isBrainlifeAdmin = hasScope(req.user, 'admin');
-        const isOwner = organization.owner === req.user.sub;
+        const isOwner = this.organizationService.isUserOwner(organization, req.user.sub);
 
-        const isAdminOfOrganization = organization.roles.some(role => role.role === 'admin' && role.members.includes(req.user.sub));
-
+        const isAdminOfOrganization = this.organizationService.isUserAdmin(organization, req.user.sub);
 
         if (!isBrainlifeAdmin && !isOwner && !isAdminOfOrganization) {
             throw new HttpErrorByCode[403]('The user has no permission to update this organization.');
@@ -96,9 +95,9 @@ export class OrganizationController {
         const organization: Organization = await this.organizationService.findOnebyId(id);
 
         const isBrainlifeAdmin = hasScope(req.user, 'admin');
-        const isOwner = organization.owner === req.user.sub;
+        const isOwner = this.organizationService.isUserOwner(organization, req.user.sub);
 
-        const isAdminOfOrganization = organization.roles.some(role => role.role === 'admin' && role.members.includes(req.user.sub));
+        const isAdminOfOrganization = this.organizationService.isUserAdmin(organization, req.user.sub);
 
 
         if (!isBrainlifeAdmin && !isOwner && !isAdminOfOrganization) {
