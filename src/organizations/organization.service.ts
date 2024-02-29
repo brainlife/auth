@@ -41,17 +41,19 @@ export class OrganizationService {
         return query.exec();
     }
 
-    async findOne(id: string): Promise<Organization> {
-        return this.organizationModel.findOne({ _id: id });
+    async findOnebyId(id: string): Promise<Organization> {
+        return this.organizationModel.findById(id);
     }
 
     async update(id: string, updateOrganizationDto: UpdateOrganizationDto): Promise<Organization> {
         // update the modified date
+        updateOrganizationDto.modified = new Date();
         return this.organizationModel.findByIdAndUpdate(id, updateOrganizationDto, { new: true });
     }
 
     async remove(id: string): Promise<Organization> {
         // update the modified date, just mark removed = true
-        return this.organizationModel.findByIdAndRemove(id);
+        return this.organizationModel.findByIdAndUpdate(id, { removed: true, modified: new Date() }, { new: true });
     }
+
 }

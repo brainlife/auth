@@ -4,7 +4,7 @@ import { CreateOrganizationDto } from 'src/dto/create-organization.dto';
 import { UpdateOrganizationDto } from 'src/dto/update-organization.dto';
 import { JwtAuthGuard } from 'src/auth/jwt-auth.guard';
 import { check } from 'prettier';
-import { checkUser } from 'src/utils/common.utils';
+import { checkUser, hasScope } from 'src/utils/common.utils';
 import { Organization } from 'src/schema/organization.schema';
 
 
@@ -23,10 +23,8 @@ export class OrganizationController {
     async findAll(@Req() req, @Res() res) {
         let where = {};
         if (req.query.find) where = JSON.parse(req.query.find);
-        console.log('where', where);
 
-        if (!req.user.roles.includes('admin')) {
-            // MongoDB query to find organizations where the user's ID is in the members array of any role
+        if (!hasScope(req.user, 'admin')) {
             where['roles.members'] = req.user.sub;
         }
 
@@ -45,16 +43,18 @@ export class OrganizationController {
             ));
     }
 
+
+
     // brainlife admin can access any organization
     // organization admin can access their organization
     // if not admin then only get the organization that the user is a member of
     @UseGuards(JwtAuthGuard)
     @Get(':id')
     async findOne(@Req() req, @Param('id') id: string) {
-        const organization = await this.organizationService.findOne(id); // Ensure this operation is awaited
-        // Direct admin access
-        if (req.user.roles.includes('admin')) return organization;
-        // Check if the user is a member of the organization in any role
+        const organization: Organization = await this.organizationService.findOnebyId(id);
+
+        if (hasScope(req.user, "admin")) return organization;
+
         const isMember = organization.roles.some(role => role.members.includes(req.user.sub));
         if (isMember) return organization;
         throw new HttpException('Forbidden', HttpStatus.FORBIDDEN);
@@ -63,15 +63,16 @@ export class OrganizationController {
 
     // any authenticated user can create an organization
     @UseGuards(JwtAuthGuard)
-    @Post()
+    @Post('create')
     create(@Req() req, @Body() createOrganizationDto: CreateOrganizationDto) {
         // validate the user is admin of the organization
         // validate that the owner is the user
+
+
         if (createOrganizationDto.owner != req.user.sub) {
             throw new Error('The owner of the organization must be the user');
         }
 
-        // Check if the user has the "admin" role and is a member of the organization
         const isAdmin = createOrganizationDto.roles.some(role => role.role === 'admin' && role.members.includes(req.user.sub));
         if (!isAdmin) {
             throw new Error('The user must be an admin of the organization');
@@ -85,43 +86,39 @@ export class OrganizationController {
     @Put(':id')
     @UseGuards(JwtAuthGuard)
     async update(@Req() req, @Param('id') id: string, @Body() updateOrganizationDto: UpdateOrganizationDto) {
-        const organization: Organization = await this.organizationService.findOne(id);
+        const organization: Organization = await this.organizationService.findOnebyId(id);
 
-        // Check if the user is a brainlife admin or the owner of the organization.
-        const isBrainlifeAdmin = req.user.roles.includes('admin');
+
+        const isBrainlifeAdmin = hasScope(req.user, 'admin');
         const isOwner = organization.owner === req.user.sub;
 
-        // Check if the user is an admin within the organization
         const isAdminOfOrganization = organization.roles.some(role => role.role === 'admin' && role.members.includes(req.user.sub));
 
-        // If the user is not a brainlife admin, the owner, or an admin in the organization, throw an error.
+
         if (!isBrainlifeAdmin && !isOwner && !isAdminOfOrganization) {
             throw new Error('The user must be an admin, the owner of the organization, or a brainlife admin to perform this operation.');
         }
 
-        // If the checks pass, proceed to update the organization.
         return this.organizationService.update(id, updateOrganizationDto);
     }
 
 
     // admin of the organization and brainlife admin can delete an organization
     @Delete(':id')
+    @UseGuards(JwtAuthGuard)
     async remove(@Req() req, @Param('id') id: string) {
-        const organization: Organization = await this.organizationService.findOne(id);
+        const organization: Organization = await this.organizationService.findOnebyId(id);
 
-        // Check if the user is a brainlife admin or the owner of the organization.
-        const isBrainlifeAdmin = req.user.roles.includes('admin');
+        const isBrainlifeAdmin = hasScope(req.user, 'admin');
         const isOwner = organization.owner === req.user.sub;
 
-        // Check if the user is an admin within the organization
         const isAdminOfOrganization = organization.roles.some(role => role.role === 'admin' && role.members.includes(req.user.sub));
 
-        // If the user is not a brainlife admin, the owner, or an admin in the organization, throw an error.
+
         if (!isBrainlifeAdmin && !isOwner && !isAdminOfOrganization) {
             throw new Error('The user must be an admin, the owner of the organization, or a brainlife admin to perform this operation.');
         }
 
-        // If the checks pass, proceed to update the organization.
         return this.organizationService.remove(id);
     }
 }
