@@ -58,12 +58,12 @@ export class OrganizationController {
     create(@Req() req, @Body() createOrganizationDto: CreateOrganizationDto) {
 
         if (createOrganizationDto.owner != req.user.sub) {
-            throw new Error('The owner of the organization must be the user');
+            throw new HttpErrorByCode[403]('The user must be the owner of the organization to create it');
         }
 
         const isAdmin = createOrganizationDto.roles.some(role => role.role === 'admin' && role.members.includes(req.user.sub));
         if (!isAdmin) {
-            throw new Error('The user must be an admin of the organization');
+            throw new HttpErrorByCode[403]('The user must be the admin of the organization to create it');
         }
 
         return this.organizationService.create(createOrganizationDto);
@@ -83,7 +83,7 @@ export class OrganizationController {
 
 
         if (!isBrainlifeAdmin && !isOwner && !isAdminOfOrganization) {
-            throw new HttpErrorByCode[403]('The user has no permission to delete this organization.');
+            throw new HttpErrorByCode[403]('The user has no permission to update this organization.');
         }
 
         return this.organizationService.update(id, updateOrganizationDto);
@@ -102,7 +102,7 @@ export class OrganizationController {
 
 
         if (!isBrainlifeAdmin && !isOwner && !isAdminOfOrganization) {
-            throw new Error('The user must be an admin, the owner of the organization, or a brainlife admin to perform this operation.');
+            throw new HttpErrorByCode[403]('The user has no permission to delete this organization.');
         }
 
         return this.organizationService.remove(id);
