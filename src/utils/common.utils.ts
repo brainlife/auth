@@ -266,7 +266,6 @@ export async function createClaim(
 }
 
 export function hasScope(user: any, role: string): boolean {
-  console.log('hasScope', user.scopes.auth, role);
   if (!user) return false;
   if (!user.scopes) return false;
   //TODO what about brainlife admin ?
@@ -275,6 +274,7 @@ export function hasScope(user: any, role: string): boolean {
   if (!~user.scopes.auth.indexOf(role)) return false;
   return true;
 }
+
 
 export function sendSuccessMessage(res, messageText) {
   const message = [
