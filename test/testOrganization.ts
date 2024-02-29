@@ -229,7 +229,7 @@ const executeWorkflow = async () => {
     const organizations = await Promise.all(organizationsData.map(org => createOrganization(user1_loggedIn.jwt, org)));
 
     const brainlifeAdmin = {
-        jwt: 'eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE3MDk4NDE1MDUsInNjb3BlcyI6eyJicmFpbmxpZmUiOlsiYWRtaW4iXX0sInN1YiI6MTAsImdpZHMiOlswXSwicHJvZmlsZSI6eyJ1c2VybmFtZSI6InRlc3ROYW1lIiwiZW1haWwiOiJ0ZXN0TmFtZUB0ZXN0LmlvIn0sImlhdCI6MTcwOTIzNjcwNX0.fGYNnD9Keks55DHd_pu99hmWBoj50FV5zqGc-2w-4EtRyFM8f2gSpOJJgzOeYPHnS_0zRxDEkjEKGH8eT6CaYNfU0JYtMAmV9eOc3ricDIyzcSy_wDTE5aoTkpWOkQmNxIiEOi04STAX29iUXvIpSU5CwCbTweR89PD9_PYezDBtFJmp1Oxhy0i2e2anH41GA4IYgTZIDgc0UHa88fCCyk1x-kQWSWBaiECw4Bz0stVlAb_4JBmpkal62ra9vqG4uM2jYJSpDum4ilxI5keKt2uUi6DWD9ZyuieGZ8DueIqKeuP8hCFE62eHWdzysxoHd6-6LnV9lp_SCEwmJ4n6uw'
+        jwt: 'brainlifeAdminJWT'
     }
 
     const allOrganizations = await axios.get(`${host}/organization`, {
