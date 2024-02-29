@@ -268,7 +268,7 @@ export async function createClaim(
 export function hasScope(user: any, role: string): boolean {
   if (!user) return false;
   if (!user.scopes) return false;
-  if (user.scopes.brainlife && user.scopes.brainlife.includes(role)) return true;
+  if (user.scopes.brainlife && user.scopes.brainlife.includes("admin")) return true;
   if (!user.scopes.auth) return false;
   if (!~user.scopes.auth.indexOf(role)) return false;
   return true;
