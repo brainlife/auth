@@ -46,13 +46,11 @@ export class OrganizationService {
     }
 
     async update(id: string, updateOrganizationDto: UpdateOrganizationDto): Promise<Organization> {
-        // update the modified date
         updateOrganizationDto.modified = new Date();
         return this.organizationModel.findByIdAndUpdate(id, updateOrganizationDto, { new: true });
     }
 
     async remove(id: string): Promise<Organization> {
-        // update the modified date, just mark removed = true
         return this.organizationModel.findByIdAndUpdate(id, { removed: true, modified: new Date() }, { new: true });
     }
 

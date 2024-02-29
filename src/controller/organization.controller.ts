@@ -6,6 +6,7 @@ import { JwtAuthGuard } from 'src/auth/jwt-auth.guard';
 import { check } from 'prettier';
 import { checkUser, hasScope } from 'src/utils/common.utils';
 import { Organization } from 'src/schema/organization.schema';
+import { HttpErrorByCode } from '@nestjs/common/utils/http-error-by-code.util';
 
 
 @Controller('organization')
@@ -82,7 +83,7 @@ export class OrganizationController {
 
 
         if (!isBrainlifeAdmin && !isOwner && !isAdminOfOrganization) {
-            throw new Error('The user must be an admin, the owner of the organization, or a brainlife admin to perform this operation.');
+            throw new HttpErrorByCode[403]('The user has no permission to delete this organization.');
         }
 
         return this.organizationService.update(id, updateOrganizationDto);
