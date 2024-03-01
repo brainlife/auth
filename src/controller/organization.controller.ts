@@ -55,13 +55,13 @@ export class OrganizationController {
 
     @UseGuards(JwtAuthGuard)
     @Post('create')
-    create(@Req() req, @Body() createOrganizationDto: CreateOrganizationDto) {
+    async create(@Req() req, @Body() createOrganizationDto: CreateOrganizationDto) {
 
         if (!this.organizationService.isUserOwner(createOrganizationDto, req.user.sub)) {
             throw new HttpErrorByCode[403]('The user must be the owner of the organization to create it');
         }
 
-        const isAdminOfOrganization = this.organizationService.isUserAdmin(createOrganizationDto, req.user.sub);
+        const isAdminOfOrganization = await this.organizationService.isUserAdmin(createOrganizationDto, req.user.sub);
         if (!isAdminOfOrganization) {
             throw new HttpErrorByCode[403]('The user must be the admin of the organization to create it');
         }

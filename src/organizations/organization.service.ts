@@ -58,12 +58,12 @@ export class OrganizationService {
         return organization.owner == user;
     }
 
-    isUserAdmin(organization: Organization, userID: string): boolean {
-        return organization.roles.some(role => role.members.includes(userID) && role.role === 'admin');
+    async isUserAdmin(organization: Organization, userID: string): Promise<boolean> {
+        return organization.roles[0].members.includes(String(userID));
     }
 
     isUserMember(organization: Organization, userID: string): boolean {
-        return organization.roles.some(role => role.members.includes(userID));
+        return organization.roles.some(role => role.members.includes(String(userID)));
     }
 
 }
