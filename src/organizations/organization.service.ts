@@ -59,11 +59,11 @@ export class OrganizationService {
     }
 
     async isUserAdmin(organization: Organization, userID: string): Promise<boolean> {
-        return organization.roles[0].members.includes(String(userID));
+        return organization.roles[0].members.includes(userID);
     }
 
     isUserMember(organization: Organization, userID: string): boolean {
-        return organization.roles.some(role => role.members.includes(String(userID)));
+        return organization.roles.some(role => role.members.includes((userID)));
     }
 
 }
