@@ -8,6 +8,7 @@ import { UserModule } from './users/user.module';
 import { ClientsModule, Transport } from '@nestjs/microservices';
 import { AuthModule } from './auth/auth.module';
 import { RedisModule } from './redis/redis.module';
+import { OrganizationModule } from './organizations/organization.module';
 
 @Module({
   imports: [
@@ -38,8 +39,9 @@ import { RedisModule } from './redis/redis.module';
     // ]),
     AuthModule,
     RedisModule,
+    OrganizationModule
   ],
   controllers: [AppController],
   providers: [AppService],
 })
-export class AppModule {}
+export class AppModule { }

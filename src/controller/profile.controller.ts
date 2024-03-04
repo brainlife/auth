@@ -38,7 +38,7 @@ export class ProfileController {
   constructor(
     private readonly userService: UserService,
     private queuePublisher: RabbitMQ,
-  ) {}
+  ) { }
 
   /**
    * @apiGroup Profile
