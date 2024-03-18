@@ -359,24 +359,19 @@ router.put('/group/:id', jwt({
     }).catch(next);
 });
 
-let g_next_gid = 1;
-db.mongo.Group.findOne({}).sort({_id:-1}).then(last_record=>{
-    //TODO - if I run more than 1 auth instance, I will need to start/increment equal to the number of all instances
-    if(last_record) g_next_gid = last_record.id + 1;
-    console.log("next_gid", g_next_gid);
-});
+
 
 //create new group (any user can create group?)
 //admin/members should be a list of user subs (not _id)
 router.post('/group', jwt({
     secret: config.auth.public_key,
     algorithms: [config.auth.sign_opt.algorithm],
-}), async (req, res, next)=>{
+}), async (req, res, next) => {
 
-    //TODO - there is concurrency issue with finding max gid v.s. using it for next one
-    //another user could interupt between above and below code..
-    //so let's use global value
-    req.body.id = g_next_gid++;
+    let g_next_gid = 1;
+    const last_record = await db.mongo.Group.findOne({}).sort({id:-1});
+    if (last_record) g_next_gid = last_record.id + 1;
+    req.body.id = g_next_gid;
     
     //convert list of subs to list of users
     req.body.admins = await db.mongo.User.find({sub: {$in: req.body.admins}});
