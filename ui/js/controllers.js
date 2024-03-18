@@ -8,10 +8,11 @@ function($scope, appconf, $route, $location, toaster, $http, menu, scaSettingsMe
     $scope.settings_menu = scaSettingsMenu;
 
     let app = $location.search().app;
+    let pathname = $location.search().auth_redirect || '';
     if($scope.appconf.cross_domain && $scope.appconf.cross_domain[app]) {
         let config = $scope.appconf.cross_domain[app]
         //sessionStorage.setItem('auth_redirect', 'http://localhost:8080');
-        sessionStorage.setItem('auth_redirect', config.auth_redirect);
+        sessionStorage.setItem('auth_redirect', config.auth_redirect + pathname);
         sessionStorage.setItem('jwt_on_url', true);
     }
 });

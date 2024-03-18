@@ -221,7 +221,7 @@ function useradd() {
 
     db.init(err=>{
         if(err) throw err;
-        var user = db.mongo.User.build(
+        var user = new db.mongo.User(
             //extend from default
             Object.assign({
                 username: argv.username,
