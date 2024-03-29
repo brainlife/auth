@@ -27,5 +27,42 @@ export class Organization extends Document {
     removed: boolean;
 }
 
+export enum InvitationStatus {
+    Pending = "Pending",
+    Accepted = "Accepted",
+    Declined = "Declined"
+}
+
+@Schema()
+export class OrganizationInvitation {
+    @Prop({ required: true })
+    inviter: number;
+
+    @Prop({ required: true })
+    invitee: number;
+
+    @Prop({ default: Date.now })
+    invitationDate: Date;
+
+    invitationExpired: Date;
+
+    @Prop({ required: true })
+    invitationRole: string;
+
+    @Prop({ required: true })
+    organization: string;
+
+    @Prop({ default: InvitationStatus.Pending, enum: InvitationStatus })
+    invitationStatus: InvitationStatus;
+
+    @Prop({ default: () => Date.now(), index: true })
+    updateDate: Date;
+}
+
+
+
+export const OrganizationInvitationSchema = SchemaFactory.createForClass(OrganizationInvitation);
+export type OrganizationInvitationDocument = OrganizationInvitation & Document;
+
 export const OrganizationSchema = SchemaFactory.createForClass(Organization);
 export type OrganizationDocument = Organization & Document;
