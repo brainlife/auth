@@ -1,4 +1,5 @@
 import { Schema, SchemaFactory, Prop } from '@nestjs/mongoose';
+import { ObjectId } from 'mongodb';
 import { Document } from 'mongoose';
 
 interface Role {
@@ -36,10 +37,10 @@ export enum InvitationStatus {
 @Schema()
 export class OrganizationInvitation {
     @Prop({ required: true })
-    inviter: number;
+    inviter: ObjectId;
 
     @Prop({ required: true })
-    invitee: number;
+    invitee: ObjectId;
 
     @Prop({ default: Date.now })
     invitationDate: Date;
