@@ -44,7 +44,7 @@ export class OrganizationInvitation {
     @Prop({ default: Date.now })
     invitationDate: Date;
 
-    invitationExpired: Date;
+    invitationExpiration: Date;
 
     @Prop({ required: true })
     invitationRole: string;
@@ -53,7 +53,7 @@ export class OrganizationInvitation {
     organization: string;
 
     @Prop({ default: InvitationStatus.Pending, enum: InvitationStatus })
-    invitationStatus: InvitationStatus;
+    status: InvitationStatus;
 
     @Prop({ default: () => Date.now(), index: true })
     updateDate: Date;
