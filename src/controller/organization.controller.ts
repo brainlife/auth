@@ -106,4 +106,16 @@ export class OrganizationController {
 
         return this.organizationService.remove(id);
     }
+
+    @UseGuards(JwtAuthGuard)
+    @Post(':id/invite')
+    async invite(@Req() req, @Param('id') id: string, @Body() invitee: string, role = 'member', inviter = req.user.sub) {
+        const organization: Organization = await this.organizationService.findOnebyId(id);
+
+        if (!this.organizationService.isUserAdmin(organization, req.user.sub)) {
+            throw new HttpErrorByCode[403]('The user must be the admin of the organization to invite users');
+        }
+
+        return await this.organizationService.inviteUserToOrganization(id, inviter, invitee, role);
+    }
 }
