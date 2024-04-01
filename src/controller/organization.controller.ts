@@ -32,7 +32,7 @@ export class OrganizationController {
     if (req.query.find) where = JSON.parse(req.query.find);
 
     if (!hasScope(req.user, 'admin')) {
-      where['roles.members'] = req.user.sub;
+      where['roles.members'] = req.user._id;
     }
 
     const limit = req.query.limit || 0;
@@ -54,7 +54,7 @@ export class OrganizationController {
 
     const isMember = this.organizationService.isUserMember(
       organization,
-      req.user.sub,
+      req.user._id,
     );
     if (isMember) return organization;
     throw new HttpException('Forbidden', HttpStatus.FORBIDDEN);
@@ -66,9 +66,8 @@ export class OrganizationController {
     @Req() req,
     @Body() createOrganizationDto: CreateOrganizationDto,
   ) {
-    if (
-      !this.organizationService.isUserOwner(createOrganizationDto, req.user.sub)
-    ) {
+
+    if (!this.organizationService.isUserOwner(createOrganizationDto, req.user._id)) {
       throw new HttpErrorByCode[403](
         'The user must be the owner of the organization to create it',
       );
@@ -76,7 +75,7 @@ export class OrganizationController {
 
     const isAdminOfOrganization = await this.organizationService.isUserAdmin(
       createOrganizationDto,
-      req.user.sub,
+      req.user._id,
     );
     if (!isAdminOfOrganization) {
       throw new HttpErrorByCode[403](
@@ -100,12 +99,12 @@ export class OrganizationController {
     const isBrainlifeAdmin = hasScope(req.user, 'admin');
     const isOwner = this.organizationService.isUserOwner(
       organization,
-      req.user.sub,
+      req.user._id,
     );
 
     const isAdminOfOrganization = this.organizationService.isUserAdmin(
       organization,
-      req.user.sub,
+      req.user._id,
     );
 
     if (!isBrainlifeAdmin && !isOwner && !isAdminOfOrganization) {
@@ -126,12 +125,12 @@ export class OrganizationController {
     const isBrainlifeAdmin = hasScope(req.user, 'admin');
     const isOwner = this.organizationService.isUserOwner(
       organization,
-      req.user.sub,
+      req.user._id,
     );
 
     const isAdminOfOrganization = this.organizationService.isUserAdmin(
       organization,
-      req.user.sub,
+      req.user._id,
     );
 
     if (!isBrainlifeAdmin && !isOwner && !isAdminOfOrganization) {
@@ -150,12 +149,12 @@ export class OrganizationController {
     @Param('id') id: string,
     @Body() invitee: string,
     role = 'member',
-    inviter = req.user.sub,
+    inviter = req.user._id,
   ) {
     const organization: Organization =
       await this.organizationService.findOnebyId(id);
 
-    if (!this.organizationService.isUserAdmin(organization, req.user.sub)) {
+    if (!this.organizationService.isUserAdmin(organization, req.user._id)) {
       throw new HttpErrorByCode[403](
         'The user must be the admin of the organization to invite users',
       );
@@ -177,7 +176,7 @@ export class OrganizationController {
     @Body() response: boolean,
     @Res() res,
   ) {
-    const invitationResult: OrganizationInvitation = await this.organizationService.answerInvitation(id, req.user.sub, response);
+    const invitationResult: OrganizationInvitation = await this.organizationService.answerInvitation(id, req.user._id, response);
     if (invitationResult.status == 'Accepted' && response == true) return res.json({ message: 'User accepted the invitation' });
     if (invitationResult.status == 'Declined' && response == false) return res.json({ message: 'User declined the invitation' });
     throw new HttpErrorByCode[400]('Invalid response');

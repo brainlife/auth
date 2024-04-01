@@ -89,8 +89,8 @@ export class OrganizationService {
     );
   }
 
-  isUserOwner(organization: Organization, user: string): boolean {
-    return organization.owner == user;
+  isUserOwner(organization: Organization, userID: string): boolean {
+    return organization.owner == userID;
   }
 
   async isUserAdmin(
