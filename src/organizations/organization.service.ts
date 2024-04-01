@@ -146,11 +146,20 @@ export class OrganizationService {
     invitee: string,
     answer: boolean,
   ) {
+
+    if (answer === undefined) {
+      throw new Error('Answer is required');
+    }
+
     const invitation = await this.organizationInvitationModel.findOne({
       organization: new ObjectId(organization),
       invitee: new ObjectId(invitee),
-      status: 'Pending',
+      // status: 'Pending',
     });
+
+    if (invitation.status !== 'Pending') {
+      throw new Error('Invitation already answered');
+    }
 
     if (!invitation) {
       throw new Error('Invitation not found');
@@ -159,6 +168,7 @@ export class OrganizationService {
     if (invitation.invitationExpiration < new Date()) {
       throw new Error('Invitation expired');
     }
+
 
 
     invitation.status = answer ? InvitationStatus.Accepted : InvitationStatus.Declined;
@@ -185,7 +195,10 @@ export class OrganizationService {
         organization.roles[1].members.push(invitee);
       }
       await organization.save();
+    } else {
+      invitation.status = InvitationStatus.Declined;
     }
+
 
     await invitation.save();
     return invitation;
