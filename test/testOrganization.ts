@@ -1,3 +1,4 @@
+
 const axios = require('axios');
 const jwt = require('jsonwebtoken');
 
@@ -180,7 +181,22 @@ const inviteUserToOrganization = async (jwt, organizationId, inviteeId, role) =>
     catch (error) {
         console.error('Error inviting user to organization:', error);
     }
+};
 
+const answerInvitation = async (jwt, organizationId, inviteeId, answer) => {
+    try {
+        const response = await axios.post(`${host}/organization/${organizationId}/invite/answer`, {
+            response: answer
+        }, {
+            headers: {
+                Authorization: `Bearer ${jwt}`
+            }
+        });
+        return response.data;
+    }
+    catch (error) {
+        console.error('Error answering invitation:', error);
+    }
 };
 
 
@@ -302,10 +318,21 @@ const executeWorkflow = async () => {
     const inviteUser2_ORG1 = await inviteUserToOrganization(user1_loggedIn.jwt, organizations[0]._id, user2_loggedIN._id, 'member');
     console.log('User 2 invited to Organization One as a member', inviteUser2_ORG1);
 
-    // check for it to fail upon re-invitation
-    const reInviteUser2_ORG1 = await inviteUserToOrganization(user1_loggedIn.jwt, organizations[0]._id, user2_loggedIN._id, 'member');
+    // // check for it to fail upon re-invitation
+    // const reInviteUser2_ORG1 = await inviteUserToOrganization(user1_loggedIn.jwt, organizations[0]._id, user2_loggedIN._id, 'member');
 
-    console.log('User 2 re-invited to Organization One as a member', reInviteUser2_ORG1);
+    // console.log('User 2 re-invited to Organization One as a member and got 500 error', reInviteUser2_ORG1);
+
+    // Lets accept the invitation
+
+    const answerInvitationUser2_ORG1 = await answerInvitation(user2_loggedIN.jwt, organizations[0]._id, user2_loggedIN._id, true);
+
+    console.log('User 2 accepted the invitation to Organization One', answerInvitationUser2_ORG1);
+
+    let organizationOne = await getOrganization(user2_loggedIN.jwt, organizations[0]._id);
+
+    console.log("User 2 is in Org one now", organizationOne.roles[1].members.includes(user2_loggedIN._id));
+
 
     deleteOrganization(brainlifeAdmin.jwt, organizations[1]._id);
 

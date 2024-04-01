@@ -170,7 +170,7 @@ export class OrganizationController {
   }
 
   @UseGuards(JwtAuthGuard)
-  @Post(':id/invite/anwser')
+  @Post(':id/invite/answer')
   async inviteResponse(
     @Req() req,
     @Param('id') id: string,
@@ -178,6 +178,7 @@ export class OrganizationController {
     @Res() res,
   ) {
     const invitationResult: OrganizationInvitation = await this.organizationService.answerInvitation(id, req.user._id, response);
+
     if (invitationResult.status == 'Accepted' && response == true) return res.json({ message: 'User accepted the invitation' });
     if (invitationResult.status == 'Declined' && response == false) return res.json({ message: 'User declined the invitation' });
     throw new HttpErrorByCode[400]('Invalid response');

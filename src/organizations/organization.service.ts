@@ -147,8 +147,8 @@ export class OrganizationService {
     answer: boolean,
   ) {
     const invitation = await this.organizationInvitationModel.findOne({
-      organization: organization,
-      invitee: invitee,
+      organization: new ObjectId(organization),
+      invitee: new ObjectId(invitee),
       status: 'Pending',
     });
 
@@ -173,16 +173,15 @@ export class OrganizationService {
       }
 
       if (invitation.invitationRole == 'admin') {
-        // Check if the user is already an admin of the organization
         if (organization.roles[0].members.includes(invitee)) {
           throw new Error('User is already an admin of the organization');
         }
         organization.roles[0].members.push(invitee);
       } else {
-        // Check if the user is already a member of the organization
-        if (organization.roles[1].members.includes(invitee)) {
+        if (organization?.roles[1]?.members.includes(invitee)) {
           throw new Error('User is already a member of the organization');
         }
+        if (!organization.roles[1]) organization.roles[1] = { role: 'member', members: [] };
         organization.roles[1].members.push(invitee);
       }
       await organization.save();
