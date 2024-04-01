@@ -193,7 +193,7 @@ export class OrganizationService {
     }
 
     if (invitation.status !== 'Pending') {
-      throw new Error('Invitation already answered');
+      throw new Error('Invitation already answered or cancelled');
     }
 
     if (invitation.invitationExpiration < new Date()) {
@@ -231,4 +231,32 @@ export class OrganizationService {
     await invitation.save();
     return invitation;
   }
+
+  async cancelInvitation(
+    organization: string,
+    inviter: string,
+    invitee: string,
+  ) {
+    const invitation = await this.organizationInvitationModel.findOne({
+      organization: new ObjectId(organization),
+      inviter: new ObjectId(inviter),
+      invitee: new ObjectId(invitee),
+      status: InvitationStatus.Pending,
+    });
+
+    if (!invitation) {
+      throw new Error('Invitation not found');
+    }
+
+    invitation.status = InvitationStatus.Cancelled;
+    await invitation.save();
+  }
+
+  async listInvitations(organizationID: string) {
+    return this.organizationInvitationModel.find({
+      organization: new ObjectId(organizationID),
+    });
+  }
+
+
 }

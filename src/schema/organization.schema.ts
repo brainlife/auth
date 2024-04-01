@@ -37,6 +37,7 @@ export enum InvitationStatus {
   Pending = 'Pending',
   Accepted = 'Accepted',
   Declined = 'Declined',
+  Cancelled = 'Cancelled',
 }
 
 @Schema()

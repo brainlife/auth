@@ -181,4 +181,40 @@ export class OrganizationController {
     return res.json({ message: 'User answered the invitation' });
   }
 
+  @UseGuards(JwtAuthGuard)
+  @Post(':id/invite/cancel')
+  async cancelInvitation(
+    @Req() req,
+    @Param('id') id: string,
+    @Body() invitee: string,
+  ) {
+    const inviter = req.user.id as string;
+
+    const organization: Organization =
+      await this.organizationService.findOnebyId(id);
+
+    if (!this.organizationService.isUserAdmin(organization, req.user.id)) {
+      throw new HttpErrorByCode[403](
+        'The user must be the admin of the organization to cancel invitations',
+      );
+    }
+
+    return await this.organizationService.cancelInvitation(id, inviter, invitee);
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Get(':id/invitations')
+  async getInvitations(@Req() req, @Param('id') id: string) {
+    const organization: Organization =
+      await this.organizationService.findOnebyId(id);
+
+    if (!this.organizationService.isUserAdmin(organization, req.user.id)) {
+      throw new HttpErrorByCode[403](
+        'The user must be the admin of the organization to see invitations',
+      );
+    }
+
+    return await this.organizationService.listInvitations(id);
+  }
+
 }
