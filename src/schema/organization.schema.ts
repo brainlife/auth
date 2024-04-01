@@ -7,6 +7,11 @@ interface Role {
   members: string[];
 }
 
+export enum UserRole {
+  Admin = 'admin',
+  Member = 'member',
+}
+
 @Schema()
 export class Organization extends Document {
   @Prop({ required: true })

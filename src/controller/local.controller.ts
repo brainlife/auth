@@ -298,7 +298,7 @@ export class LocalController {
       }),
     );
 
-    return res.json({ message: 'Login Success', jwt, sub: user.sub, _id: user._id });
+    return res.json({ message: 'Login Success', jwt, sub: user.sub, id: user.id });
   }
 
   @ApiOperation({ summary: 'Set a new password for a user.' })

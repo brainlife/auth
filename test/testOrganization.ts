@@ -43,7 +43,7 @@ const handleSignupAndLogin = async () => {
         try {
             const signupResponse = await signupUser(user);
             const loginResponse = await loginUser(user);
-            console.log(`User ${user.username} logged in with JWT: ${loginResponse.jwt}, id: ${loginResponse._id}`);
+            console.log(`User ${user.username} logged in with JWT: ${loginResponse.jwt}, id: ${loginResponse.id}`);
 
             usersLoggedIN.push(loginResponse);
 
@@ -95,8 +95,6 @@ const createOrganization = async (jwt, organizationData) => {
                 Authorization: `Bearer ${jwt}`
             }
         });
-
-        console.log('Organization created:', response.data);
         return response.data;
     } catch (error) {
         console.error('Error creating organization:', error);
@@ -203,7 +201,7 @@ const answerInvitation = async (jwt, organizationId, inviteeId, answer) => {
 const deleteUsers = async (users) => {
     // for (const user of users) {
     //     try {
-    //         await axios.delete(`${host}/user/${user._id}`);
+    //         await axios.delete(`${host}/user/${user.id}`);
     //         console.log(`User ${user.username} deleted`);
     //     } catch (error) {
     //         console.error(`Error deleting user ${user.username}:`, error);
@@ -224,17 +222,17 @@ const executeWorkflow = async () => {
         roles: [
             {
                 role: 'admin',
-                members: [user1_loggedIn._id]
+                members: [user1_loggedIn.id]
             },
             {
                 role: 'member',
-                members: [user2_loggedIN._id]
+                members: [user2_loggedIN.id]
             }
         ],
-        owner: user1_loggedIn._id
+        owner: user1_loggedIn.id
     }
 
-    organizationData.roles[0].members.push(user1_loggedIn._id);
+    organizationData.roles[0].members.push(user1_loggedIn.id);
 
     const organization = await createOrganization(user1_loggedIn.jwt, organizationData);
 
@@ -248,11 +246,11 @@ const executeWorkflow = async () => {
 
 
     const updatedOrg = await getOrganization(user1_loggedIn.jwt, organization._id);
+
     if (updatedOrg.name === updateData.name) {
         console.log('Organization updated successfully');
     }
 
-    // await deleteOrganization(user1_loggedIn.jwt, organization._id);
 
     // const deletedOrg = await getOrganization(user1_loggedIn.jwt, organization._id);
     // if (deletedOrg.removed === true) {
@@ -262,21 +260,21 @@ const executeWorkflow = async () => {
     const organizationsData = [
         {
             name: 'Organization One',
-            owner: user1_loggedIn._id,
+            owner: user1_loggedIn.id,
             roles: [
                 {
                     role: 'admin',
-                    members: [user1_loggedIn._id]
+                    members: [user1_loggedIn.id]
                 }
             ]
         },
         {
             name: 'Organization Two',
-            owner: user1_loggedIn._id,
+            owner: user1_loggedIn.id,
             roles: [
                 {
                     role: 'admin',
-                    members: [user1_loggedIn._id]
+                    members: [user1_loggedIn.id]
                 }
             ]
         }
@@ -306,35 +304,35 @@ const executeWorkflow = async () => {
 
     // //{
     //     name: 'Organization One',
-    //     owner: user1_loggedIn._id,
+    //     owner: user1_loggedIn.id,
     //     roles: [
     //         {
     //             role: 'admin',
-    //             members: [user1_loggedIn._id]
+    //             members: [user1_loggedIn.id]
     //         }
     //     ]
     // }, Lets invite user2 to Organization One as a member
 
-    const inviteUser2_ORG1 = await inviteUserToOrganization(user1_loggedIn.jwt, organizations[0]._id, user2_loggedIN._id, 'member');
+    const inviteUser2_ORG1 = await inviteUserToOrganization(user1_loggedIn.jwt, organizations[0]._id, user2_loggedIN.id, 'member');
     console.log('User 2 invited to Organization One as a member', inviteUser2_ORG1);
 
     // // check for it to fail upon re-invitation
-    // const reInviteUser2_ORG1 = await inviteUserToOrganization(user1_loggedIn.jwt, organizations[0]._id, user2_loggedIN._id, 'member');
+    // const reInviteUser2_ORG1 = await inviteUserToOrganization(user1_loggedIn.jwt, organizations[0].id, user2_loggedIN.id, 'member');
 
     // console.log('User 2 re-invited to Organization One as a member and got 500 error', reInviteUser2_ORG1);
 
     // Lets accept the invitation
 
-    const answerInvitationUser2_ORG1 = await answerInvitation(user2_loggedIN.jwt, organizations[0]._id, user2_loggedIN._id, true);
+    const answerInvitationUser2_ORG1 = await answerInvitation(user2_loggedIN.jwt, organizations[0]._id, user2_loggedIN.id, true);
 
     console.log('User 2 accepted the invitation to Organization One', answerInvitationUser2_ORG1);
 
     let organizationOne = await getOrganization(user2_loggedIN.jwt, organizations[0]._id);
 
-    console.log("User 2 is in Org one now", organizationOne.roles[1].members.includes(user2_loggedIN._id));
+    console.log("User 2 is in Org one now", organizationOne.roles[1].members.includes(user2_loggedIN.id));
 
 
-    deleteOrganization(brainlifeAdmin.jwt, organizations[1]._id);
+    await deleteOrganization(brainlifeAdmin.jwt, organizations[1]._id);
 
     const deletedOrgTwo = await getOrganization(brainlifeAdmin.jwt, organizations[1]._id);
 

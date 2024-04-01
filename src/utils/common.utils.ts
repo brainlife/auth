@@ -262,7 +262,7 @@ export async function createClaim(
       fullname: user?.fullname,
       aup: user?.profile?.private?.aup,
     },
-    _id: user?._id
+    id: user?._id
   };
 }
 

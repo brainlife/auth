@@ -93,16 +93,51 @@ export class OrganizationService {
     return organization.owner == userID;
   }
 
-  async isUserAdmin(
-    organization: Organization,
-    userID: string,
-  ): Promise<boolean> {
-    return organization.roles[0].members.includes(userID);
+  async isUserAdmin(organization: Organization, userID: string): Promise<boolean> {
+    const adminRole = organization.roles.find(role => role.role === 'admin');
+    return adminRole ? adminRole.members.includes(userID) : false;
   }
+
 
   isUserMember(organization: Organization, userID: string): boolean {
     return organization.roles.some((role) => role.members.includes(userID));
   }
+
+  isUserSpecificMember(organization: Organization, userID: string): boolean {
+    const memberRole = organization.roles.find(role => role.role === 'member');
+    return memberRole ? memberRole.members.includes(userID) : false;
+  }
+
+  addMember(organization: Organization, userID: string): Organization {
+    const memberRoleIndex = organization.roles.findIndex(role => role.role === 'member');
+
+    if (memberRoleIndex === -1) {
+      organization.roles.push({ role: 'member', members: [userID] });
+    } else {
+      if (!organization.roles[memberRoleIndex].members.includes(userID)) {
+        organization.roles[memberRoleIndex].members.push(userID);
+      }
+    }
+
+    return organization;
+  }
+
+
+  addAdmin(organization: Organization, userID: string): Organization {
+    const adminRoleIndex = organization.roles.findIndex(role => role.role === 'admin');
+
+    if (adminRoleIndex === -1) {
+      organization.roles.push({ role: 'admin', members: [userID] });
+    } else {
+      if (!organization.roles[adminRoleIndex].members.includes(userID)) {
+        organization.roles[adminRoleIndex].members.push(userID);
+      }
+    }
+
+    return organization;
+  }
+
+
 
 
   async inviteUserToOrganization(
@@ -147,34 +182,28 @@ export class OrganizationService {
     answer: boolean,
   ) {
 
-    if (answer === undefined) {
-      throw new Error('Answer is required');
-    }
-
     const invitation = await this.organizationInvitationModel.findOne({
       organization: new ObjectId(organization),
       invitee: new ObjectId(invitee),
       // status: 'Pending',
     });
 
-    if (invitation.status !== 'Pending') {
-      throw new Error('Invitation already answered');
-    }
-
     if (!invitation) {
       throw new Error('Invitation not found');
+    }
+
+    if (invitation.status !== 'Pending') {
+      throw new Error('Invitation already answered');
     }
 
     if (invitation.invitationExpiration < new Date()) {
       throw new Error('Invitation expired');
     }
 
-
-
     invitation.status = answer ? InvitationStatus.Accepted : InvitationStatus.Declined;
 
     if (answer) {
-      const organization = await this.organizationModel.findById(
+      let organization: Organization = await this.organizationModel.findById(
         invitation.organization,
       );
 
@@ -183,23 +212,22 @@ export class OrganizationService {
       }
 
       if (invitation.invitationRole == 'admin') {
-        if (organization.roles[0].members.includes(invitee)) {
+        if (this.isUserAdmin(organization, invitee)) {
           throw new Error('User is already an admin of the organization');
         }
-        organization.roles[0].members.push(invitee);
+        organization = this.addAdmin(organization, invitee);
       } else {
-        if (organization?.roles[1]?.members.includes(invitee)) {
+        if (this.isUserSpecificMember(organization, invitee)) {
           throw new Error('User is already a member of the organization');
         }
-        if (!organization.roles[1]) organization.roles[1] = { role: 'member', members: [] };
-        organization.roles[1].members.push(invitee);
+        organization = this.addMember(organization, invitee);
       }
       await organization.save();
     } else {
       invitation.status = InvitationStatus.Declined;
     }
 
-
+    invitation.updateDate = new Date();
     await invitation.save();
     return invitation;
   }
