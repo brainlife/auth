@@ -1,4 +1,5 @@
 const axios = require('axios');
+const jwt = require('jsonwebtoken');
 
 const host = 'http://localhost:8080/api/auth';
 
@@ -23,7 +24,12 @@ const loginUser = async (userData) => {
             username: userData.username,
             password: userData.password
         });
+
+        const decodedToken = jwt.decode(response.data.jwt);
+        console.log('Decoded JWT:', decodedToken);
+
         return response.data;
+
     } catch (error) {
         console.error('Login error:', error.response.data);
         throw error;
@@ -35,10 +41,8 @@ const handleSignupAndLogin = async () => {
     for (const user of users) {
         try {
             const signupResponse = await signupUser(user);
-            console.log(`User ${user.username} signed up with sub: ${signupResponse.sub}`);
-
             const loginResponse = await loginUser(user);
-            console.log(`User ${user.username} logged in with JWT: ${loginResponse.jwt}`);
+            console.log(`User ${user.username} logged in with JWT: ${loginResponse.jwt}, id: ${loginResponse._id}`);
 
             usersLoggedIN.push(loginResponse);
 
@@ -161,6 +165,36 @@ const deleteOrganization = async (jwt, organizationId) => {
     }
 };
 
+const inviteUserToOrganization = async (jwt, organizationId, inviteeId, role) => {
+    try {
+        const response = await axios.post(`${host}/organization/${organizationId}/invite`, {
+            role,
+            invitee: inviteeId
+        }, {
+            headers: {
+                Authorization: `Bearer ${jwt}`
+            }
+        });
+        return response.data;
+    }
+    catch (error) {
+        console.error('Error inviting user to organization:', error);
+    }
+
+};
+
+
+const deleteUsers = async (users) => {
+    // for (const user of users) {
+    //     try {
+    //         await axios.delete(`${host}/user/${user._id}`);
+    //         console.log(`User ${user.username} deleted`);
+    //     } catch (error) {
+    //         console.error(`Error deleting user ${user.username}:`, error);
+    //     }
+    // }
+};
+
 
 
 
@@ -174,20 +208,22 @@ const executeWorkflow = async () => {
         roles: [
             {
                 role: 'admin',
-                members: [user1_loggedIn.sub]
+                members: [user1_loggedIn._id]
             },
             {
                 role: 'member',
-                members: [user2_loggedIN.sub]
+                members: [user2_loggedIN._id]
             }
         ],
-        owner: user1_loggedIn.sub
+        owner: user1_loggedIn._id
     }
 
-    organizationData.roles[0].members.push(user1_loggedIn.sub);
+    organizationData.roles[0].members.push(user1_loggedIn._id);
 
     const organization = await createOrganization(user1_loggedIn.jwt, organizationData);
+
     console.log('Organization created:', organization);
+
 
     const updateData = {
         name: 'Updated Organization Name'
@@ -200,31 +236,31 @@ const executeWorkflow = async () => {
         console.log('Organization updated successfully');
     }
 
-    await deleteOrganization(user1_loggedIn.jwt, organization._id);
+    // await deleteOrganization(user1_loggedIn.jwt, organization._id);
 
-    const deletedOrg = await getOrganization(user1_loggedIn.jwt, organization._id);
-    if (deletedOrg.removed === true) {
-        console.log('Organization deleted successfully');
-    }
+    // const deletedOrg = await getOrganization(user1_loggedIn.jwt, organization._id);
+    // if (deletedOrg.removed === true) {
+    //     console.log('Organization deleted successfully');
+    // }
 
     const organizationsData = [
         {
             name: 'Organization One',
-            owner: user1_loggedIn.sub,
+            owner: user1_loggedIn._id,
             roles: [
                 {
                     role: 'admin',
-                    members: [user1_loggedIn.sub]
+                    members: [user1_loggedIn._id]
                 }
             ]
         },
         {
             name: 'Organization Two',
-            owner: user1_loggedIn.sub,
+            owner: user1_loggedIn._id,
             roles: [
                 {
                     role: 'admin',
-                    members: [user1_loggedIn.sub]
+                    members: [user1_loggedIn._id]
                 }
             ]
         }
@@ -233,7 +269,7 @@ const executeWorkflow = async () => {
     const organizations = await Promise.all(organizationsData.map(org => createOrganization(user1_loggedIn.jwt, org)));
 
     const brainlifeAdmin = {
-        jwt: 'eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE3MDk4NDE3NDEsInNjb3BlcyI6eyJicmFpbmxpZmUiOlsiYWRtaW4iXX0sInN1YiI6MTAsImdpZHMiOlswXSwicHJvZmlsZSI6eyJ1c2VybmFtZSI6InRlc3ROYW1lIiwiZW1haWwiOiJ0ZXN0TmFtZUB0ZXN0LmlvIn0sImlhdCI6MTcwOTIzNjk0MX0.ca1eKzMBxt3tkw3kWnetUAKr56eky99gQhuq9L0mSiqgAjO2McezFL9BeJMg2aX1XBB8ZuQC7ZLELRPJdFcTx9W59SvEhydEM-sN1TQCHVxObCDzaGZnyGLOXkWSHo6JtoBigVKVOm1qx5i4kHsYxtE7mQV1UDRBLK9DxjVPsC9DkQobtZz5mhhpYb-HPWWqQrX1MEPTcfKti_UYKjs-VVj3hLuhn3jJ2S35cYQaVcfjspYO5arAsY8SO4p8aHgWsv7Ah28Sexu0iVW_4SnK37MudxnWylKxjOVkV554CLOdpGTKaEg2ndEiyKeVfIxO2VMbvJ6fiWwixgiD2QK-UQ'
+        jwt: ""
     }
 
     const allOrganizations = await axios.get(`${host}/organization`, {
@@ -251,6 +287,24 @@ const executeWorkflow = async () => {
     if (updatedOrgOne.name === 'Updated Organization One') {
         console.log('Organization One updated successfully');
     }
+
+    // //{
+    //     name: 'Organization One',
+    //     owner: user1_loggedIn._id,
+    //     roles: [
+    //         {
+    //             role: 'admin',
+    //             members: [user1_loggedIn._id]
+    //         }
+    //     ]
+    // }, Lets invite user2 to Organization One as a member
+
+    const inviteUser2_ORG1 = await inviteUserToOrganization(user1_loggedIn.jwt, organizations[0]._id, user2_loggedIN._id, 'member');
+    console.log('User 2 invited to Organization One as a member', inviteUser2_ORG1);
+
+    process.exit(0);
+
+
 
     deleteOrganization(brainlifeAdmin.jwt, organizations[1]._id);
 

@@ -13,7 +13,7 @@ import {
   HttpStatus,
 } from '@nestjs/common';
 import { OrganizationService } from 'src/organizations/organization.service';
-import { CreateOrganizationDto } from 'src/dto/create-organization.dto';
+import { CreateOrganizationDto, InviteUserDto } from 'src/dto/create-organization.dto';
 import { UpdateOrganizationDto } from 'src/dto/update-organization.dto';
 import { JwtAuthGuard } from 'src/auth/jwt-auth.guard';
 import { check } from 'prettier';
@@ -147,10 +147,11 @@ export class OrganizationController {
   async invite(
     @Req() req,
     @Param('id') id: string,
-    @Body() invitee: string,
-    role = 'member',
-    inviter = req.user._id,
+    @Body() inviteUserDto: InviteUserDto,
   ) {
+    const { invitee, role } = inviteUserDto;
+    const inviter = req.user._id as string;
+
     const organization: Organization =
       await this.organizationService.findOnebyId(id);
 

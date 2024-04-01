@@ -154,7 +154,6 @@ export class OrganizationService {
     if (!invitation) {
       throw new Error('Invitation not found');
     }
-    // check if the invitation is expired
 
     if (invitation.invitationExpiration < new Date()) {
       throw new Error('Invitation expired');
