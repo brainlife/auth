@@ -53,7 +53,7 @@ export class LocalController {
     private groupService: GroupService,
     private failedLoginService: FailedLoginService,
     private queuePublisher: RabbitMQ,
-  ) {}
+  ) { }
 
   /**
    * @api {post} /local/resetpass Handle both resetpass request and fulfillment request
@@ -298,7 +298,7 @@ export class LocalController {
       }),
     );
 
-    return res.json({ message: 'Login Success', jwt, sub: user.sub });
+    return res.json({ message: 'Login Success', jwt, sub: user.sub, _id: user._id });
   }
 
   @ApiOperation({ summary: 'Set a new password for a user.' })
