@@ -302,9 +302,10 @@ const executeWorkflow = async () => {
     const inviteUser2_ORG1 = await inviteUserToOrganization(user1_loggedIn.jwt, organizations[0]._id, user2_loggedIN._id, 'member');
     console.log('User 2 invited to Organization One as a member', inviteUser2_ORG1);
 
-    process.exit(0);
+    // check for it to fail upon re-invitation
+    const reInviteUser2_ORG1 = await inviteUserToOrganization(user1_loggedIn.jwt, organizations[0]._id, user2_loggedIN._id, 'member');
 
-
+    console.log('User 2 re-invited to Organization One as a member', reInviteUser2_ORG1);
 
     deleteOrganization(brainlifeAdmin.jwt, organizations[1]._id);
 

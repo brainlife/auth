@@ -51,7 +51,7 @@ export class OrganizationInvitation {
   invitationRole: string;
 
   @Prop({ required: true })
-  organization: string;
+  organization: ObjectId;
 
   @Prop({ default: InvitationStatus.Pending, enum: InvitationStatus })
   status: InvitationStatus;

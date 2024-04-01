@@ -104,6 +104,7 @@ export class OrganizationService {
     return organization.roles.some((role) => role.members.includes(userID));
   }
 
+
   async inviteUserToOrganization(
     organization: string,
     inviter: string,
@@ -112,8 +113,8 @@ export class OrganizationService {
   ) {
     // Check if the user is already a member of the organization or has a pending invitation
     const existingInvitation = await this.organizationInvitationModel.findOne({
-      organization: organization,
-      invitee: invitee,
+      organization: new ObjectId(organization),
+      invitee: new ObjectId(invitee),
       status: 'Pending',
     });
 
@@ -132,7 +133,7 @@ export class OrganizationService {
     createOrganizationInvitation.inviter = new ObjectId(inviter);
     createOrganizationInvitation.invitee = new ObjectId(invitee);
     createOrganizationInvitation.invitationRole = role;
-    createOrganizationInvitation.organization = organization;
+    createOrganizationInvitation.organization = new ObjectId(organization);
     createOrganizationInvitation.invitationExpiration = new Date(
       new Date().getTime() + 7 * 24 * 60 * 60 * 1000,
     ); // 7 days
