@@ -1,7 +1,6 @@
 FROM node:16
 
-#TODO do we still need this?
-RUN apt-get update && apt install openssl
+# RUN apt-get update && apt install openssl
 RUN npm install -g pm2
 
 WORKDIR /app
@@ -11,4 +10,4 @@ RUN npm install
 
 COPY . /app
 
-ENTRYPOINT [ "/app/run.sh" ]
+CMD [ "pm2", "start", "./api/auth.js" ]
