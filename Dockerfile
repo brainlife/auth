@@ -10,4 +10,6 @@ RUN npm install
 
 COPY . /app
 
-CMD [ "pm2", "start", "./api/auth.js" ]
+HEALTHCHECK CMD curl --fail http://localhost:8080/health || exit 1
+
+CMD [ "pm2-runtime", "start", "./api/auth.js" ]
