@@ -176,7 +176,8 @@ router.get('/users', jwt({
  * @apiHeader {String} authorization A valid JWT token "Bearer: xxxxx"
  * @apiSuccessExample {json} Success-Response:
  *     HTTP/1.1 200 OK
- *     [ 1,2,3 ] 
+ *     [ 1,2,0,3 ]
+ *     (admin gids first, then 0 separator, then member gids - same format as the jwt "gids" claim)
  */
 router.get('/user/groups/:id', jwt({
     secret: config.auth.public_key,
@@ -185,8 +186,19 @@ router.get('/user/groups/:id', jwt({
     db.mongo.User.findOne({sub: req.params.id}).then(async user=>{
         if(!user) return res.status(404).end();
         try {
-            let groups = await db.mongo.Group.find({$or: [{admins: user}, {members: user}]}, {id: 1});
-            let gids = groups.map(group=>group.id);
+            const adminGroups = await db.mongo.Group.find({ active: true, admins: user._id }, { id: 1 });
+            const memberGroups = await db.mongo.Group.find({ active: true, members: user._id }, { id: 1 });
+            
+            //match the jwt gids claim format: admin gids, then 0 separator, then member gids
+            const gids = [
+                ...adminGroups.map(g => g.id),
+                0
+            ];
+            memberGroups.forEach(g => {
+                if (!gids.includes(g.id)) {
+                    gids.push(g.id);
+                }
+            });
             res.json(gids);
         } catch(err) {
             next(err);
