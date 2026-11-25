@@ -1,58 +1,85 @@
-[![Build Status](https://travis-ci.org/soichih/sca-auth.svg?branch=master)](https://travis-ci.org/soichih/sca-auth)
-[![Coverage Status](https://coveralls.io/repos/github/soichih/sca-auth/badge.svg?branch=master)](https://coveralls.io/github/soichih/sca-auth?branch=master)
+<p align="center">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset=".github/brand/brainlife-mark-on-dark.svg">
+    <img src=".github/brand/brainlife-mark-on-light.svg" alt="brainlife.io" width="140">
+  </picture>
+</p>
 
-Generic authentication service that allows user to authenticate against variety of identity providers and issue JWT token. This service also provides role administration that can be used for authorization and group administrations.
+<h1 align="center">auth (legacy)</h1>
 
-Any services that then use authentication service's public key to validate the JWT token and do stateless authentication (and basic authorization through roles / groups)
+<p align="center">
+  Generic authentication service that signs users in through many identity providers and issues JWTs.
+</p>
 
-For DB backend, it can use PostgreSQL, MySQL, MariaDB, or SQLite.
+<p align="center">
+  <a href="LICENSE"><img src="https://img.shields.io/badge/License-MIT-lightgrey.svg" alt="MIT license"></a>
+  <img src="https://img.shields.io/badge/Status-legacy-lightgrey.svg" alt="Status: legacy">
+  <a href="https://brainlife.io"><img src="https://img.shields.io/badge/brainlife.io-site-3b9fd0.svg" alt="brainlife.io"></a>
+  <a href="https://brainlife.io/docs"><img src="https://img.shields.io/badge/Docs-brainlife.io%2Fdocs-005981.svg" alt="Documentation"></a>
+  <a href="https://doi.org/10.1038/s41592-024-02237-2"><img src="https://img.shields.io/badge/DOI-10.1038%2Fs41592--024--02237--2-e57536.svg" alt="Nature Methods paper"></a>
+</p>
 
-## Installation (pm2)
+> [!WARNING]
+> **Legacy.** New development happens in [brainlife/auth-next](https://github.com/brainlife/auth-next). This repository still received a group-ID fix in September 2026, and the [brainlife](https://github.com/brainlife/brainlife) development stack references it; check with the maintainers before choosing which one to deploy.
 
-```
-git clone git@github.com:brainlife/auth.git auth
-cd auth && npm install
-cd ui && npm install
-```
+## 🧠 At a glance
 
-You will need to create your configuration by copying `./api/config/index.js.sample` to `./api/config/index.js` (and edit the content)
+| | |
+|---|---|
+| 🧭 **What** | Authenticates users against identity providers and issues JWTs; role, group and profile administration. Other services verify tokens with its public key |
+| 🧱 **Stack** | Node.js · Express · Passport · pm2; sign-in UI in `ui/` |
+| ➡️ **Use instead** | [auth-next](https://github.com/brainlife/auth-next) |
+| 🕰️ **Last activity** | 2026-09-18 |
 
-You also need to create your public and private keys.
+## 🚀 Running it
 
-```
-openssl genrsa -out auth.key 2048
-chmod 600 auth.key
+```bash
+npm install && (cd ui && npm install)
+cp api/config/index.js.dev api/config/index.js   # edit
+openssl genrsa -out auth.key 2048 && chmod 600 auth.key
 openssl rsa -in auth.key -pubout > auth.pub
+npm start                                            # node api/auth.js
 ```
 
-## Installation (docker)
+The [`Dockerfile`](Dockerfile) runs the API under `pm2-runtime` (API on port 8080, health check at `/health`); mount your config at `/app/api/config`. Once the UI is up, the API reference is served under `/apidoc`.
 
-Create configuration file first
+## 👥 Authors
 
-```
-mkdir /etc/auth
-cd /etc/auth
-wget https://raw.githubusercontent.com/brainlife/auth/master/api/config/index.js.sample
-cp index.js.sample index.js
-```
-And edit index.js. You need to point various paths to the right place. Just contact me if you aren't sure.
+Soichi Hayashi and the brainlife.io team.
 
-You also need to create public / prviate keys (see above for `openssl genrsa`)
+## 📚 Citing
 
-Then, create auth container..
+If you use brainlife.io in your work, please cite:
 
-```
-docker run \
-    --restart=always \
-    --name auth \
-    -v /etc/auth:/app/api/config \
-    -v /usr/local/data/auth:/db \
-    -d soichih/auth
-```
+> Hayashi S, Caron BA, Heinsfeld AS, et al. brainlife.io: a decentralized and open-source cloud platform to support neuroscience research. *Nature Methods* 21:809–813 (2024). [doi:10.1038/s41592-024-02237-2](https://doi.org/10.1038/s41592-024-02237-2)
 
-You need to expose your container's port 80 (for UI) and 8080 (for API) directly, or via web proxy like nginx. Please feel free to contact me if you aren't sure how to do that.
+## 💰 Funding
 
-# APIDOC
+brainlife.io is developed by the Pestilli Lab at The University of Texas at Austin and is publicly funded; acknowledging that support helps keep it running.
 
-Once you have your UI up, you can view the API doc at `/apidoc` sub directory. Or you can see our hosted version at `https://sca.iu.edu/auth/apidoc/`
+<details>
+<summary>Grants (verified list, from <a href="https://github.com/brainlife/ezbids/blob/master/CREDITS.md#funding">ezbids CREDITS.md</a>)</summary>
 
+| Funder | Award | Title |
+|---|---|---|
+| NIH NINDS | [U24NS140384](https://reporter.nih.gov/project-details/U24NS140384) | BRAIN CONNECTS: The Axonal Projectome EXchange (APEX) |
+| NIH NIMH | [R01MH126699](https://reporter.nih.gov/project-details/R01MH126699) | Community-driven development of BIDS |
+| NIH NIBIB | [R01EB030896](https://reporter.nih.gov/project-details/R01EB030896) | CRCNS US-France: open science and cloud computing of MEEG |
+| NIH NIBIB | [R01EB029272](https://reporter.nih.gov/project-details/R01EB029272) | CRCNS US-France: lowering the barrier of entry to network neuroscience |
+| NSF | [BCS-1636893](https://www.nsf.gov/awardsearch/showAward?AWD_ID=1636893), [2148729](https://www.nsf.gov/awardsearch/showAward?AWD_ID=2148729) | BD Spokes: Advanced Computational Neuroscience Network |
+| NSF | [BCS-1734853](https://www.nsf.gov/awardsearch/showAward?AWD_ID=1734853), [2203524](https://www.nsf.gov/awardsearch/showAward?AWD_ID=2203524) | NCS-FO: Connectome mapping algorithms |
+| NSF | [IIS-1912270](https://www.nsf.gov/awardsearch/showAward?AWD_ID=1912270), [2148700](https://www.nsf.gov/awardsearch/showAward?AWD_ID=2148700) | CRCNS US-German: DataLad |
+| NSF | [ACI-1916518](https://www.nsf.gov/awardsearch/showAward?AWD_ID=1916518) | BD Hubs: Midwest Big Data Hub |
+| Wellcome Trust | [226486](https://grantnav.threesixtygiving.org/grant/360G-Wellcome-226486_Z_22_Z) | Developing an international governance framework to advance global brain and mental health data equity and innovation |
+
+</details>
+
+## 🤝 Contributing
+
+Issues and pull requests are welcome in this repository. For help using brainlife.io, see the [documentation](https://brainlife.io/docs).
+
+## ⚖️ License
+
+[MIT](LICENSE).
+
+<p align="center"><sub>brainlife.io · Brain data across scales. One place to analyze, share and publish it. · The University of Texas at Austin</sub></p>
